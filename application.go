@@ -15,6 +15,10 @@ func (app *Application) Start() (bool, error) {
 	return false, nil
 }
 
+func (app *Application) Init() (bool, error) {
+	return false, nil
+}
+
 func (app *Application) Stop() (bool, error) {
 	return false, nil
 }

@@ -13,6 +13,7 @@ func main() {
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	app := Create()
+	app.Init()
 	res, err := app.Start()
 	if !res {
 		msg := stringFormatter.Format("An error occurred during starting application, error is: {0}", err.Error())
