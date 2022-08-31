@@ -12,7 +12,7 @@ func main() {
 	osSignal := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	app := Create()
+	app := Create("./config.json", "data.json")
 	app.Init()
 	res, err := app.Start()
 	if !res {

@@ -1,5 +1,6 @@
 package data
 
 type Realm struct {
-	Name string
+	Name    string
+	Clients []Client
 }

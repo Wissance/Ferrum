@@ -12,7 +12,8 @@ const (
 )
 
 type Client struct {
-	Type ClientType
-	ID   uuid.UUID
-	Name string
+	Type  ClientType
+	ID    uuid.UUID
+	Name  string
+	Users []interface{}
 }

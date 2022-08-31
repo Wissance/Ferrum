@@ -1,11 +1,15 @@
 package Ferrum
 
-import "Ferrum/application"
+import (
+	"Ferrum/application"
+	"Ferrum/config"
+)
 
 type Application struct {
+	appConfig *config.ServerConfig
 }
 
-func Create() application.AppRunner {
+func Create(configFile string, dataFile string) application.AppRunner {
 	app := &Application{}
 	appRunner := application.AppRunner(app)
 	return appRunner
@@ -16,6 +20,8 @@ func (app *Application) Start() (bool, error) {
 }
 
 func (app *Application) Init() (bool, error) {
+	// init users
+	// init webapi
 	return false, nil
 }
 
