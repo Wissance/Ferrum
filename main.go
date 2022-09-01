@@ -13,7 +13,12 @@ func main() {
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	app := Create("./config.json", "data.json")
-	app.Init()
+	res, initErr := app.Init()
+	if initErr != nil {
+		fmt.Println("An error occurred during app init, terminating the app")
+		os.Exit(-1)
+	}
+
 	res, err := app.Start()
 	if !res {
 		msg := stringFormatter.Format("An error occurred during starting application, error is: {0}", err.Error())
