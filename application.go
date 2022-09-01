@@ -88,6 +88,6 @@ func (app *Application) initRestApi() error {
 }
 
 func (app *Application) initKeuCloakSimilarRestApiRoutes(router *mux.Router) {
-	// 1. Generate token endpoint
-	// 2. Get userinfo endpoint
+	// 1. Generate token endpoint - /auth/realms/{realm}/protocol/openid-connect/token
+	// 2. Get userinfo endpoint - /auth/realms/SOAR/protocol/openid-connect/userinfo
 }
