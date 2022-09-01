@@ -5,6 +5,8 @@ import (
 	"Ferrum/config"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
+	r "github.com/wissance/gwuu/api/rest"
 	"github.com/wissance/stringFormatter"
 	"io/ioutil"
 	"path/filepath"
@@ -13,6 +15,7 @@ import (
 type Application struct {
 	appConfigFile *string
 	appConfig     *config.ServerConfig
+	webApiHandler *r.WebApiHandler
 }
 
 func Create(configFile string, dataFile string) application.AppRunner {
@@ -77,5 +80,14 @@ func (app *Application) initDataProviders() error {
 }
 
 func (app *Application) initRestApi() error {
+	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
+	router := app.webApiHandler.Router
+	router.StrictSlash(true)
+	app.initKeuCloakSimilarRestApiRoutes(router)
 	return nil
+}
+
+func (app *Application) initKeuCloakSimilarRestApiRoutes(router *mux.Router) {
+	// 1. Generate token endpoint
+	// 2. Get userinfo endpoint
 }
