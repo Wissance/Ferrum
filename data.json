@@ -1,0 +1,51 @@
+{
+    "realms": [
+        {
+            "name": "test-r",
+            "clients": [
+                {
+                    "id": "test-service-app-client",
+                    "type": "confidential",
+                    "auth": {
+                        "type": 1,
+                        "value": ""
+                    }
+                }
+            ],
+            "users": [
+                {
+                    "info": {
+                        "sub": "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
+                        "email_verified": false,
+                        "roles": [
+                            "admin"
+                        ],
+                        "name": "admin sys",
+                        "preferred_username": "admin",
+                        "given_name": "admin",
+                        "family_name": "sys"
+                    },
+                    "credentials": {
+                        "password": "1s2d3f4g90xs"
+                    }
+                },
+                {
+                    "info": {
+                        "sub": "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
+                        "email_verified": false,
+                        "roles": [
+                            "1stfloor"
+                        ],
+                        "name": "ivan ivanov",
+                        "preferred_username": "vano",
+                        "given_name": "ivan",
+                        "family_name": "ivanov"
+                    },
+                    "credentials": {
+                        "password": "qwerty_user"
+                    }
+                }
+            ]
+        }
+    ]
+}
