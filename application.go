@@ -1,6 +1,7 @@
-package Ferrum
+package main
 
 import (
+	"Ferrum/api/rest"
 	"Ferrum/application"
 	"Ferrum/config"
 	"encoding/json"
@@ -9,13 +10,15 @@ import (
 	r "github.com/wissance/gwuu/api/rest"
 	"github.com/wissance/stringFormatter"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 )
 
 type Application struct {
 	appConfigFile *string
-	appConfig     *config.ServerConfig
+	appConfig     *config.AppConfig
 	webApiHandler *r.WebApiHandler
+	webApiContext *rest.WebApiContext
 }
 
 func Create(configFile string, dataFile string) application.AppRunner {
@@ -67,6 +70,7 @@ func (app *Application) readAppConfig() error {
 		return err
 	}
 
+	app.appConfig = &config.AppConfig{}
 	if err = json.Unmarshal(fileData, app.appConfig); err != nil {
 		fmt.Println(stringFormatter.Format("An error occurred during config file unmarshal: {0}", err.Error()))
 		return err
@@ -81,6 +85,7 @@ func (app *Application) initDataProviders() error {
 
 func (app *Application) initRestApi() error {
 	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
+	app.webApiContext = &rest.WebApiContext{}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
 	app.initKeuCloakSimilarRestApiRoutes(router)
@@ -89,5 +94,7 @@ func (app *Application) initRestApi() error {
 
 func (app *Application) initKeuCloakSimilarRestApiRoutes(router *mux.Router) {
 	// 1. Generate token endpoint - /auth/realms/{realm}/protocol/openid-connect/token
+	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/token/", app.webApiContext.IssueNewToken, http.MethodPost)
 	// 2. Get userinfo endpoint - /auth/realms/SOAR/protocol/openid-connect/userinfo
+	app.webApiHandler.HandleFunc(router, "/auth/realms/SOAR/protocol/openid-connect/userinfo/", app.webApiContext.GetUserInfo, http.MethodGet)
 }

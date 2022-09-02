@@ -1,5 +1,7 @@
 {
-    "schema": "http",
-    "address": "localhost",
-    "port": 8182
+    "server": {
+        "schema": "http",
+        "address": "localhost",
+        "port": 8182
+    }
 }

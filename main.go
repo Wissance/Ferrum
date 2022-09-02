@@ -1,4 +1,4 @@
-package Ferrum
+package main
 
 import (
 	"fmt"
