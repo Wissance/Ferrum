@@ -29,7 +29,7 @@ func Create(configFile string, dataFile string) application.AppRunner {
 }
 
 func (app *Application) Start() (bool, error) {
-	return false, nil
+	return true, nil
 }
 
 func (app *Application) Init() (bool, error) {
@@ -54,7 +54,7 @@ func (app *Application) Init() (bool, error) {
 }
 
 func (app *Application) Stop() (bool, error) {
-	return false, nil
+	return true, nil
 }
 
 func (app *Application) readAppConfig() error {

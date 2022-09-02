@@ -17,18 +17,22 @@ func main() {
 	if initErr != nil {
 		fmt.Println("An error occurred during app init, terminating the app")
 		os.Exit(-1)
+	} else {
+		fmt.Println("Application was successfully initialized")
 	}
 
 	res, err := app.Start()
 	if !res {
 		msg := stringFormatter.Format("An error occurred during starting application, error is: {0}", err.Error())
 		fmt.Println(msg)
+	} else {
+		fmt.Println("Application was successfully started")
 	}
 
 	go func() {
 		sig := <-osSignal
 		//logging.InfoLog(stringFormatter.Format("Got signal from OS: {0}", sig))
-		fmt.Println(stringFormatter.Format("Got signal from OS: {0}", sig))
+		fmt.Println(stringFormatter.Format("Got signal from OS: \"{0}\", stopping", sig))
 		done <- true
 	}()
 	<-done
@@ -37,6 +41,8 @@ func main() {
 	if !res {
 		msg := stringFormatter.Format("An error occurred during stopping application, error is: {0}", err.Error())
 		fmt.Println(msg)
+	} else {
+		fmt.Println("Application was successfully stopped")
 	}
 
 }
