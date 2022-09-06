@@ -5,8 +5,6 @@ type Schema string
 const (
 	HTTP  Schema = "http"
 	HTTPS Schema = "https"
-	GRPC  Schema = "grpc"
-	GRPCS Schema = "grpcs"
 )
 
 type ServerConfig struct {

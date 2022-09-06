@@ -29,7 +29,14 @@ func Create(configFile string, dataFile string) application.AppRunner {
 }
 
 func (app *Application) Start() (bool, error) {
-	return true, nil
+	var err error
+	go func() {
+		err = app.startWebService()
+		if err != nil {
+			fmt.Println(stringFormatter.Format("An error occurred during API Service Start"))
+		}
+	}()
+	return err == nil, err
 }
 
 func (app *Application) Init() (bool, error) {
@@ -88,13 +95,37 @@ func (app *Application) initRestApi() error {
 	app.webApiContext = &rest.WebApiContext{}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
-	app.initKeuCloakSimilarRestApiRoutes(router)
+	app.initKeyCloakSimilarRestApiRoutes(router)
+	// Setting up listener for logging
 	return nil
 }
 
-func (app *Application) initKeuCloakSimilarRestApiRoutes(router *mux.Router) {
+func (app *Application) initKeyCloakSimilarRestApiRoutes(router *mux.Router) {
 	// 1. Generate token endpoint - /auth/realms/{realm}/protocol/openid-connect/token
 	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/token/", app.webApiContext.IssueNewToken, http.MethodPost)
 	// 2. Get userinfo endpoint - /auth/realms/SOAR/protocol/openid-connect/userinfo
-	app.webApiHandler.HandleFunc(router, "/auth/realms/SOAR/protocol/openid-connect/userinfo/", app.webApiContext.GetUserInfo, http.MethodGet)
+	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/userinfo/", app.webApiContext.GetUserInfo, http.MethodGet)
+}
+
+func (app *Application) startWebService() error {
+	var err error
+	addressTemplate := "{0}:{1}"
+	address := stringFormatter.Format(addressTemplate, app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
+	switch app.appConfig.ServerCfg.Schema { //nolint:exhaustive
+	case config.HTTP:
+		fmt.Println(stringFormatter.Format("Starting \"HTTP\" WEB API Service on address: \"{0}\"", address))
+		err = http.ListenAndServe(address, app.webApiHandler.Router)
+		if err != nil {
+			fmt.Println(stringFormatter.Format("An error occurred during attempt to start \"HTTP\" WEB API Service: {0}", err.Error()))
+		}
+		/*case config.HTTPS:
+		fmt.Println(stringFormatter.Format("5. Starting \"HTTPS\" REST API Service on address: \"{0}\"", address))
+		cert := app.WebApiCtx.Config.APIConfig.REST.Security.Certificate
+		key := app.WebApiCtx.Config.APIConfig.REST.Security.Key
+		err = http.ListenAndServeTLS(address, cert, key, app.webApiHandler.Router)
+		if err != nil {
+			fmt.Println(stringFormatter.Format("An error occurred during attempt tp start \"HTTPS\" REST API Service: {0}", err.Error()))
+		}*/
+	}
+	return err
 }
