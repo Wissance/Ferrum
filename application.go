@@ -118,14 +118,14 @@ func (app *Application) startWebService() error {
 		if err != nil {
 			fmt.Println(stringFormatter.Format("An error occurred during attempt to start \"HTTP\" WEB API Service: {0}", err.Error()))
 		}
-		/*case config.HTTPS:
+	case config.HTTPS:
 		fmt.Println(stringFormatter.Format("5. Starting \"HTTPS\" REST API Service on address: \"{0}\"", address))
-		cert := app.WebApiCtx.Config.APIConfig.REST.Security.Certificate
-		key := app.WebApiCtx.Config.APIConfig.REST.Security.Key
+		cert := app.appConfig.ServerCfg.Security.CertificateFile
+		key := app.appConfig.ServerCfg.Security.KeyFile
 		err = http.ListenAndServeTLS(address, cert, key, app.webApiHandler.Router)
 		if err != nil {
 			fmt.Println(stringFormatter.Format("An error occurred during attempt tp start \"HTTPS\" REST API Service: {0}", err.Error()))
-		}*/
+		}
 	}
 	return err
 }
