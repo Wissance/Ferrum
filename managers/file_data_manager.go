@@ -33,7 +33,7 @@ func Create(dataFile string) DataContext {
 
 func (mn *FileDataManager) GetRealm(realmId string) *data.Realm {
 	for _, e := range mn.serverData.Realms {
-		// todo(umv): should we compare in lower case
+		// case-sensitive comparison, myapp and MyApP are different realms
 		if e.Name == realmId {
 			return &e
 		}
