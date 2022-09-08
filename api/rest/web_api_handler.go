@@ -2,8 +2,8 @@ package rest
 
 import (
 	"Ferrum/dto"
-	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
 	"github.com/wissance/stringFormatter"
 	"net/http"
 )
@@ -34,17 +34,23 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 			// todo(UMV): think we don't have refresh strategy yet, add in v1.0 ...
 			// New token issue strategy ...
 			tokenGenerationData := dto.TokenGenerationData{}
-			decoder := json.NewDecoder(request.Body)
-			err := decoder.Decode(&tokenGenerationData)
+			err := request.ParseForm()
 			if err != nil {
-				// todo(UMV): log events
 				status = http.StatusBadRequest
 				result = dto.ErrorDetails{Msg: badBodyForTokenGeneration}
 			} else {
-				// 1. Validate client data: client_id, client_secret (if we have so), scope
-				// 2. Validate user credentials
-				// 3. If all steps were passed return new dto.Token
-				result = dto.Token{AccessToken: "123445"}
+				var decoder = schema.NewDecoder()
+				err = decoder.Decode(&tokenGenerationData, request.PostForm)
+				if err != nil {
+					// todo(UMV): log events
+					status = http.StatusBadRequest
+					result = dto.ErrorDetails{Msg: badBodyForTokenGeneration}
+				} else {
+					// 1. Validate client data: client_id, client_secret (if we have so), scope
+					// 2. Validate user credentials
+					// 3. If all steps were passed return new dto.Token
+					result = dto.Token{AccessToken: "123445"}
+				}
 			}
 		}
 	}

@@ -1,7 +1,7 @@
 {
     "realms": [
         {
-            "name": "test-r",
+            "name": "myapp",
             "clients": [
                 {
                     "id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e5a14",
