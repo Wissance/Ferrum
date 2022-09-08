@@ -17,7 +17,16 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 		status = http.StatusBadRequest
 	} else {
 		// todo: validate ...
-		result = dto.Token{AccessToken: "123445"}
+		realmPtr := (*wCtx.DataProvider).GetRealm(realm)
+		if realmPtr == nil {
+			status = http.StatusNotFound
+		} else {
+			// todo(UMV): think we don't have refresh strategy yet, add in v1.0 ...
+			// 1. Validate client data: client_id, client_secret (if we have so), scope
+			// 2. Validate user credentials
+			// 3. If all steps were passed return new dto.Token
+			result = dto.Token{AccessToken: "123445"}
+		}
 	}
 	afterHandle(&respWriter, status, &result)
 }

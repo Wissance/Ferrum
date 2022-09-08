@@ -31,11 +31,13 @@ func Create(dataFile string) DataContext {
 	return dc
 }
 
-func (mn *FileDataManager) Init() bool {
-	return true
-}
-
-func (mn *FileDataManager) GetRealm(realmId *string) *data.Realm {
+func (mn *FileDataManager) GetRealm(realmId string) *data.Realm {
+	for _, e := range mn.serverData.Realms {
+		// todo(umv): should we compare in lower case
+		if e.Name == realmId {
+			return &e
+		}
+	}
 	return nil
 }
 
