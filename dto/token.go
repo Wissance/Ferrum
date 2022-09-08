@@ -1,7 +1,7 @@
 package dto
 
 type Token struct {
-	AccessToken     string
+	AccessToken     string `json:"access_token"`
 	Expires         int
 	RefreshExpires  int
 	RefreshToken    string
