@@ -50,7 +50,14 @@ func (mn *FileDataManager) GetClient(realm *data.Realm, name string) *data.Clien
 	return nil
 }
 
-func (mn *FileDataManager) GetUser(userId uuid.UUID) *data.User {
+func (mn *FileDataManager) GetUser(realm *data.Realm, userName string) *data.User {
+	for _, u := range realm.Users {
+		user := data.Create(u)
+		if user.GetUsername() == userName {
+			return &user
+		}
+	}
+	
 	return nil
 }
 

@@ -3,7 +3,13 @@ package data
 import "github.com/google/uuid"
 
 type KeyCloakUser struct {
-	raw interface{}
+	rawData interface{}
+}
+
+func Create(rawData interface{}) User {
+	kcUser := &KeyCloakUser{rawData: rawData}
+	user := User(kcUser)
+	return user
 }
 
 func (user *KeyCloakUser) GetUsername() string {

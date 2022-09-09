@@ -35,5 +35,15 @@ func (service *PasswordBasedSecurityService) Validate(tokenIssueData *dto.TokenG
 }
 
 func (service *PasswordBasedSecurityService) CheckCredentials(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError {
-	return &data.OperationError{}
+	user := (*service.DataProvider).GetUser(realm, tokenIssueData.Username)
+	if user == nil {
+		// todo(UMV): return Err
+		return &data.OperationError{}
+	}
+
+	// todo(UMV) use hash instead raw passwords
+	if (*user).GetPassword() != tokenIssueData.Password {
+		return &data.OperationError{}
+	}
+	return nil
 }
