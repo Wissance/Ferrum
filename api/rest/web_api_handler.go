@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"Ferrum/data"
 	"Ferrum/dto"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
@@ -9,9 +10,11 @@ import (
 )
 
 const (
-	realmNotProviderMsg        = "You does not provided any realm"
-	realmDoesNotExistsTemplate = "Realm \"{0}\" does not exists"
-	badBodyForTokenGeneration  = "Bad body for token generation, see documentations"
+	realmNotProviderMsg          = "You does not provided any realm"
+	realmDoesNotExistsTemplate   = "Realm \"{0}\" does not exists"
+	badBodyForTokenGenerationMsg = "Bad body for token generation, see documentations"
+	invalidClientMsg             = "Invalid client"
+	invalidClientCredentialDesc  = "Invalid client credentials"
 )
 
 func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request *http.Request) {
@@ -37,19 +40,25 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 			err := request.ParseForm()
 			if err != nil {
 				status = http.StatusBadRequest
-				result = dto.ErrorDetails{Msg: badBodyForTokenGeneration}
+				result = dto.ErrorDetails{Msg: badBodyForTokenGenerationMsg}
 			} else {
 				var decoder = schema.NewDecoder()
 				err = decoder.Decode(&tokenGenerationData, request.PostForm)
 				if err != nil {
 					// todo(UMV): log events
 					status = http.StatusBadRequest
-					result = dto.ErrorDetails{Msg: badBodyForTokenGeneration}
+					result = dto.ErrorDetails{Msg: badBodyForTokenGenerationMsg}
 				} else {
 					// 1. Validate client data: client_id, client_secret (if we have so), scope
-					// 2. Validate user credentials
-					// 3. If all steps were passed return new dto.Token
-					result = dto.Token{AccessToken: "123445"}
+					check := wCtx.validate(&tokenGenerationData, realmPtr)
+					if check != nil {
+						status = http.StatusBadRequest
+						result = *check
+					} else {
+						// 2. Validate user credentials
+						// 3. If all steps were passed return new dto.Token
+						result = dto.Token{AccessToken: "123445"}
+					}
 				}
 			}
 		}
@@ -59,4 +68,22 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 
 func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *http.Request) {
 
+}
+
+// todo(UMV): this is temporary, MUST move to some service, not related to web
+func (wCtx *WebApiContext) validate(tokenGenData *dto.TokenGenerationData, realm *data.Realm) *dto.ErrorDetails {
+	for _, c := range realm.Clients {
+		if c.Name == tokenGenData.ClientId {
+			if c.Type == data.Public {
+				return nil
+			}
+
+			// here we make deal with confidential client
+			if c.Auth.Type == data.ClientIdAndSecrets && c.Auth.Value == tokenGenData.ClientSecret {
+				return nil
+			}
+
+		}
+	}
+	return &dto.ErrorDetails{Msg: invalidClientMsg, Description: invalidClientCredentialDesc}
 }
