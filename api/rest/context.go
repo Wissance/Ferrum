@@ -1,7 +1,11 @@
 package rest
 
-import "Ferrum/managers"
+import (
+	"Ferrum/managers"
+	"Ferrum/services"
+)
 
 type WebApiContext struct {
 	DataProvider *managers.DataContext
+	Security     *services.SecurityService
 }

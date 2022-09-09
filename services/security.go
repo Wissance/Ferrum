@@ -6,6 +6,6 @@ import (
 )
 
 type SecurityService interface {
-	Validate(data *dto.TokenGenerationData) *data.OperationError
-	CheckCredentials(data *dto.TokenGenerationData) *data.OperationError
+	Validate(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError
+	CheckCredentials(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError
 }

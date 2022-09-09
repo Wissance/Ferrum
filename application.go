@@ -5,6 +5,7 @@ import (
 	"Ferrum/application"
 	"Ferrum/config"
 	"Ferrum/managers"
+	"Ferrum/services"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -96,7 +97,8 @@ func (app *Application) initDataProviders() error {
 func (app *Application) initRestApi() error {
 	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
 	dataProvider := managers.Create(*app.dataConfigFile)
-	app.webApiContext = &rest.WebApiContext{DataProvider: &dataProvider}
+	securityService := services.Create(&dataProvider)
+	app.webApiContext = &rest.WebApiContext{DataProvider: &dataProvider, Security: &securityService}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
 	app.initKeyCloakSimilarRestApiRoutes(router)
