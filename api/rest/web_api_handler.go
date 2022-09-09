@@ -48,8 +48,13 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 						result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 					} else {
 						// 2. Validate user credentials
-						// 3. If all steps were passed return new dto.Token
-						result = dto.Token{AccessToken: "123445"}
+						check = (*wCtx.Security).CheckCredentials(&tokenGenerationData, realmPtr)
+						if check != nil {
+
+						} else {
+							// 3. If all steps were passed return new dto.Token
+							result = dto.Token{AccessToken: "123445"}
+						}
 					}
 				}
 			}

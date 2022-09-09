@@ -6,6 +6,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
+	github.com/ohler55/ojg v1.14.4
 	github.com/wissance/gwuu v1.2.4
 	github.com/wissance/stringFormatter v0.2.1
 )
