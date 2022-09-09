@@ -19,7 +19,23 @@ func Create(rawData interface{}) User {
 }
 
 func (user *KeyCloakUser) GetUsername() string {
-	mask, err := jp.ParseString("info.preferred_username")
+	return user.getPathStringValue("info.preferred_username")
+}
+func (user *KeyCloakUser) GetPassword() string {
+	return user.getPathStringValue("credentials.password")
+}
+
+func (user *KeyCloakUser) GetId() uuid.UUID {
+	idStrValue := user.getPathStringValue("info.sub")
+	id, err := uuid.Parse(idStrValue)
+	if err != nil {
+		//todo(UMV): think what to do here
+	}
+	return id
+}
+
+func (user *KeyCloakUser) getPathStringValue(path string) string {
+	mask, err := jp.ParseString(path)
 	if err != nil {
 		// todo(UMV): log and think what to do ...
 	}
@@ -28,11 +44,4 @@ func (user *KeyCloakUser) GetUsername() string {
 		return res[0].(string)
 	}
 	return ""
-}
-func (user *KeyCloakUser) GetPassword() string {
-	return ""
-}
-
-func (user *KeyCloakUser) GetId() uuid.UUID {
-	return uuid.Nil
 }

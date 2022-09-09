@@ -42,7 +42,8 @@ func (service *PasswordBasedSecurityService) CheckCredentials(tokenIssueData *dt
 	}
 
 	// todo(UMV) use hash instead raw passwords
-	if (*user).GetPassword() != tokenIssueData.Password {
+	password := (*user).GetPassword()
+	if password != tokenIssueData.Password {
 		// todo(UMV): return Err that user password mismatches
 		return &data.OperationError{}
 	}
