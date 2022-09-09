@@ -41,7 +41,12 @@ func (mn *FileDataManager) GetRealm(realmId string) *data.Realm {
 	return nil
 }
 
-func (mn *FileDataManager) GetClient(clientId uuid.UUID) *data.Client {
+func (mn *FileDataManager) GetClient(realm *data.Realm, name string) *data.Client {
+	for _, c := range realm.Clients {
+		if c.Name == name {
+			return &c
+		}
+	}
 	return nil
 }
 

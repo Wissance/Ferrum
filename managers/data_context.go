@@ -7,7 +7,7 @@ import (
 
 type DataContext interface {
 	GetRealm(realmId string) *data.Realm
-	GetClient(clientId uuid.UUID) *data.Client
+	GetClient(realm *data.Realm, name string) *data.Client
 	GetUser(userId uuid.UUID) *data.User
 	GetClientUsers(clientId uuid.UUID) *[]data.User
 }
