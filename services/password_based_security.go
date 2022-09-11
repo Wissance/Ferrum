@@ -77,9 +77,22 @@ func (service *PasswordBasedSecurityService) StartOrUpdateSession(realm string, 
 }
 
 func (service *PasswordBasedSecurityService) GetSession(realm string, userId uuid.UUID) *data.UserSession {
+	realmSessions, ok := service.UserSessions[realm]
+	if !ok {
+		return nil
+	}
+	for _, s := range realmSessions {
+		if s.UserId == userId {
+			return &s
+		}
+	}
 	return nil
 }
 
 func (service *PasswordBasedSecurityService) IsSessionExpired(realm string, userId uuid.UUID) bool {
-	return false
+	s := service.GetSession(realm, userId)
+	if s == nil {
+		return true
+	}
+	return s.Expired.Before(time.Now())
 }
