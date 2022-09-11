@@ -5,14 +5,16 @@ import (
 	"Ferrum/dto"
 	"Ferrum/errors"
 	"Ferrum/managers"
+	"github.com/google/uuid"
 )
 
 type PasswordBasedSecurityService struct {
 	DataProvider *managers.DataContext
+	UserSessions map[uuid.UUID]data.UserSession
 }
 
 func Create(dataProvider *managers.DataContext) SecurityService {
-	pwdSecService := &PasswordBasedSecurityService{DataProvider: dataProvider}
+	pwdSecService := &PasswordBasedSecurityService{DataProvider: dataProvider, UserSessions: map[uuid.UUID]data.UserSession{}}
 	secService := SecurityService(pwdSecService)
 	return secService
 }
@@ -46,4 +48,16 @@ func (service *PasswordBasedSecurityService) CheckCredentials(tokenIssueData *dt
 		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDEsc}
 	}
 	return nil
+}
+
+func (service *PasswordBasedSecurityService) StartOrUpdateSession(realm string, userId uuid.UUID, duration int) uuid.UUID {
+	return uuid.UUID{}
+}
+
+func (service *PasswordBasedSecurityService) GetSession(realm string, userId uuid.UUID) *data.UserSession {
+	return nil
+}
+
+func (service *PasswordBasedSecurityService) IsSessionExpired(realm string, userId uuid.UUID) bool {
+	return false
 }
