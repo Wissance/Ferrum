@@ -4,7 +4,6 @@ import (
 	"Ferrum/data"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/wissance/stringFormatter"
 	"io/ioutil"
 	"path/filepath"
@@ -31,10 +30,10 @@ func Create(dataFile string) DataContext {
 	return dc
 }
 
-func (mn *FileDataManager) GetRealm(realmId string) *data.Realm {
+func (mn *FileDataManager) GetRealm(realmName string) *data.Realm {
 	for _, e := range mn.serverData.Realms {
 		// case-sensitive comparison, myapp and MyApP are different realms
-		if e.Name == realmId {
+		if e.Name == realmName {
 			return &e
 		}
 	}
@@ -57,12 +56,20 @@ func (mn *FileDataManager) GetUser(realm *data.Realm, userName string) *data.Use
 			return &user
 		}
 	}
-	
+
 	return nil
 }
 
-func (mn *FileDataManager) GetClientUsers(clientId uuid.UUID) *[]data.User {
-	return nil
+func (mn *FileDataManager) GetRealmUsers(realmName string) *[]data.User {
+	realm := mn.GetRealm(realmName)
+	if realm == nil {
+		return nil
+	}
+	users := make([]data.User, len(realm.Users))
+	for i, u := range realm.Users {
+		users[i] = data.Create(u)
+	}
+	return &users
 }
 
 func (mn *FileDataManager) loadData() error {
