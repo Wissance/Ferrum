@@ -54,7 +54,8 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 						} else {
 							// 3. If all steps were passed return new dto.Token
-							result = dto.Token{AccessToken: "123445"}
+							result = dto.Token{AccessToken: "123445", Expires: 300, RefreshToken: "123", RefreshExpires: 120,
+								TokenType: "Bearer", NotBeforePolicy: 0, Session: "aaaassssaaaa"}
 						}
 					}
 				}
