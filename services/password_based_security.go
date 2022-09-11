@@ -51,6 +51,10 @@ func (service *PasswordBasedSecurityService) CheckCredentials(tokenIssueData *dt
 	return nil
 }
 
+func (service *PasswordBasedSecurityService) GetCurrentUser(realm *data.Realm, userName string) *data.User {
+	return (*service.DataProvider).GetUser(realm, userName)
+}
+
 func (service *PasswordBasedSecurityService) StartOrUpdateSession(realm string, userId uuid.UUID, duration int) uuid.UUID {
 	realmSessions, ok := service.UserSessions[realm]
 	sessionId := uuid.New()

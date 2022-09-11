@@ -53,11 +53,13 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							status = http.StatusUnauthorized
 							result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 						} else {
+							currentUser := (*wCtx.Security).GetCurrentUser(realmPtr, tokenGenerationData.Username)
 							// 3. Create access token && refresh token
 							// 4. Generate new token
 							result = dto.Token{AccessToken: "123445", Expires: 300, RefreshToken: "123", RefreshExpires: 120,
 								TokenType: "Bearer", NotBeforePolicy: 0, Session: "aaaassssaaaa"}
 							// 5. Save session
+							(*wCtx.Security).StartOrUpdateSession(realm, (*currentUser).GetId(), 300)
 						}
 					}
 				}
