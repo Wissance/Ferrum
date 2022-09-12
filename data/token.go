@@ -5,7 +5,9 @@ import (
 	"time"
 )
 
-type TokenRefreshData struct {
+type userInfo = interface{}
+
+type commonTokenData struct {
 	IssuedAt     time.Time `json:"iat"`
 	ExpiredAt    time.Time `json:"exp"`
 	JwtId        uuid.UUID `json:"jti"`
@@ -16,4 +18,13 @@ type TokenRefreshData struct {
 	SessionState uuid.UUID `json:"session_state"`
 	SessionId    uuid.UUID `json:"sid"`
 	Scope        string    `json:"scope"`
+}
+
+type TokenRefreshData struct {
+	commonTokenData
+}
+
+type AccessTokenData struct {
+	commonTokenData
+	userInfo
 }

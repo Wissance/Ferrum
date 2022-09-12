@@ -3,7 +3,6 @@ package rest
 import (
 	"Ferrum/dto"
 	"Ferrum/errors"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/wissance/stringFormatter"
@@ -64,7 +63,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							result = dto.Token{AccessToken: "123445", Expires: duration, RefreshToken: "123", RefreshExpires: 120,
 								TokenType: "Bearer", NotBeforePolicy: 0, Session: session.String()}
 							// todo(UMV): create JWT ...
-							token := jwt.NewWithClaims(jwt.SigningMethodHS256, currentUser)
+							//token := jwt.NewWithClaims(jwt.SigningMethodHS256, currentUser)
 						}
 					}
 				}
