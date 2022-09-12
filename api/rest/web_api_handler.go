@@ -3,6 +3,7 @@ package rest
 import (
 	"Ferrum/dto"
 	"Ferrum/errors"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/wissance/stringFormatter"
@@ -56,10 +57,14 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							currentUser := (*wCtx.Security).GetCurrentUser(realmPtr, tokenGenerationData.Username)
 							// 3. Create access token && refresh token
 							// 4. Generate new token
-							result = dto.Token{AccessToken: "123445", Expires: 300, RefreshToken: "123", RefreshExpires: 120,
-								TokenType: "Bearer", NotBeforePolicy: 0, Session: "aaaassssaaaa"}
-							// 5. Save session
-							(*wCtx.Security).StartOrUpdateSession(realm, (*currentUser).GetId(), 300)
+							duration := 300
+							// 4. Save session
+							session := (*wCtx.Security).StartOrUpdateSession(realm, (*currentUser).GetId(), duration)
+							// 5. Generate new token
+							result = dto.Token{AccessToken: "123445", Expires: duration, RefreshToken: "123", RefreshExpires: 120,
+								TokenType: "Bearer", NotBeforePolicy: 0, Session: session.String()}
+							// todo(UMV): create JWT ...
+							token := jwt.NewWithClaims(jwt.SigningMethodHS256, currentUser)
 						}
 					}
 				}
@@ -70,5 +75,5 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 }
 
 func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *http.Request) {
-
+	// Just get access token,  find user + session
 }
