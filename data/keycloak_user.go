@@ -34,6 +34,13 @@ func (user *KeyCloakUser) GetId() uuid.UUID {
 	return id
 }
 
+func (user *KeyCloakUser) GetUserInfo() interface{} {
+	str := user.getPathStringValue("info")
+	var result interface{}
+	_ = json.Unmarshal([]byte(str), &result)
+	return result
+}
+
 func (user *KeyCloakUser) getPathStringValue(path string) string {
 	mask, err := jp.ParseString(path)
 	if err != nil {

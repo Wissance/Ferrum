@@ -6,4 +6,5 @@ type User interface {
 	GetUsername() string
 	GetPassword() string
 	GetId() uuid.UUID
+	GetUserInfo() interface{}
 }
