@@ -61,11 +61,13 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							duration := 300
 							refreshDuration := 120
 							// 4. Save session
-							session := (*wCtx.Security).StartOrUpdateSession(realm, (*currentUser).GetId(), duration)
+							sessionId := (*wCtx.Security).StartOrUpdateSession(realm, (*currentUser).GetId(), duration)
+							session := (*wCtx.Security).GetSession(realm, (*currentUser).GetId())
 							// 5. Generate new token
-							result = dto.Token{AccessToken: "123445", Expires: duration, RefreshToken: "123",
+							accessToken := wCtx.generateAccessToken(realm, "Bearer", "profile email", session, currentUser)
+							result = dto.Token{AccessToken: wCtx.TokenGenerator.GenerateAccessToken(accessToken), Expires: duration, RefreshToken: "123",
 								RefreshExpires: refreshDuration,
-								TokenType:      "Bearer", NotBeforePolicy: 0, Session: session.String()}
+								TokenType:      "Bearer", NotBeforePolicy: 0, Session: sessionId.String()}
 							// todo(UMV): create JWT ...
 							// token := jwt.NewWithClaims(jwt.SigningMethodHS256, currentUser)
 						}

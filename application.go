@@ -98,7 +98,7 @@ func (app *Application) initRestApi() error {
 	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
 	dataProvider := managers.Create(*app.dataConfigFile)
 	securityService := services.CreateSecurityService(&dataProvider)
-	app.webApiContext = &rest.WebApiContext{DataProvider: &dataProvider, Security: &securityService}
+	app.webApiContext = &rest.WebApiContext{DataProvider: &dataProvider, Security: &securityService, TokenGenerator: &services.JwtGenerator{}}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
 	app.initKeyCloakSimilarRestApiRoutes(router)
