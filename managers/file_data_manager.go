@@ -51,7 +51,7 @@ func (mn *FileDataManager) GetClient(realm *data.Realm, name string) *data.Clien
 
 func (mn *FileDataManager) GetUser(realm *data.Realm, userName string) *data.User {
 	for _, u := range realm.Users {
-		user := data.Create(u)
+		user := data.CreateUser(u)
 		if user.GetUsername() == userName {
 			return &user
 		}
@@ -67,7 +67,7 @@ func (mn *FileDataManager) GetRealmUsers(realmName string) *[]data.User {
 	}
 	users := make([]data.User, len(realm.Users))
 	for i, u := range realm.Users {
-		users[i] = data.Create(u)
+		users[i] = data.CreateUser(u)
 	}
 	return &users
 }

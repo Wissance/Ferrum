@@ -14,7 +14,7 @@ type PasswordBasedSecurityService struct {
 	UserSessions map[string][]data.UserSession
 }
 
-func Create(dataProvider *managers.DataContext) SecurityService {
+func CreateSecurityService(dataProvider *managers.DataContext) SecurityService {
 	pwdSecService := &PasswordBasedSecurityService{DataProvider: dataProvider, UserSessions: map[string][]data.UserSession{}}
 	secService := SecurityService(pwdSecService)
 	return secService

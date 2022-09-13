@@ -1,8 +1,10 @@
 package rest
 
 import (
+	"Ferrum/data"
 	"Ferrum/dto"
 	"Ferrum/errors"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/wissance/stringFormatter"
@@ -57,13 +59,15 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							// 3. Create access token && refresh token
 							// 4. Generate new token
 							duration := 300
+							refreshDuration := 120
 							// 4. Save session
 							session := (*wCtx.Security).StartOrUpdateSession(realm, (*currentUser).GetId(), duration)
 							// 5. Generate new token
-							result = dto.Token{AccessToken: "123445", Expires: duration, RefreshToken: "123", RefreshExpires: 120,
-								TokenType: "Bearer", NotBeforePolicy: 0, Session: session.String()}
+							result = dto.Token{AccessToken: "123445", Expires: duration, RefreshToken: "123",
+								RefreshExpires: refreshDuration,
+								TokenType:      "Bearer", NotBeforePolicy: 0, Session: session.String()}
 							// todo(UMV): create JWT ...
-							//token := jwt.NewWithClaims(jwt.SigningMethodHS256, currentUser)
+							// token := jwt.NewWithClaims(jwt.SigningMethodHS256, currentUser)
 						}
 					}
 				}
@@ -75,4 +79,14 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 
 func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *http.Request) {
 	// Just get access token,  find user + session
+}
+
+func (wCtx *WebApiContext) generateAccessToken(realm string, tokenType string, scope string, sessionData *data.UserSession, userData *data.User) *data.AccessTokenData {
+	// todo(UMV): store schema and pair address:port in the wCtx
+	issuer := stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
+	jwtCommon := data.JwtTokenData{Issuer: issuer, Type: tokenType, Audience: "account", Scope: scope, JwtId: uuid.New(),
+		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
+		SessionId: sessionData.Id, SessionState: sessionData.Id}
+	accessToken := data.CreateAccessToken(&jwtCommon, userData)
+	return accessToken
 }

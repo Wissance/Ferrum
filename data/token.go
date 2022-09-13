@@ -1,13 +1,14 @@
 package data
 
 import (
+	"errors"
 	"github.com/google/uuid"
 	"time"
 )
 
 type userInfo = interface{}
 
-type commonTokenData struct {
+type JwtTokenData struct {
 	IssuedAt     time.Time `json:"iat"`
 	ExpiredAt    time.Time `json:"exp"`
 	JwtId        uuid.UUID `json:"jti"`
@@ -21,10 +22,30 @@ type commonTokenData struct {
 }
 
 type TokenRefreshData struct {
-	commonTokenData
+	JwtTokenData
 }
 
 type AccessTokenData struct {
-	commonTokenData
+	JwtTokenData
 	userInfo
+}
+
+func CreateAccessToken(commonData *JwtTokenData, userData *User) *AccessTokenData {
+	return &AccessTokenData{JwtTokenData: *commonData, userInfo: (*userData).GetUserInfo()}
+}
+
+func (token *AccessTokenData) Valid() error {
+	if token.userInfo != nil {
+		return nil
+	}
+	return errors.New("UserInfo is null (it can't be)")
+}
+
+func CreateRefreshToken(commonData *JwtTokenData) *TokenRefreshData {
+	return &TokenRefreshData{JwtTokenData: *commonData}
+}
+
+func (token *TokenRefreshData) Valid() error {
+	// just formally, we don't have anything to validate, maybe in future
+	return nil
 }

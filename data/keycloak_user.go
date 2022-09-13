@@ -11,7 +11,7 @@ type KeyCloakUser struct {
 	jsonRawData string
 }
 
-func Create(rawData interface{}) User {
+func CreateUser(rawData interface{}) User {
 	jsonData, _ := json.Marshal(&rawData)
 	kcUser := &KeyCloakUser{rawData: rawData, jsonRawData: string(jsonData)}
 	user := User(kcUser)
