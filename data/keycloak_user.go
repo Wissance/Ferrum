@@ -19,14 +19,14 @@ func CreateUser(rawData interface{}) User {
 }
 
 func (user *KeyCloakUser) GetUsername() string {
-	return user.getPathStringValue("info.preferred_username")
+	return getPathStringValue[string](user.rawData, "info.preferred_username")
 }
 func (user *KeyCloakUser) GetPassword() string {
-	return user.getPathStringValue("credentials.password")
+	return getPathStringValue[string](user.rawData, "credentials.password")
 }
 
 func (user *KeyCloakUser) GetId() uuid.UUID {
-	idStrValue := user.getPathStringValue("info.sub")
+	idStrValue := getPathStringValue[string](user.rawData, "info.sub")
 	id, err := uuid.Parse(idStrValue)
 	if err != nil {
 		//todo(UMV): think what to do here
@@ -35,20 +35,22 @@ func (user *KeyCloakUser) GetId() uuid.UUID {
 }
 
 func (user *KeyCloakUser) GetUserInfo() interface{} {
-	str := user.getPathStringValue("info")
-	var result interface{}
-	_ = json.Unmarshal([]byte(str), &result)
-	return result
+	var jsonResult interface{}
+	result := getPathStringValue[interface{}](user.rawData, "info")
+	str, _ := json.Marshal(&result)
+	_ = json.Unmarshal(str, &jsonResult)
+	return jsonResult
 }
 
-func (user *KeyCloakUser) getPathStringValue(path string) string {
+func /*(user *KeyCloakUser)*/ getPathStringValue[T any](rawData interface{}, path string) T {
+	var result T
 	mask, err := jp.ParseString(path)
 	if err != nil {
 		// todo(UMV): log and think what to do ...
 	}
-	res := mask.Get(user.rawData)
+	res := mask.Get(rawData)
 	if res != nil && len(res) == 1 {
-		return res[0].(string)
+		result = res[0].(T)
 	}
-	return ""
+	return result
 }

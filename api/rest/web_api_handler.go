@@ -63,13 +63,13 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							// 4. Save session
 							sessionId := (*wCtx.Security).StartOrUpdateSession(realm, (*currentUser).GetId(), duration)
 							session := (*wCtx.Security).GetSession(realm, (*currentUser).GetId())
-							// 5. Generate new token
-							accessToken := wCtx.generateAccessToken(realm, "Bearer", "profile email", session, currentUser)
-							result = dto.Token{AccessToken: wCtx.TokenGenerator.GenerateAccessToken(accessToken), Expires: duration, RefreshToken: "123",
-								RefreshExpires: refreshDuration,
-								TokenType:      "Bearer", NotBeforePolicy: 0, Session: sessionId.String()}
-							// todo(UMV): create JWT ...
-							// token := jwt.NewWithClaims(jwt.SigningMethodHS256, currentUser)
+							// 5. Generate new tokens
+							accessToken := wCtx.prepareAccessToken(realm, "Bearer", "profile email", session, currentUser)
+							refreshToken := wCtx.prepareRefreshToken(realm, "Refresh", "profile email", session)
+							result = dto.Token{AccessToken: wCtx.TokenGenerator.GenerateAccessToken(accessToken), Expires: duration,
+								RefreshToken: wCtx.TokenGenerator.GenerateRefreshToken(refreshToken), RefreshExpires: refreshDuration,
+								TokenType: "Bearer", NotBeforePolicy: 0, Session: sessionId.String()}
+
 						}
 					}
 				}
@@ -83,12 +83,24 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 	// Just get access token,  find user + session
 }
 
-func (wCtx *WebApiContext) generateAccessToken(realm string, tokenType string, scope string, sessionData *data.UserSession, userData *data.User) *data.AccessTokenData {
+// todo(UMV): this probably should be moved to security service, or in OTHER place
+func (wCtx *WebApiContext) prepareAccessToken(realm string, tokenType string, scope string, sessionData *data.UserSession, userData *data.User) *data.AccessTokenData {
 	// todo(UMV): store schema and pair address:port in the wCtx
 	issuer := stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
 	jwtCommon := data.JwtTokenData{Issuer: issuer, Type: tokenType, Audience: "account", Scope: scope, JwtId: uuid.New(),
 		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
 		SessionId: sessionData.Id, SessionState: sessionData.Id}
 	accessToken := data.CreateAccessToken(&jwtCommon, userData)
+	return accessToken
+}
+
+// todo(UMV): this probably should be moved to security service, or in OTHER place
+func (wCtx *WebApiContext) prepareRefreshToken(realm string, tokenType string, scope string, sessionData *data.UserSession) *data.TokenRefreshData {
+	// todo(UMV): store schema and pair address:port in the wCtx
+	issuer := stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
+	jwtCommon := data.JwtTokenData{Issuer: issuer, Type: tokenType, Audience: issuer, Scope: scope, JwtId: uuid.New(),
+		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
+		SessionId: sessionData.Id, SessionState: sessionData.Id}
+	accessToken := data.CreateRefreshToken(&jwtCommon)
 	return accessToken
 }

@@ -1,7 +1,6 @@
 package data
 
 import (
-	"errors"
 	"github.com/google/uuid"
 	"time"
 )
@@ -35,10 +34,11 @@ func CreateAccessToken(commonData *JwtTokenData, userData *User) *AccessTokenDat
 }
 
 func (token *AccessTokenData) Valid() error {
-	if token.userInfo != nil {
+	/*if token.userInfo != nil {
 		return nil
 	}
-	return errors.New("UserInfo is null (it can't be)")
+	return errors.New("UserInfo is null (it can't be)")*/
+	return nil
 }
 
 func CreateRefreshToken(commonData *JwtTokenData) *TokenRefreshData {
