@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type userInfo = interface{}
+type RawUserInfo = interface{}
 
 type JwtTokenData struct {
 	IssuedAt     time.Time `json:"iat"`
@@ -26,11 +26,11 @@ type TokenRefreshData struct {
 
 type AccessTokenData struct {
 	JwtTokenData
-	userInfo
+	RawUserInfo
 }
 
 func CreateAccessToken(commonData *JwtTokenData, userData *User) *AccessTokenData {
-	return &AccessTokenData{JwtTokenData: *commonData, userInfo: (*userData).GetUserInfo()}
+	return &AccessTokenData{JwtTokenData: *commonData, RawUserInfo: (*userData).GetUserInfo()}
 }
 
 func (token *AccessTokenData) Valid() error {

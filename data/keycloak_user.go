@@ -35,11 +35,11 @@ func (user *KeyCloakUser) GetId() uuid.UUID {
 }
 
 func (user *KeyCloakUser) GetUserInfo() interface{} {
-	var jsonResult interface{}
+	//var jsonResult interface{}
 	result := getPathStringValue[interface{}](user.rawData, "info")
-	str, _ := json.Marshal(&result)
-	_ = json.Unmarshal(str, &jsonResult)
-	return jsonResult
+	//str, _ := json.Marshal(&result)
+	//_ = json.Unmarshal(str, &jsonResult)
+	return result //jsonResult
 }
 
 func /*(user *KeyCloakUser)*/ getPathStringValue[T any](rawData interface{}, path string) T {
