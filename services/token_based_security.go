@@ -40,13 +40,13 @@ func (service *TokenBasedSecurityService) Validate(tokenIssueData *dto.TokenGene
 func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError {
 	user := (*service.DataProvider).GetUser(realm, tokenIssueData.Username)
 	if user == nil {
-		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDEsc}
+		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
 	}
 
 	// todo(UMV): use hash instead raw passwords
 	password := (*user).GetPassword()
 	if password != tokenIssueData.Password {
-		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDEsc}
+		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
 	}
 	return nil
 }
@@ -100,6 +100,19 @@ func (service *TokenBasedSecurityService) GetSession(realm string, userId uuid.U
 	}
 	for _, s := range realmSessions {
 		if s.UserId == userId {
+			return &s
+		}
+	}
+	return nil
+}
+
+func (service *TokenBasedSecurityService) GetSessionByAccessToken(realm string, token *string) *data.UserSession {
+	realmSessions, ok := service.UserSessions[realm]
+	if !ok {
+		return nil
+	}
+	for _, s := range realmSessions {
+		if s.JwtAccessToken == *token {
 			return &s
 		}
 	}

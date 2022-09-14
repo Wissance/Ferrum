@@ -7,6 +7,8 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/wissance/stringFormatter"
 	"net/http"
+	"strings"
+	"time"
 )
 
 func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request *http.Request) {
@@ -81,7 +83,48 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 }
 
 func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *http.Request) {
-	// Just get access token,  find user + session
+	beforeHandle(&respWriter)
+	vars := mux.Vars(request)
+	realm := vars["realm"]
+	var result interface{}
+	status := http.StatusOK
+	if len(realm) == 0 {
+		// 400
+		status = http.StatusBadRequest
+		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
+	} else {
+		realmPtr := (*wCtx.DataProvider).GetRealm(realm)
+		if realmPtr == nil {
+			status = http.StatusNotFound
+			result = dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
+		} else {
+			// Just get access token,  find user + session
+			authorization := request.Header.Get("Authorization")
+			parts := strings.Split(authorization, " ")
+			if parts[0] != "Bearer" {
+				status = http.StatusBadRequest
+				result = dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
+			} else {
+				session := (*wCtx.Security).GetSessionByAccessToken(realm, &parts[1])
+				if session == nil {
+					status = http.StatusUnauthorized
+					result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
+				} else {
+					if session.Expired.Before(time.Now()) {
+						status = http.StatusUnauthorized
+						result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
+					} else {
+						user := (*wCtx.DataProvider).GetUserById(realmPtr, session.UserId)
+						status = http.StatusOK
+						if user != nil {
+							result = (*user).GetUserInfo()
+						}
+					}
+				}
+			}
+		}
+	}
+	afterHandle(&respWriter, status, &result)
 }
 
 func (wCtx *WebApiContext) getRealmBaseUrl(realm string) string {

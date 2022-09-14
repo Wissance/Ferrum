@@ -13,5 +13,6 @@ type SecurityService interface {
 	StartOrUpdateSession(realm string, userId uuid.UUID, duration int) uuid.UUID
 	AssignTokens(realm string, userId uuid.UUID, accessToken *string, refreshToken *string)
 	GetSession(realm string, userId uuid.UUID) *data.UserSession
+	GetSessionByAccessToken(realm string, token *string) *data.UserSession
 	IsSessionExpired(realm string, userId uuid.UUID) bool
 }

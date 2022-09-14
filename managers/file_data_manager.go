@@ -4,6 +4,7 @@ import (
 	"Ferrum/data"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/wissance/stringFormatter"
 	"io/ioutil"
 	"path/filepath"
@@ -53,6 +54,17 @@ func (mn *FileDataManager) GetUser(realm *data.Realm, userName string) *data.Use
 	for _, u := range realm.Users {
 		user := data.CreateUser(u)
 		if user.GetUsername() == userName {
+			return &user
+		}
+	}
+
+	return nil
+}
+
+func (mn *FileDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *data.User {
+	for _, u := range realm.Users {
+		user := data.CreateUser(u)
+		if user.GetId() == userId {
 			return &user
 		}
 	}

@@ -7,5 +7,9 @@ const (
 	InvalidClientMsg             = "Invalid client"
 	InvalidClientCredentialDesc  = "Invalid client credentials"
 	InvalidUserCredentialsMsg    = "invalid grant"
-	InvalidUserCredentialsDEsc   = "Invalid user credentials"
+	InvalidUserCredentialsDesc   = "Invalid user credentials"
+	InvalidRequestMsg            = "Invalid request"
+	InvalidRequestDesc           = "Token not provided"
+	InvalidTokenMsg              = "Invalid token"
+	InvalidTokenDesc             = "Token verification failed"
 )
