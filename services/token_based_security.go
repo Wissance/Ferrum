@@ -66,9 +66,9 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 		return sessionId
 	}
 	// realm session exists, we should find and update Expired values OR add new
-	for _, s := range realmSessions {
+	for i, s := range realmSessions {
 		if s.UserId == userId {
-			s.Expired = time.Now().Add(time.Second * time.Duration(duration))
+			realmSessions[i].Expired = time.Now().Add(time.Second * time.Duration(duration))
 			service.UserSessions[realm] = realmSessions
 			return s.Id
 		}
@@ -83,11 +83,13 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 func (service *TokenBasedSecurityService) AssignTokens(realm string, userId uuid.UUID, accessToken *string, refreshToken *string) {
 	realmSessions, ok := service.UserSessions[realm]
 	if ok {
-		for _, s := range realmSessions {
+		//index := -1
+		for i, s := range realmSessions {
 			if s.UserId == userId {
-				s.JwtAccessToken = *accessToken
-				s.JwtRefreshToken = *refreshToken
+				realmSessions[i].JwtAccessToken = *accessToken
+				realmSessions[i].JwtRefreshToken = *refreshToken
 				service.UserSessions[realm] = realmSessions
+				break
 			}
 		}
 	}
