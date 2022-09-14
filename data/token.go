@@ -1,13 +1,14 @@
 package data
 
 import (
+	"Ferrum/utils/jsontools"
 	"github.com/google/uuid"
 	"time"
 )
 
-type RawUserInfo = interface{}
+type RawUserInfo interface{}
 
-type JwtTokenData struct {
+type JwtCommonInfo struct {
 	IssuedAt     time.Time `json:"iat"`
 	ExpiredAt    time.Time `json:"exp"`
 	JwtId        uuid.UUID `json:"jti"`
@@ -21,31 +22,38 @@ type JwtTokenData struct {
 }
 
 type TokenRefreshData struct {
-	JwtTokenData
+	JwtCommonInfo
 }
 
 type AccessTokenData struct {
-	JwtTokenData
-	RawUserInfo
+	jwtCommonInfo JwtCommonInfo
+	rawUserInfo   RawUserInfo
+	ResultData    map[string]interface{}
+	ResultJsonStr string
 }
 
-func CreateAccessToken(commonData *JwtTokenData, userData *User) *AccessTokenData {
-	return &AccessTokenData{JwtTokenData: *commonData, RawUserInfo: (*userData).GetUserInfo()}
+func CreateAccessToken(commonData *JwtCommonInfo, userData *User) *AccessTokenData {
+	token := AccessTokenData{jwtCommonInfo: *commonData, rawUserInfo: (*userData).GetUserInfo()}
+	token.Init()
+	return &token
 }
 
 func (token *AccessTokenData) Valid() error {
-	/*if token.userInfo != nil {
-		return nil
-	}
-	return errors.New("UserInfo is null (it can't be)")*/
+	// just pass formally, we don't have anything to validate, maybe in future
 	return nil
 }
 
-func CreateRefreshToken(commonData *JwtTokenData) *TokenRefreshData {
-	return &TokenRefreshData{JwtTokenData: *commonData}
+func CreateRefreshToken(commonData *JwtCommonInfo) *TokenRefreshData {
+	return &TokenRefreshData{JwtCommonInfo: *commonData}
 }
 
 func (token *TokenRefreshData) Valid() error {
-	// just formally, we don't have anything to validate, maybe in future
+	// just pass formally, we don't have anything to validate, maybe in future
 	return nil
+}
+
+func (token *AccessTokenData) Init() {
+	data, str := jsontools.MergeNonIntersect[JwtCommonInfo, RawUserInfo](&token.jwtCommonInfo, &token.rawUserInfo)
+	token.ResultData = data.(map[string]interface{})
+	token.ResultJsonStr = str
 }

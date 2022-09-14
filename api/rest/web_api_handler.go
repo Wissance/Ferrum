@@ -87,7 +87,7 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 func (wCtx *WebApiContext) prepareAccessToken(realm string, tokenType string, scope string, sessionData *data.UserSession, userData *data.User) *data.AccessTokenData {
 	// todo(UMV): store schema and pair address:port in the wCtx
 	issuer := stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
-	jwtCommon := data.JwtTokenData{Issuer: issuer, Type: tokenType, Audience: "account", Scope: scope, JwtId: uuid.New(),
+	jwtCommon := data.JwtCommonInfo{Issuer: issuer, Type: tokenType, Audience: "account", Scope: scope, JwtId: uuid.New(),
 		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
 		SessionId: sessionData.Id, SessionState: sessionData.Id}
 	accessToken := data.CreateAccessToken(&jwtCommon, userData)
@@ -98,7 +98,7 @@ func (wCtx *WebApiContext) prepareAccessToken(realm string, tokenType string, sc
 func (wCtx *WebApiContext) prepareRefreshToken(realm string, tokenType string, scope string, sessionData *data.UserSession) *data.TokenRefreshData {
 	// todo(UMV): store schema and pair address:port in the wCtx
 	issuer := stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
-	jwtCommon := data.JwtTokenData{Issuer: issuer, Type: tokenType, Audience: issuer, Scope: scope, JwtId: uuid.New(),
+	jwtCommon := data.JwtCommonInfo{Issuer: issuer, Type: tokenType, Audience: issuer, Scope: scope, JwtId: uuid.New(),
 		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
 		SessionId: sessionData.Id, SessionState: sessionData.Id}
 	accessToken := data.CreateRefreshToken(&jwtCommon)
