@@ -1,10 +1,8 @@
 package rest
 
 import (
-	"Ferrum/data"
 	"Ferrum/dto"
 	"Ferrum/errors"
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/wissance/stringFormatter"
@@ -64,11 +62,11 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							sessionId := (*wCtx.Security).StartOrUpdateSession(realm, (*currentUser).GetId(), duration)
 							session := (*wCtx.Security).GetSession(realm, (*currentUser).GetId())
 							// 5. Generate new tokens
-							accessToken := wCtx.prepareAccessToken(realm, "Bearer", "profile email", session, currentUser)
-							refreshToken := wCtx.prepareRefreshToken(realm, "Refresh", "profile email", session)
-							result = dto.Token{AccessToken: wCtx.TokenGenerator.GenerateAccessToken(accessToken), Expires: duration,
-								RefreshToken: wCtx.TokenGenerator.GenerateRefreshToken(refreshToken), RefreshExpires: refreshDuration,
-								TokenType: "Bearer", NotBeforePolicy: 0, Session: sessionId.String()}
+							accessToken := wCtx.TokenGenerator.GenerateJwtAccessToken(wCtx.getRealmBaseUrl(realm), "Bearer", "profile email", session, currentUser)
+							refreshToken := wCtx.TokenGenerator.GenerateJwtRefreshToken(wCtx.getRealmBaseUrl(realm), "Refresh", "profile email", session)
+							result = dto.Token{AccessToken: accessToken, Expires: duration, RefreshToken: refreshToken,
+								RefreshExpires: refreshDuration, TokenType: "Bearer", NotBeforePolicy: 0,
+								Session: sessionId.String()}
 
 						}
 					}
@@ -83,24 +81,6 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 	// Just get access token,  find user + session
 }
 
-// todo(UMV): this probably should be moved to security service, or in OTHER place
-func (wCtx *WebApiContext) prepareAccessToken(realm string, tokenType string, scope string, sessionData *data.UserSession, userData *data.User) *data.AccessTokenData {
-	// todo(UMV): store schema and pair address:port in the wCtx
-	issuer := stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
-	jwtCommon := data.JwtCommonInfo{Issuer: issuer, Type: tokenType, Audience: "account", Scope: scope, JwtId: uuid.New(),
-		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
-		SessionId: sessionData.Id, SessionState: sessionData.Id}
-	accessToken := data.CreateAccessToken(&jwtCommon, userData)
-	return accessToken
-}
-
-// todo(UMV): this probably should be moved to security service, or in OTHER place
-func (wCtx *WebApiContext) prepareRefreshToken(realm string, tokenType string, scope string, sessionData *data.UserSession) *data.TokenRefreshData {
-	// todo(UMV): store schema and pair address:port in the wCtx
-	issuer := stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
-	jwtCommon := data.JwtCommonInfo{Issuer: issuer, Type: tokenType, Audience: issuer, Scope: scope, JwtId: uuid.New(),
-		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
-		SessionId: sessionData.Id, SessionState: sessionData.Id}
-	accessToken := data.CreateRefreshToken(&jwtCommon)
-	return accessToken
+func (wCtx *WebApiContext) getRealmBaseUrl(realm string) string {
+	return stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
 }
