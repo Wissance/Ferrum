@@ -9,18 +9,18 @@ import (
 	"time"
 )
 
-type PasswordBasedSecurityService struct {
+type TokenBasedSecurityService struct {
 	DataProvider *managers.DataContext
 	UserSessions map[string][]data.UserSession
 }
 
 func CreateSecurityService(dataProvider *managers.DataContext) SecurityService {
-	pwdSecService := &PasswordBasedSecurityService{DataProvider: dataProvider, UserSessions: map[string][]data.UserSession{}}
+	pwdSecService := &TokenBasedSecurityService{DataProvider: dataProvider, UserSessions: map[string][]data.UserSession{}}
 	secService := SecurityService(pwdSecService)
 	return secService
 }
 
-func (service *PasswordBasedSecurityService) Validate(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError {
+func (service *TokenBasedSecurityService) Validate(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError {
 	for _, c := range realm.Clients {
 		if c.Name == tokenIssueData.ClientId {
 			if c.Type == data.Public {
@@ -37,7 +37,7 @@ func (service *PasswordBasedSecurityService) Validate(tokenIssueData *dto.TokenG
 	return &data.OperationError{Msg: errors.InvalidClientMsg, Description: errors.InvalidClientCredentialDesc}
 }
 
-func (service *PasswordBasedSecurityService) CheckCredentials(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError {
+func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError {
 	user := (*service.DataProvider).GetUser(realm, tokenIssueData.Username)
 	if user == nil {
 		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDEsc}
@@ -51,11 +51,11 @@ func (service *PasswordBasedSecurityService) CheckCredentials(tokenIssueData *dt
 	return nil
 }
 
-func (service *PasswordBasedSecurityService) GetCurrentUser(realm *data.Realm, userName string) *data.User {
+func (service *TokenBasedSecurityService) GetCurrentUser(realm *data.Realm, userName string) *data.User {
 	return (*service.DataProvider).GetUser(realm, userName)
 }
 
-func (service *PasswordBasedSecurityService) StartOrUpdateSession(realm string, userId uuid.UUID, duration int) uuid.UUID {
+func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, userId uuid.UUID, duration int) uuid.UUID {
 	realmSessions, ok := service.UserSessions[realm]
 	sessionId := uuid.New()
 	// if there are no realm sessions ...
@@ -80,7 +80,20 @@ func (service *PasswordBasedSecurityService) StartOrUpdateSession(realm string, 
 	return userSession.Id
 }
 
-func (service *PasswordBasedSecurityService) GetSession(realm string, userId uuid.UUID) *data.UserSession {
+func (service *TokenBasedSecurityService) AssignTokens(realm string, userId uuid.UUID, accessToken *string, refreshToken *string) {
+	realmSessions, ok := service.UserSessions[realm]
+	if ok {
+		for _, s := range realmSessions {
+			if s.UserId == userId {
+				s.JwtAccessToken = *accessToken
+				s.JwtRefreshToken = *refreshToken
+				service.UserSessions[realm] = realmSessions
+			}
+		}
+	}
+}
+
+func (service *TokenBasedSecurityService) GetSession(realm string, userId uuid.UUID) *data.UserSession {
 	realmSessions, ok := service.UserSessions[realm]
 	if !ok {
 		return nil
@@ -93,7 +106,7 @@ func (service *PasswordBasedSecurityService) GetSession(realm string, userId uui
 	return nil
 }
 
-func (service *PasswordBasedSecurityService) IsSessionExpired(realm string, userId uuid.UUID) bool {
+func (service *TokenBasedSecurityService) IsSessionExpired(realm string, userId uuid.UUID) bool {
 	s := service.GetSession(realm, userId)
 	if s == nil {
 		return true

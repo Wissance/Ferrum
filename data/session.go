@@ -6,8 +6,10 @@ import (
 )
 
 type UserSession struct {
-	Id      uuid.UUID
-	UserId  uuid.UUID
-	Started time.Time
-	Expired time.Time
+	Id              uuid.UUID
+	UserId          uuid.UUID
+	Started         time.Time
+	Expired         time.Time
+	JwtAccessToken  string
+	JwtRefreshToken string
 }

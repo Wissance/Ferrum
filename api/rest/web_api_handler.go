@@ -54,16 +54,19 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 						} else {
 							currentUser := (*wCtx.Security).GetCurrentUser(realmPtr, tokenGenerationData.Username)
+							userId := (*currentUser).GetId()
 							// 3. Create access token && refresh token
 							// 4. Generate new token
 							duration := 300
 							refreshDuration := 120
 							// 4. Save session
-							sessionId := (*wCtx.Security).StartOrUpdateSession(realm, (*currentUser).GetId(), duration)
-							session := (*wCtx.Security).GetSession(realm, (*currentUser).GetId())
+							sessionId := (*wCtx.Security).StartOrUpdateSession(realm, userId, duration)
+							session := (*wCtx.Security).GetSession(realm, userId)
 							// 5. Generate new tokens
 							accessToken := wCtx.TokenGenerator.GenerateJwtAccessToken(wCtx.getRealmBaseUrl(realm), "Bearer", "profile email", session, currentUser)
 							refreshToken := wCtx.TokenGenerator.GenerateJwtRefreshToken(wCtx.getRealmBaseUrl(realm), "Refresh", "profile email", session)
+							(*wCtx.Security).AssignTokens(realm, userId, &accessToken, &refreshToken)
+							// 6. Assign token to result
 							result = dto.Token{AccessToken: accessToken, Expires: duration, RefreshToken: refreshToken,
 								RefreshExpires: refreshDuration, TokenType: "Bearer", NotBeforePolicy: 0,
 								Session: sessionId.String()}
