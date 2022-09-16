@@ -11,12 +11,13 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 )
 
 var testKey = []byte("qwerty1234567890")
 var testServerData = data.ServerData{
 	Realms: []data.Realm{
-		{Name: "testrealm1", TokenExpiration: 30, RefreshTokenExpiration: 20,
+		{Name: "testrealm1", TokenExpiration: 10, RefreshTokenExpiration: 5,
 			Clients: []data.Client{
 				{Name: "testclient1", Type: data.Confidential, Auth: data.Authentication{Type: data.ClientIdAndSecrets,
 					Value: "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz"}},
@@ -49,10 +50,12 @@ func TestApplicationOnHttp(t *testing.T) {
 	token := getDataFromResponse[dto.Token](t, response)
 	assert.True(t, len(token.AccessToken) > 0)
 	assert.True(t, len(token.RefreshToken) > 0)
-	userInfo := getUserInfo(t, baseUrl, realm, token.AccessToken)
+	// check token by query username
+	userInfo := getUserInfo(t, baseUrl, realm, token.AccessToken, "200 OK")
 	assert.True(t, len(userInfo) > 0)
 	assert.Equal(t, username, userInfo["preferred_username"])
-	// check token by query username
+	time.Sleep(time.Second * time.Duration(10))
+	userInfo = getUserInfo(t, baseUrl, realm, token.AccessToken, "401 Unauthorized")
 	// wait token expiration and call one more, got 401
 
 	// try with bad client credentials
@@ -88,7 +91,7 @@ func getDataFromResponse[TR dto.Token | dto.ErrorDetails](t *testing.T, response
 	return result
 }
 
-func getUserInfo(t *testing.T, baseUrl string, realm string, token string) map[string]interface{} {
+func getUserInfo(t *testing.T, baseUrl string, realm string, token string, expectedStatus string) map[string]interface{} {
 	userInfoUrlTemplate := "{0}/auth/realms/{1}/protocol/openid-connect/userinfo/"
 	userInfoUrl := stringFormatter.Format(userInfoUrlTemplate, baseUrl, realm)
 	client := http.Client{}
@@ -96,6 +99,7 @@ func getUserInfo(t *testing.T, baseUrl string, realm string, token string) map[s
 	request.Header.Set("Authorization", "Bearer "+token)
 	assert.Nil(t, err)
 	response, err := client.Do(request)
+	assert.Equal(t, expectedStatus, response.Status)
 	assert.Nil(t, err)
 	responseBody, err := io.ReadAll(response.Body)
 	assert.Nil(t, err)
