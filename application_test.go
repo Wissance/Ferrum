@@ -41,12 +41,17 @@ func TestApplicationOnHttp(t *testing.T) {
 	res, err = app.Start()
 	assert.True(t, res)
 	assert.Nil(t, err)
-
-	response := issueNewToken(t, "http://127.0.0.1:8284", "testrealm1", "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
-		"vano", "1234567890")
+	baseUrl := "http://127.0.0.1:8284"
+	realm := "testrealm1"
+	username := "vano"
+	response := issueNewToken(t, baseUrl, realm, "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
+		username, "1234567890")
 	token := getDataFromResponse[dto.Token](t, response)
 	assert.True(t, len(token.AccessToken) > 0)
 	assert.True(t, len(token.RefreshToken) > 0)
+	userInfo := getUserInfo(t, baseUrl, realm, token.AccessToken)
+	assert.True(t, len(userInfo) > 0)
+	assert.Equal(t, username, userInfo["preferred_username"])
 	// check token by query username
 	// wait token expiration and call one more, got 401
 
@@ -83,6 +88,19 @@ func getDataFromResponse[TR dto.Token | dto.ErrorDetails](t *testing.T, response
 	return result
 }
 
-func getUserInfo() map[string]interface{} {
-
+func getUserInfo(t *testing.T, baseUrl string, realm string, token string) map[string]interface{} {
+	userInfoUrlTemplate := "{0}/auth/realms/{1}/protocol/openid-connect/userinfo/"
+	userInfoUrl := stringFormatter.Format(userInfoUrlTemplate, baseUrl, realm)
+	client := http.Client{}
+	request, err := http.NewRequest("GET", userInfoUrl, nil)
+	request.Header.Set("Authorization", "Bearer "+token)
+	assert.Nil(t, err)
+	response, err := client.Do(request)
+	assert.Nil(t, err)
+	responseBody, err := io.ReadAll(response.Body)
+	assert.Nil(t, err)
+	var result map[string]interface{}
+	err = json.Unmarshal(responseBody, &result)
+	assert.Nil(t, err)
+	return result
 }
