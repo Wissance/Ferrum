@@ -22,15 +22,24 @@ type Application struct {
 	dataConfigFile *string
 	secretKeyFile  *string
 	appConfig      *config.AppConfig
+	secretKey      *[]byte
+	dataProvider   *managers.DataContext
 	webApiHandler  *r.WebApiHandler
 	webApiContext  *rest.WebApiContext
 }
 
-func Create(configFile string, dataFile string, secretKeyFile string) application.AppRunner {
+func CreateAppFromConfigs(configFile string, dataFile string, secretKeyFile string) application.AppRunner {
 	app := &Application{}
 	app.appConfigFile = &configFile
 	app.dataConfigFile = &dataFile
 	app.secretKeyFile = &secretKeyFile
+	appRunner := application.AppRunner(app)
+	return appRunner
+}
+
+func CreateAppFromData(appConfig *config.AppConfig, secretKey []byte) application.AppRunner {
+	app := &Application{appConfig: appConfig, secretKey: &secretKey}
+
 	appRunner := application.AppRunner(app)
 	return appRunner
 }
@@ -47,33 +56,39 @@ func (app *Application) Start() (bool, error) {
 }
 
 func (app *Application) Init() (bool, error) {
-	err := app.readAppConfig()
-	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during reading app config file: {0}", err.Error()))
-		return false, err
-	}
+	// initialization from configs
+	if app.appConfigFile != nil {
+		err := app.readAppConfig()
+		if err != nil {
+			fmt.Println(stringFormatter.Format("An error occurred during reading app config file: {0}", err.Error()))
+			return false, err
+		}
 
-	// init users, today we are reading data file
-	err = app.initDataProviders()
-	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during data providers init: {0}", err.Error()))
-		return false, err
-	}
+		// init users, today we are reading data file
+		err = app.initDataProviders()
+		if err != nil {
+			fmt.Println(stringFormatter.Format("An error occurred during data providers init: {0}", err.Error()))
+			return false, err
+		}
 
-	// reading secrets key
-	key := app.readKey()
-	if key == nil {
-		fmt.Println(stringFormatter.Format("An error occurred during reading secret key, key is nil"))
-		return false, errors.New("secret key is nil")
-	}
+		// reading secrets key
+		key := app.readKey()
+		if key == nil {
+			fmt.Println(stringFormatter.Format("An error occurred during reading secret key, key is nil"))
+			return false, errors.New("secret key is nil")
+		}
+		app.secretKey = key
 
-	// init webapi
-	err = app.initRestApi(key)
-	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during rest api init: {0}", err.Error()))
-		return false, err
+		// init webapi
+		err = app.initRestApi()
+		if err != nil {
+			fmt.Println(stringFormatter.Format("An error occurred during rest api init: {0}", err.Error()))
+			return false, err
+		}
+		return true, nil
+	} else {
+		return true, nil
 	}
-	return true, nil
 }
 
 func (app *Application) Stop() (bool, error) {
@@ -103,16 +118,18 @@ func (app *Application) readAppConfig() error {
 }
 
 func (app *Application) initDataProviders() error {
+	if app.dataConfigFile != nil {
+		dataProvider := managers.Create(*app.dataConfigFile)
+		app.dataProvider = &dataProvider
+	}
 	return nil
 }
 
-func (app *Application) initRestApi(key *[]byte) error {
+func (app *Application) initRestApi() error {
 	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
-	dataProvider := managers.Create(*app.dataConfigFile)
-	securityService := services.CreateSecurityService(&dataProvider)
-	// todo: provide GOOD key as a file ....
-	app.webApiContext = &rest.WebApiContext{DataProvider: &dataProvider, Security: &securityService,
-		TokenGenerator: &services.JwtGenerator{SignKey: *key}}
+	securityService := services.CreateSecurityService(app.dataProvider)
+	app.webApiContext = &rest.WebApiContext{DataProvider: app.dataProvider, Security: &securityService,
+		TokenGenerator: &services.JwtGenerator{SignKey: *app.secretKey}}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
 	app.initKeyCloakSimilarRestApiRoutes(router)
