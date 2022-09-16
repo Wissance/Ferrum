@@ -4,6 +4,7 @@ import (
 	"Ferrum/config"
 	"Ferrum/data"
 	"Ferrum/dto"
+	"Ferrum/errors"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/wissance/stringFormatter"
@@ -59,7 +60,15 @@ func TestApplicationOnHttp(t *testing.T) {
 	// wait token expiration and call one more, got 401
 
 	// try with bad client credentials
+	response = issueNewToken(t, baseUrl, realm, "unknownClient", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
+		username, "1234567890")
+	errResp := getDataFromResponse[dto.ErrorDetails](t, response)
+	assert.Equal(t, errors.InvalidClientMsg, errResp.Msg)
 	// try with bad user credentials
+	response = issueNewToken(t, baseUrl, realm, "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
+		username, "wrongPass!!!")
+	errResp = getDataFromResponse[dto.ErrorDetails](t, response)
+	assert.Equal(t, errors.InvalidUserCredentialsMsg, errResp.Msg)
 
 	res, err = app.Stop()
 	assert.True(t, res)
