@@ -42,18 +42,24 @@ func TestApplicationOnHttp(t *testing.T) {
 	assert.True(t, res)
 	assert.Nil(t, err)
 
-	//todo(UMV): make here sets of API calls
-	//time.Sleep(time.Second * time.Duration(2))
-	getTokenFromConfidentialClientAndCheck(t, "http://127.0.0.1:8284", "testrealm1", "testclient1",
-		"fb6Z4RsOadVycQoeQiN57xpu8w8wplYz", "vano", "1234567890")
+	response := issueNewToken(t, "http://127.0.0.1:8284", "testrealm1", "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
+		"vano", "1234567890")
+	token := getDataFromResponse[dto.Token](t, response)
+	assert.True(t, len(token.AccessToken) > 0)
+	assert.True(t, len(token.RefreshToken) > 0)
+	// check token by query username
+	// wait token expiration and call one more, got 401
+
+	// try with bad client credentials
+	// try with bad user credentials
 
 	res, err = app.Stop()
 	assert.True(t, res)
 	assert.Nil(t, err)
 }
 
-func getTokenFromConfidentialClientAndCheck(t *testing.T, baseUrl string, realm string, clientId string, clientSecret string,
-	userName string, password string) dto.Token {
+func issueNewToken(t *testing.T, baseUrl string, realm string, clientId string, clientSecret string,
+	userName string, password string) *http.Response {
 	tokenUrlTemplate := "{0}/auth/realms/{1}/protocol/openid-connect/token/"
 	tokenUrl := stringFormatter.Format(tokenUrlTemplate, baseUrl, realm)
 	getTokenData := url.Values{}
@@ -65,12 +71,18 @@ func getTokenFromConfidentialClientAndCheck(t *testing.T, baseUrl string, realm 
 	getTokenData.Set("password", password)
 	response, err := http.PostForm(tokenUrl, getTokenData)
 	assert.Nil(t, err)
+	return response
+}
+
+func getDataFromResponse[TR dto.Token | dto.ErrorDetails](t *testing.T, response *http.Response) TR {
 	responseBody, err := io.ReadAll(response.Body)
 	assert.Nil(t, err)
-	var token dto.Token
-	err = json.Unmarshal(responseBody, &token)
+	var result TR
+	err = json.Unmarshal(responseBody, &result)
 	assert.Nil(t, err)
-	assert.True(t, len(token.AccessToken) > 0)
-	assert.True(t, len(token.RefreshToken) > 0)
-	return token
+	return result
+}
+
+func getUserInfo() map[string]interface{} {
+
 }
