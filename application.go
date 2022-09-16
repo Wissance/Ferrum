@@ -4,6 +4,7 @@ import (
 	"Ferrum/api/rest"
 	"Ferrum/application"
 	"Ferrum/config"
+	"Ferrum/data"
 	"Ferrum/managers"
 	"Ferrum/services"
 	"encoding/json"
@@ -23,12 +24,13 @@ type Application struct {
 	secretKeyFile  *string
 	appConfig      *config.AppConfig
 	secretKey      *[]byte
+	serverData     *data.ServerData
 	dataProvider   *managers.DataContext
 	webApiHandler  *r.WebApiHandler
 	webApiContext  *rest.WebApiContext
 }
 
-func CreateAppFromConfigs(configFile string, dataFile string, secretKeyFile string) application.AppRunner {
+func CreateAppWithConfigs(configFile string, dataFile string, secretKeyFile string) application.AppRunner {
 	app := &Application{}
 	app.appConfigFile = &configFile
 	app.dataConfigFile = &dataFile
@@ -37,8 +39,8 @@ func CreateAppFromConfigs(configFile string, dataFile string, secretKeyFile stri
 	return appRunner
 }
 
-func CreateAppFromData(appConfig *config.AppConfig, secretKey []byte) application.AppRunner {
-	app := &Application{appConfig: appConfig, secretKey: &secretKey}
+func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte) application.AppRunner {
+	app := &Application{appConfig: appConfig, secretKey: &secretKey, serverData: serverData}
 
 	appRunner := application.AppRunner(app)
 	return appRunner
@@ -56,18 +58,11 @@ func (app *Application) Start() (bool, error) {
 }
 
 func (app *Application) Init() (bool, error) {
-	// initialization from configs
+	// part that initializes app from configs
 	if app.appConfigFile != nil {
 		err := app.readAppConfig()
 		if err != nil {
 			fmt.Println(stringFormatter.Format("An error occurred during reading app config file: {0}", err.Error()))
-			return false, err
-		}
-
-		// init users, today we are reading data file
-		err = app.initDataProviders()
-		if err != nil {
-			fmt.Println(stringFormatter.Format("An error occurred during data providers init: {0}", err.Error()))
 			return false, err
 		}
 
@@ -78,17 +73,22 @@ func (app *Application) Init() (bool, error) {
 			return false, errors.New("secret key is nil")
 		}
 		app.secretKey = key
-
-		// init webapi
-		err = app.initRestApi()
-		if err != nil {
-			fmt.Println(stringFormatter.Format("An error occurred during rest api init: {0}", err.Error()))
-			return false, err
-		}
-		return true, nil
-	} else {
-		return true, nil
 	}
+	// common part: both configs and direct struct pass
+	// init users, today we are reading data file
+	err := app.initDataProviders()
+	if err != nil {
+		fmt.Println(stringFormatter.Format("An error occurred during data providers init: {0}", err.Error()))
+		return false, err
+	}
+
+	// init webapi
+	err = app.initRestApi()
+	if err != nil {
+		fmt.Println(stringFormatter.Format("An error occurred during rest api init: {0}", err.Error()))
+		return false, err
+	}
+	return true, nil
 }
 
 func (app *Application) Stop() (bool, error) {
@@ -119,7 +119,10 @@ func (app *Application) readAppConfig() error {
 
 func (app *Application) initDataProviders() error {
 	if app.dataConfigFile != nil {
-		dataProvider := managers.Create(*app.dataConfigFile)
+		dataProvider := managers.CreateAndContextInitWithDataFile(*app.dataConfigFile)
+		app.dataProvider = &dataProvider
+	} else {
+		dataProvider := managers.CreateAndContextInitUsingData(app.serverData)
 		app.dataProvider = &dataProvider
 	}
 	return nil

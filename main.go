@@ -12,7 +12,7 @@ func main() {
 	osSignal := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	app := CreateAppFromConfigs("./config.json", "./data.json", "./keyfile")
+	app := CreateAppWithConfigs("./config.json", "./data.json", "./keyfile")
 	res, initErr := app.Init()
 	if initErr != nil {
 		fmt.Println("An error occurred during app init, terminating the app")
