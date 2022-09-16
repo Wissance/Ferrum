@@ -18,11 +18,12 @@ var testServerData = data.ServerData{
 	Realms: []data.Realm{
 		{Name: "testrealm1", TokenExpiration: 30, RefreshTokenExpiration: 20,
 			Clients: []data.Client{
-				{Name: "testclient1", Type: data.Confidential, Auth: data.Authentication{Value: "atatatata"}},
+				{Name: "testclient1", Type: data.Confidential, Auth: data.Authentication{Type: data.ClientIdAndSecrets,
+					Value: "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz"}},
 			}, Users: []interface{}{
 			map[string]interface{}{"info": map[string]interface{}{"sub": "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
-				"name": "vano", "preferred_username": "vano ivanov",
-				"given_name": "vano", "family_name": "ivanov", "email_verified": true},
+				"name": "vano", "preferred_username": "vano",
+				"given_name": "vano ivanov", "family_name": "ivanov", "email_verified": true},
 				"credentials": map[string]interface{}{"password": "1234567890"}},
 		}},
 	},
@@ -30,7 +31,7 @@ var testServerData = data.ServerData{
 
 func TestApplicationOnHttp(t *testing.T) {
 	appConfig := config.AppConfig{
-		ServerCfg: config.ServerConfig{Schema: "http", Address: "localhost", Port: 8284},
+		ServerCfg: config.ServerConfig{Schema: "http", Address: "127.0.0.1", Port: 8284},
 	}
 	app := CreateAppWithData(&appConfig, &testServerData, testKey)
 	res, err := app.Init()
@@ -42,8 +43,9 @@ func TestApplicationOnHttp(t *testing.T) {
 	assert.Nil(t, err)
 
 	//todo(UMV): make here sets of API calls
-	getTokenFromConfidentialClientAndCheck(t, "http://localhost:8284", "testrealm1", "testclient1",
-		"atatatata", "vano", "1234567890")
+	//time.Sleep(time.Second * time.Duration(2))
+	getTokenFromConfidentialClientAndCheck(t, "http://127.0.0.1:8284", "testrealm1", "testclient1",
+		"fb6Z4RsOadVycQoeQiN57xpu8w8wplYz", "vano", "1234567890")
 
 	res, err = app.Stop()
 	assert.True(t, res)
@@ -52,7 +54,7 @@ func TestApplicationOnHttp(t *testing.T) {
 
 func getTokenFromConfidentialClientAndCheck(t *testing.T, baseUrl string, realm string, clientId string, clientSecret string,
 	userName string, password string) dto.Token {
-	tokenUrlTemplate := "{0}/auth/realms/{1}/protocol/openid-connect/token"
+	tokenUrlTemplate := "{0}/auth/realms/{1}/protocol/openid-connect/token/"
 	tokenUrl := stringFormatter.Format(tokenUrlTemplate, baseUrl, realm)
 	getTokenData := url.Values{}
 	getTokenData.Set("client_id", clientId)

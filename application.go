@@ -159,7 +159,7 @@ func (app *Application) startWebService() error {
 			fmt.Println(stringFormatter.Format("An error occurred during attempt to start \"HTTP\" WEB API Service: {0}", err.Error()))
 		}
 	case config.HTTPS:
-		fmt.Println(stringFormatter.Format("5. Starting \"HTTPS\" REST API Service on address: \"{0}\"", address))
+		fmt.Println(stringFormatter.Format("Starting \"HTTPS\" REST API Service on address: \"{0}\"", address))
 		cert := app.appConfig.ServerCfg.Security.CertificateFile
 		key := app.appConfig.ServerCfg.Security.KeyFile
 		err = http.ListenAndServeTLS(address, cert, key, app.webApiHandler.Router)
