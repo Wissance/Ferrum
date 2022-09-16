@@ -7,6 +7,7 @@ import (
 	"Ferrum/managers"
 	"Ferrum/services"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	r "github.com/wissance/gwuu/api/rest"
@@ -19,15 +20,17 @@ import (
 type Application struct {
 	appConfigFile  *string
 	dataConfigFile *string
+	secretKeyFile  *string
 	appConfig      *config.AppConfig
 	webApiHandler  *r.WebApiHandler
 	webApiContext  *rest.WebApiContext
 }
 
-func Create(configFile string, dataFile string) application.AppRunner {
+func Create(configFile string, dataFile string, secretKeyFile string) application.AppRunner {
 	app := &Application{}
 	app.appConfigFile = &configFile
 	app.dataConfigFile = &dataFile
+	app.secretKeyFile = &secretKeyFile
 	appRunner := application.AppRunner(app)
 	return appRunner
 }
@@ -49,14 +52,23 @@ func (app *Application) Init() (bool, error) {
 		fmt.Println(stringFormatter.Format("An error occurred during reading app config file: {0}", err.Error()))
 		return false, err
 	}
+
 	// init users, today we are reading data file
 	err = app.initDataProviders()
 	if err != nil {
 		fmt.Println(stringFormatter.Format("An error occurred during data providers init: {0}", err.Error()))
 		return false, err
 	}
+
+	// reading secrets key
+	key := app.readKey()
+	if key == nil {
+		fmt.Println(stringFormatter.Format("An error occurred during reading secret key, key is nil"))
+		return false, errors.New("secret key is nil")
+	}
+
 	// init webapi
-	err = app.initRestApi()
+	err = app.initRestApi(key)
 	if err != nil {
 		fmt.Println(stringFormatter.Format("An error occurred during rest api init: {0}", err.Error()))
 		return false, err
@@ -94,13 +106,13 @@ func (app *Application) initDataProviders() error {
 	return nil
 }
 
-func (app *Application) initRestApi() error {
+func (app *Application) initRestApi(key *[]byte) error {
 	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
 	dataProvider := managers.Create(*app.dataConfigFile)
 	securityService := services.CreateSecurityService(&dataProvider)
 	// todo: provide GOOD key as a file ....
 	app.webApiContext = &rest.WebApiContext{DataProvider: &dataProvider, Security: &securityService,
-		TokenGenerator: &services.JwtGenerator{SignKey: []byte("secureSecretText")}}
+		TokenGenerator: &services.JwtGenerator{SignKey: *key}}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
 	app.initKeyCloakSimilarRestApiRoutes(router)
@@ -136,4 +148,20 @@ func (app *Application) startWebService() error {
 		}
 	}
 	return err
+}
+
+func (app *Application) readKey() *[]byte {
+	absPath, err := filepath.Abs(*app.appConfigFile)
+	if err != nil {
+		fmt.Println(stringFormatter.Format("An error occurred during getting key file abs path: {0}", err.Error()))
+		return nil
+	}
+
+	fileData, err := ioutil.ReadFile(absPath)
+	if err != nil {
+		fmt.Println(stringFormatter.Format("An error occurred during key file reading: {0}", err.Error()))
+		return nil
+	}
+
+	return &fileData
 }

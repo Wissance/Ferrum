@@ -59,8 +59,8 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							userId := (*currentUser).GetId()
 							// 3. Create access token && refresh token
 							// 4. Generate new token
-							duration := 300
-							refreshDuration := 120
+							duration := realmPtr.TokenExpiration
+							refreshDuration := realmPtr.RefreshTokenExpiration
 							// 4. Save session
 							sessionId := (*wCtx.Security).StartOrUpdateSession(realm, userId, duration)
 							session := (*wCtx.Security).GetSession(realm, userId)
