@@ -5,6 +5,7 @@ import (
 	"Ferrum/data"
 	"Ferrum/dto"
 	"Ferrum/errors"
+	"crypto/tls"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/wissance/stringFormatter"
@@ -23,19 +24,28 @@ var testServerData = data.ServerData{
 				{Name: "testclient1", Type: data.Confidential, Auth: data.Authentication{Type: data.ClientIdAndSecrets,
 					Value: "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz"}},
 			}, Users: []interface{}{
-			map[string]interface{}{"info": map[string]interface{}{"sub": "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
-				"name": "vano", "preferred_username": "vano",
-				"given_name": "vano ivanov", "family_name": "ivanov", "email_verified": true},
-				"credentials": map[string]interface{}{"password": "1234567890"}},
-		}},
+				map[string]interface{}{"info": map[string]interface{}{"sub": "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
+					"name": "vano", "preferred_username": "vano",
+					"given_name": "vano ivanov", "family_name": "ivanov", "email_verified": true},
+					"credentials": map[string]interface{}{"password": "1234567890"}},
+			}},
 	},
 }
+var httpAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTP, Address: "127.0.0.1", Port: 8284}}
+var httpsAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTPS, Address: "127.0.0.1", Port: 8672,
+	Security: config.SecurityConfig{KeyFile: "./certs/server.key", CertificateFile: "./certs/server.crt"}}}
 
 func TestApplicationOnHttp(t *testing.T) {
-	appConfig := config.AppConfig{
-		ServerCfg: config.ServerConfig{Schema: "http", Address: "127.0.0.1", Port: 8284},
-	}
-	app := CreateAppWithData(&appConfig, &testServerData, testKey)
+	testRunCommonTestCycleImpl(t, &httpAppConfig, "http://127.0.0.1:8284")
+}
+
+func TestApplicationOnHttps(t *testing.T) {
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	testRunCommonTestCycleImpl(t, &httpsAppConfig, "https://127.0.0.1:8672")
+}
+
+func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseUrl string) {
+	app := CreateAppWithData(appConfig, &testServerData, testKey)
 	res, err := app.Init()
 	assert.True(t, res)
 	assert.Nil(t, err)
@@ -43,7 +53,6 @@ func TestApplicationOnHttp(t *testing.T) {
 	res, err = app.Start()
 	assert.True(t, res)
 	assert.Nil(t, err)
-	baseUrl := "http://127.0.0.1:8284"
 	realm := "testrealm1"
 	username := "vano"
 	response := issueNewToken(t, baseUrl, realm, "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
