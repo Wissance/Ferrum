@@ -4,9 +4,11 @@ import (
 	"Ferrum/api/rest"
 	"Ferrum/application"
 	"Ferrum/config"
+	"Ferrum/data"
 	"Ferrum/managers"
 	"Ferrum/services"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	r "github.com/wissance/gwuu/api/rest"
@@ -19,15 +21,27 @@ import (
 type Application struct {
 	appConfigFile  *string
 	dataConfigFile *string
+	secretKeyFile  *string
 	appConfig      *config.AppConfig
+	secretKey      *[]byte
+	serverData     *data.ServerData
+	dataProvider   *managers.DataContext
 	webApiHandler  *r.WebApiHandler
 	webApiContext  *rest.WebApiContext
 }
 
-func Create(configFile string, dataFile string) application.AppRunner {
+func CreateAppWithConfigs(configFile string, dataFile string, secretKeyFile string) application.AppRunner {
 	app := &Application{}
 	app.appConfigFile = &configFile
 	app.dataConfigFile = &dataFile
+	app.secretKeyFile = &secretKeyFile
+	appRunner := application.AppRunner(app)
+	return appRunner
+}
+
+func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte) application.AppRunner {
+	app := &Application{appConfig: appConfig, secretKey: &secretKey, serverData: serverData}
+
 	appRunner := application.AppRunner(app)
 	return appRunner
 }
@@ -44,17 +58,30 @@ func (app *Application) Start() (bool, error) {
 }
 
 func (app *Application) Init() (bool, error) {
-	err := app.readAppConfig()
-	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during reading app config file: {0}", err.Error()))
-		return false, err
+	// part that initializes app from configs
+	if app.appConfigFile != nil {
+		err := app.readAppConfig()
+		if err != nil {
+			fmt.Println(stringFormatter.Format("An error occurred during reading app config file: {0}", err.Error()))
+			return false, err
+		}
+
+		// reading secrets key
+		key := app.readKey()
+		if key == nil {
+			fmt.Println(stringFormatter.Format("An error occurred during reading secret key, key is nil"))
+			return false, errors.New("secret key is nil")
+		}
+		app.secretKey = key
 	}
+	// common part: both configs and direct struct pass
 	// init users, today we are reading data file
-	err = app.initDataProviders()
+	err := app.initDataProviders()
 	if err != nil {
 		fmt.Println(stringFormatter.Format("An error occurred during data providers init: {0}", err.Error()))
 		return false, err
 	}
+
 	// init webapi
 	err = app.initRestApi()
 	if err != nil {
@@ -91,16 +118,21 @@ func (app *Application) readAppConfig() error {
 }
 
 func (app *Application) initDataProviders() error {
+	if app.dataConfigFile != nil {
+		dataProvider := managers.CreateAndContextInitWithDataFile(*app.dataConfigFile)
+		app.dataProvider = &dataProvider
+	} else {
+		dataProvider := managers.CreateAndContextInitUsingData(app.serverData)
+		app.dataProvider = &dataProvider
+	}
 	return nil
 }
 
 func (app *Application) initRestApi() error {
 	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
-	dataProvider := managers.Create(*app.dataConfigFile)
-	securityService := services.CreateSecurityService(&dataProvider)
-	// todo: provide GOOD key as a file ....
-	app.webApiContext = &rest.WebApiContext{DataProvider: &dataProvider, Security: &securityService,
-		TokenGenerator: &services.JwtGenerator{SignKey: []byte("secureSecretText")}}
+	securityService := services.CreateSecurityService(app.dataProvider)
+	app.webApiContext = &rest.WebApiContext{DataProvider: app.dataProvider, Security: &securityService,
+		TokenGenerator: &services.JwtGenerator{SignKey: *app.secretKey}}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
 	app.initKeyCloakSimilarRestApiRoutes(router)
@@ -127,7 +159,7 @@ func (app *Application) startWebService() error {
 			fmt.Println(stringFormatter.Format("An error occurred during attempt to start \"HTTP\" WEB API Service: {0}", err.Error()))
 		}
 	case config.HTTPS:
-		fmt.Println(stringFormatter.Format("5. Starting \"HTTPS\" REST API Service on address: \"{0}\"", address))
+		fmt.Println(stringFormatter.Format("Starting \"HTTPS\" REST API Service on address: \"{0}\"", address))
 		cert := app.appConfig.ServerCfg.Security.CertificateFile
 		key := app.appConfig.ServerCfg.Security.KeyFile
 		err = http.ListenAndServeTLS(address, cert, key, app.webApiHandler.Router)
@@ -136,4 +168,20 @@ func (app *Application) startWebService() error {
 		}
 	}
 	return err
+}
+
+func (app *Application) readKey() *[]byte {
+	absPath, err := filepath.Abs(*app.appConfigFile)
+	if err != nil {
+		fmt.Println(stringFormatter.Format("An error occurred during getting key file abs path: {0}", err.Error()))
+		return nil
+	}
+
+	fileData, err := ioutil.ReadFile(absPath)
+	if err != nil {
+		fmt.Println(stringFormatter.Format("An error occurred during key file reading: {0}", err.Error()))
+		return nil
+	}
+
+	return &fileData
 }

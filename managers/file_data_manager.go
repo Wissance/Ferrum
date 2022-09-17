@@ -15,7 +15,7 @@ type FileDataManager struct {
 	serverData data.ServerData
 }
 
-func Create(dataFile string) DataContext {
+func CreateAndContextInitWithDataFile(dataFile string) DataContext {
 	absPath, err := filepath.Abs(dataFile)
 	if err != nil {
 		fmt.Println(stringFormatter.Format("An error occurred during attempt to get abs path of data file: {0}", err.Error()))
@@ -27,6 +27,12 @@ func Create(dataFile string) DataContext {
 		// at least and think what to do further
 		fmt.Println(stringFormatter.Format("An error occurred during data loading: {0}", err.Error()))
 	}
+	dc := DataContext(mn)
+	return dc
+}
+
+func CreateAndContextInitUsingData(serverData *data.ServerData) DataContext {
+	mn := &FileDataManager{serverData: *serverData}
 	dc := DataContext(mn)
 	return dc
 }
