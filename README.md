@@ -2,8 +2,8 @@
 
 ### General info
 
-`Ferrum` is `OpenId-Connect` Authorization server written on GO. It behaves like `Keycloak` server
-and could:
+`Ferrum` is `OpenId-Connect` Authorization server written on GO. It behaves like `Keycloak` server (**minimal `Keycloak`**
+ but we'll grow to full-fledged `KeyCloak`) and could:
 
 1. issue new tokens:
 2. control user sessions;
