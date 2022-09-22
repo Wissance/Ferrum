@@ -1,5 +1,15 @@
 # Ferrum
 
+Ferrum is a **better** Authorization Server.
+
+![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/wissance/Ferrum?style=plastic) 
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/Ferrum?style=plastic) 
+![GitHub issues](https://img.shields.io/github/issues/wissance/Ferrum?style=plastic)
+![GitHub Release Date](https://img.shields.io/github/release-date/wissance/Ferrum) 
+![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.1.0/total?style=plastic)
+
+![Ferrum: A better Auth Server](/img/ferrum_cover.png)
+
 ## General info
 
 `Ferrum` is `OpenId-Connect` Authorization server written on GO. It behaves like `Keycloak` server (**minimal `Keycloak`**
@@ -21,9 +31,20 @@ it has `endpoints` SIMILAR to `Keycloak`, at present time we are having followin
 
 ## How to use
 
+### Build
+
 First of all build is simple run `go build` from application root directory. Additionally it is possible
 to generate self signed certificates - run `go generate` from command line (if you are going to generate 
 new certs **remove certs and key file from ./certs directory** prior to generate new)
+
+If you don't specify the name of executable (by passing -o {execName} to go build) than name of executable = name of project
+
+### Run application
+
+run is simple:
+```ps1
+./Ferrum
+```
 
 There are 2 ways to use `Ferrum`:
 1. It could be started as traditional application and depends from following files:
@@ -61,6 +82,12 @@ There are 2 ways to use `Ferrum`:
 	app.Stop()
    ```
 
+### Test
+At present moment we have 2 fully integration tests, and number of them continues to grow. To run test execute from cmd:
+```ps1
+go test
+```
+
 ## Configure user data as you wish
 
 Users does not have any specific structure, you could add whatever you want, but for compatibility
@@ -82,3 +109,41 @@ in this minimal user example you could expand `info` structure as you want, `cre
 there are NO SENSES in modifying it.
 
 ## Use from code
+
+Minimal full example of how to use coud be found in `application_test.go`, here is a minimal snippet:
+
+```go
+var testKey = []byte("qwerty1234567890")
+var testServerData = data.ServerData{
+	Realms: []data.Realm{
+		{Name: "testrealm1", TokenExpiration: 10, RefreshTokenExpiration: 5,
+			Clients: []data.Client{
+				{Name: "testclient1", Type: data.Confidential, Auth: data.Authentication{Type: data.ClientIdAndSecrets,
+					Value: "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz"}},
+			}, Users: []interface{}{
+				map[string]interface{}{"info": map[string]interface{}{"sub": "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
+					"name": "vano", "preferred_username": "vano",
+					"given_name": "vano ivanov", "family_name": "ivanov", "email_verified": true},
+					"credentials": map[string]interface{}{"password": "1234567890"}},
+			}},
+	},
+}
+var httpsAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTPS, Address: "127.0.0.1", Port: 8672,
+	Security: config.SecurityConfig{KeyFile: "./certs/server.key", CertificateFile: "./certs/server.crt"}}}
+	
+app := CreateAppWithData(appConfig, &testServerData, testKey)
+res, err := app.Init()
+if err != nil {
+	// handle ERROR
+}
+
+res, err = app.Start() 
+
+if err != nil {
+	// handle ERROR
+}
+
+// do whatever you want
+
+app.Stop()
+```
