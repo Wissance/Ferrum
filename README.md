@@ -1,5 +1,11 @@
 # Ferrum
 
+![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/wissance/Ferrum?style=plastic) 
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/Ferrum?style=plastic) 
+![GitHub issues](https://img.shields.io/github/issues/wissance/Ferrum?style=plastic)
+![GitHub Release Date](https://img.shields.io/github/release-date/wissance/Ferrum) 
+![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.1.0/total?style=plastic)
+
 ![Ferrum: A better Auth Server](/img/ferrum_cover.png)
 
 ## General info
