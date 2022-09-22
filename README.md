@@ -1,9 +1,9 @@
-## Ferrum
+# Ferrum
 
-### General info
+## General info
 
-`Ferrum` is `OpenId-Connect` Authorization server written on GO. It behaves like `Keycloak` server
-and could:
+`Ferrum` is `OpenId-Connect` Authorization server written on GO. It behaves like `Keycloak` server (**minimal `Keycloak`**
+ but we'll grow to full-fledged `KeyCloak`) and could:
 
 1. issue new tokens:
 2. control user sessions;
@@ -19,7 +19,7 @@ it has `endpoints` SIMILAR to `Keycloak`, at present time we are having followin
 1. `POST "/auth/realms/{realm}/protocol/openid-connect/token/"``
 2. `GET "/auth/realms/{realm}/protocol/openid-connect/userinfo/"`
 
-### How to use
+## How to use
 
 First of all build is simple run `go build` from application root directory. Additionally it is possible
 to generate self signed certificates - run `go generate` from command line (if you are going to generate 
@@ -61,7 +61,7 @@ There are 2 ways to use `Ferrum`:
 	app.Stop()
    ```
 
-### Configure user data as you wish
+## Configure user data as you wish
 
 Users does not have any specific structure, you could add whatever you want, but for compatibility
 with keycloak and for ability to check password minimal user looks like:
@@ -81,4 +81,4 @@ with keycloak and for ability to check password minimal user looks like:
 in this minimal user example you could expand `info` structure as you want, `credentials` is a service structure,
 there are NO SENSES in modifying it.
 
-### Use from code
+## Use from code
