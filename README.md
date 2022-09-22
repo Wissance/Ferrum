@@ -1,5 +1,7 @@
 # Ferrum
 
+![Ferrum: A better Auth Server](/img/ferrum_cover_sm.png)
+
 ## General info
 
 `Ferrum` is `OpenId-Connect` Authorization server written on GO. It behaves like `Keycloak` server (**minimal `Keycloak`**
