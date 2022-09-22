@@ -1,6 +1,6 @@
 # Ferrum
 
-![Ferrum: A better Auth Server](/img/ferrum_cover_sm.png)
+![Ferrum: A better Auth Server](/img/ferrum_cover.png)
 
 ## General info
 
