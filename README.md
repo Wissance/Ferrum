@@ -10,6 +10,10 @@ Ferrum is a **better** Authorization Server.
 
 ![Ferrum: A better Auth Server](/img/ferrum_cover.png)
 
+## Communication
+
+* Discord channel : https://discord.gg/9RYNYu2Mxq
+
 ## General info
 
 `Ferrum` is `OpenId-Connect` Authorization server written on GO. It behaves like `Keycloak` server (**minimal `Keycloak`**
