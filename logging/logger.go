@@ -28,10 +28,10 @@ var logLevels = map[string]log.Level{
 
 type AppLogger struct {
 	logger    *log.Logger
-	loggerCfg *config.Logging
+	loggerCfg *config.LoggingConfig
 }
 
-func Create(cfg *config.Logging) *AppLogger {
+func CreateLogger(cfg *config.LoggingConfig) *AppLogger {
 	return &AppLogger{loggerCfg: cfg, logger: log.New()}
 }
 
