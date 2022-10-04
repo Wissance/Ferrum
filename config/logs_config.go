@@ -15,7 +15,7 @@ const (
 	Logging Logging `json:"logging"`
 }*/
 
-type Destination struct {
+type DestinationConfig struct {
 	File       AppenderType `json:"file"`
 	BufferSize int          `json:"buffer_size"`
 	MaxSize    int          `json:"max_size"`
@@ -24,16 +24,16 @@ type Destination struct {
 	LocalTime  bool         `json:"local_time"`
 }
 
-type Appender struct {
-	Type        AppenderType `json:"type"`
-	Enabled     bool         `json:"enabled"`
-	Level       *string      `json:"level"`
-	Destination *Destination `json:"destination"`
+type AppenderConfig struct {
+	Type        AppenderType       `json:"type"`
+	Enabled     bool               `json:"enabled"`
+	Level       *string            `json:"level"`
+	Destination *DestinationConfig `json:"destination"`
 }
 
-type Logging struct {
-	Level          *string    `json:"level"`
-	Appenders      []Appender `json:"appenders"`
-	ConsoleOutHTTP bool       `json:"console_out_http"`
-	LogHTTP        bool       `json:"http_log"`
+type LoggingConfig struct {
+	Level          *string          `json:"level"`
+	Appenders      []AppenderConfig `json:"appenders"`
+	ConsoleOutHTTP bool             `json:"console_out_http"`
+	LogHTTP        bool             `json:"http_log"`
 }

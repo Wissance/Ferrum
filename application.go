@@ -28,6 +28,7 @@ type Application struct {
 	dataProvider   *managers.DataContext
 	webApiHandler  *r.WebApiHandler
 	webApiContext  *rest.WebApiContext
+	Logger         *logging.AppLogger
 }
 
 func CreateAppWithConfigs(configFile string, dataFile string, secretKeyFile string) application.AppRunner {
@@ -41,7 +42,6 @@ func CreateAppWithConfigs(configFile string, dataFile string, secretKeyFile stri
 
 func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte) application.AppRunner {
 	app := &Application{appConfig: appConfig, secretKey: &secretKey, serverData: serverData}
-
 	appRunner := application.AppRunner(app)
 	return appRunner
 }
@@ -51,7 +51,7 @@ func (app *Application) Start() (bool, error) {
 	go func() {
 		err = app.startWebService()
 		if err != nil {
-			fmt.Println(stringFormatter.Format("An error occurred during API Service Start"))
+			app.Logger.Error(stringFormatter.Format("An error occurred during API Service Start"))
 		}
 	}()
 	return err == nil, err
@@ -75,17 +75,19 @@ func (app *Application) Init() (bool, error) {
 		app.secretKey = key
 	}
 	// common part: both configs and direct struct pass
+	// init logger
+	app.Logger = logging.CreateLogger(&app.appConfig.Logging)
 	// init users, today we are reading data file
 	err := app.initDataProviders()
 	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during data providers init: {0}", err.Error()))
+		app.Logger.Error(stringFormatter.Format("An error occurred during data providers init: {0}", err.Error()))
 		return false, err
 	}
 
 	// init webapi
 	err = app.initRestApi()
 	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during rest api init: {0}", err.Error()))
+		app.Logger.Error(stringFormatter.Format("An error occurred during rest api init: {0}", err.Error()))
 		return false, err
 	}
 	return true, nil
@@ -98,19 +100,19 @@ func (app *Application) Stop() (bool, error) {
 func (app *Application) readAppConfig() error {
 	absPath, err := filepath.Abs(*app.appConfigFile)
 	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during getting config file abs path: {0}", err.Error()))
+		app.Logger.Error(stringFormatter.Format("An error occurred during getting config file abs path: {0}", err.Error()))
 		return err
 	}
 
 	fileData, err := ioutil.ReadFile(absPath)
 	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during config file reading: {0}", err.Error()))
+		app.Logger.Error(stringFormatter.Format("An error occurred during config file reading: {0}", err.Error()))
 		return err
 	}
 
 	app.appConfig = &config.AppConfig{}
 	if err = json.Unmarshal(fileData, app.appConfig); err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during config file unmarshal: {0}", err.Error()))
+		app.Logger.Error(stringFormatter.Format("An error occurred during config file unmarshal: {0}", err.Error()))
 		return err
 	}
 
@@ -154,18 +156,18 @@ func (app *Application) startWebService() error {
 	address := stringFormatter.Format(addressTemplate, app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
 	switch app.appConfig.ServerCfg.Schema { //nolint:exhaustive
 	case config.HTTP:
-		fmt.Println(stringFormatter.Format("Starting \"HTTP\" WEB API Service on address: \"{0}\"", address))
+		app.Logger.Info(stringFormatter.Format("Starting \"HTTP\" WEB API Service on address: \"{0}\"", address))
 		err = http.ListenAndServe(address, app.webApiHandler.Router)
 		if err != nil {
-			fmt.Println(stringFormatter.Format("An error occurred during attempt to start \"HTTP\" WEB API Service: {0}", err.Error()))
+			app.Logger.Error(stringFormatter.Format("An error occurred during attempt to start \"HTTP\" WEB API Service: {0}", err.Error()))
 		}
 	case config.HTTPS:
-		fmt.Println(stringFormatter.Format("Starting \"HTTPS\" REST API Service on address: \"{0}\"", address))
+		app.Logger.Info(stringFormatter.Format("Starting \"HTTPS\" REST API Service on address: \"{0}\"", address))
 		cert := app.appConfig.ServerCfg.Security.CertificateFile
 		key := app.appConfig.ServerCfg.Security.KeyFile
 		err = http.ListenAndServeTLS(address, cert, key, app.webApiHandler.Router)
 		if err != nil {
-			fmt.Println(stringFormatter.Format("An error occurred during attempt tp start \"HTTPS\" REST API Service: {0}", err.Error()))
+			app.Logger.Error(stringFormatter.Format("An error occurred during attempt tp start \"HTTPS\" REST API Service: {0}", err.Error()))
 		}
 	}
 	return err
@@ -174,13 +176,13 @@ func (app *Application) startWebService() error {
 func (app *Application) readKey() *[]byte {
 	absPath, err := filepath.Abs(*app.appConfigFile)
 	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during getting key file abs path: {0}", err.Error()))
+		app.Logger.Error(stringFormatter.Format("An error occurred during getting key file abs path: {0}", err.Error()))
 		return nil
 	}
 
 	fileData, err := ioutil.ReadFile(absPath)
 	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during key file reading: {0}", err.Error()))
+		app.Logger.Error(stringFormatter.Format("An error occurred during key file reading: {0}", err.Error()))
 		return nil
 	}
 
