@@ -17,11 +17,12 @@ func main() {
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	app := CreateAppWithConfigs("./config.json", "./data.json", "./keyfile")
 	res, initErr := app.Init()
+	logger := app.GetLogger()
 	if initErr != nil {
-		fmt.Println("An error occurred during app init, terminating the app")
+		logger.Error("An error occurred during app init, terminating the app")
 		os.Exit(-1)
 	} else {
-		fmt.Println("Application was successfully initialized")
+		logger.Info("Application was successfully initialized")
 	}
 
 	res, err := app.Start()
@@ -29,13 +30,13 @@ func main() {
 		msg := stringFormatter.Format("An error occurred during starting application, error is: {0}", err.Error())
 		fmt.Println(msg)
 	} else {
-		fmt.Println("Application was successfully started")
+		logger.Info("Application was successfully started")
 	}
 
 	go func() {
 		sig := <-osSignal
 		//logging.InfoLog(stringFormatter.Format("Got signal from OS: {0}", sig))
-		fmt.Println(stringFormatter.Format("Got signal from OS: \"{0}\", stopping", sig))
+		logger.Info(stringFormatter.Format("Got signal from OS: \"{0}\", stopping", sig))
 		done <- true
 	}()
 	<-done
@@ -45,7 +46,7 @@ func main() {
 		msg := stringFormatter.Format("An error occurred during stopping application, error is: {0}", err.Error())
 		fmt.Println(msg)
 	} else {
-		fmt.Println("Application was successfully stopped")
+		logger.Info("Application was successfully stopped")
 	}
 
 }
