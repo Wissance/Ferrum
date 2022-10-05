@@ -2,9 +2,9 @@ package services
 
 import (
 	"Ferrum/data"
+	"Ferrum/logging"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/wissance/stringFormatter"
@@ -13,6 +13,7 @@ import (
 
 type JwtGenerator struct {
 	SignKey []byte
+	logger  *logging.AppLogger
 }
 
 func (generator *JwtGenerator) GenerateJwtAccessToken(realmBaseUrl string, tokenType string, scope string, sessionData *data.UserSession,
@@ -33,7 +34,7 @@ func (generator *JwtGenerator) generateJwtAccessToken(tokenData *data.AccessToke
 	//token.SignedString([]byte("secureSecretText"))
 	if err != nil {
 		//todo(UMV): think what to do on Error
-		fmt.Println(stringFormatter.Format("An error occurred during signed Jwt Access Token Generation: {0}", err.Error()))
+		generator.logger.Error(stringFormatter.Format("An error occurred during signed Jwt Access Token Generation: {0}", err.Error()))
 	}
 
 	return signedToken
@@ -44,14 +45,13 @@ func (generator *JwtGenerator) generateJwtRefreshToken(tokenData *data.TokenRefr
 	signedToken, err := token.SignedString(generator.SignKey)
 	if err != nil {
 		//todo(UMV): think what to do on Error
-		fmt.Println(stringFormatter.Format("An error occurred during signed Jwt Refresh Token Generation: {0}", err.Error()))
+		generator.logger.Error(stringFormatter.Format("An error occurred during signed Jwt Refresh Token Generation: {0}", err.Error()))
 	}
 	return signedToken
 }
 
 func (generator *JwtGenerator) prepareAccessToken(realmBaseUrl string, tokenType string, scope string, sessionData *data.UserSession,
 	userData *data.User) *data.AccessTokenData {
-	//issuer := stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
 	issuer := realmBaseUrl
 	jwtCommon := data.JwtCommonInfo{Issuer: issuer, Type: tokenType, Audience: "account", Scope: scope, JwtId: uuid.New(),
 		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
@@ -61,7 +61,6 @@ func (generator *JwtGenerator) prepareAccessToken(realmBaseUrl string, tokenType
 }
 
 func (generator *JwtGenerator) prepareRefreshToken(realmBaseUrl string, tokenType string, scope string, sessionData *data.UserSession) *data.TokenRefreshData {
-	//issuer := stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
 	issuer := realmBaseUrl
 	jwtCommon := data.JwtCommonInfo{Issuer: issuer, Type: tokenType, Audience: issuer, Scope: scope, JwtId: uuid.New(),
 		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
