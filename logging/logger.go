@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mattn/go-colorable"
 	"io"
+	"os"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -31,6 +32,8 @@ type AppLogger struct {
 	loggerCfg *config.LoggingConfig
 }
 
+//AppLogger
+
 func CreateLogger(cfg *config.LoggingConfig) *AppLogger {
 	return &AppLogger{loggerCfg: cfg, logger: log.New()}
 }
@@ -56,6 +59,10 @@ func (l *AppLogger) Trace(message string) {
 }
 
 func (l *AppLogger) Init() {
+	if l.loggerCfg == nil {
+		return
+	}
+
 	l.logger.Out = io.Discard
 	for _, a := range l.loggerCfg.Appenders {
 		if !a.Enabled {
@@ -69,6 +76,12 @@ func (l *AppLogger) Init() {
 
 		switch a.Type {
 		case config.RollingFile:
+			logFilePath, _ := filepath.Abs(string(a.Destination.File))
+			logsDir := filepath.Dir(logFilePath)
+			if _, err := os.Stat(logsDir); os.IsNotExist(err) {
+				_ = os.Mkdir(logsDir, os.ModeAppend)
+			}
+
 			hook, _ := rotatefilehook.NewRotateFileHook(rotatefilehook.RotateFileConfig{
 				Filename:   string(a.Destination.File),
 				MaxSize:    a.Destination.MaxSize,
