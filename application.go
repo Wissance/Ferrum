@@ -126,7 +126,7 @@ func (app *Application) readAppConfig() error {
 
 func (app *Application) initDataProviders() error {
 	if app.dataConfigFile != nil {
-		dataProvider := managers.CreateAndContextInitWithDataFile(*app.dataConfigFile)
+		dataProvider := managers.CreateAndContextInitWithDataFile(*app.dataConfigFile, app.logger)
 		app.dataProvider = &dataProvider
 	} else {
 		dataProvider := managers.CreateAndContextInitUsingData(app.serverData)
@@ -137,7 +137,7 @@ func (app *Application) initDataProviders() error {
 
 func (app *Application) initRestApi() error {
 	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
-	securityService := services.CreateSecurityService(app.dataProvider)
+	securityService := services.CreateSecurityService(app.dataProvider, app.logger)
 	app.webApiContext = &rest.WebApiContext{DataProvider: app.dataProvider, Security: &securityService,
 		TokenGenerator: &services.JwtGenerator{SignKey: *app.secretKey}, Logger: app.logger}
 	router := app.webApiHandler.Router
