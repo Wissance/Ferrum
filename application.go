@@ -77,6 +77,7 @@ func (app *Application) Init() (bool, error) {
 	// common part: both configs and direct struct pass
 	// init logger
 	app.Logger = logging.CreateLogger(&app.appConfig.Logging)
+	app.Logger.Init()
 	// init users, today we are reading data file
 	err := app.initDataProviders()
 	if err != nil {
