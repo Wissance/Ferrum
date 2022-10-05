@@ -13,7 +13,7 @@ import (
 
 type JwtGenerator struct {
 	SignKey []byte
-	logger  *logging.AppLogger
+	Logger  *logging.AppLogger
 }
 
 func (generator *JwtGenerator) GenerateJwtAccessToken(realmBaseUrl string, tokenType string, scope string, sessionData *data.UserSession,
@@ -34,7 +34,7 @@ func (generator *JwtGenerator) generateJwtAccessToken(tokenData *data.AccessToke
 	//token.SignedString([]byte("secureSecretText"))
 	if err != nil {
 		//todo(UMV): think what to do on Error
-		generator.logger.Error(stringFormatter.Format("An error occurred during signed Jwt Access Token Generation: {0}", err.Error()))
+		generator.Logger.Error(stringFormatter.Format("An error occurred during signed Jwt Access Token Generation: {0}", err.Error()))
 	}
 
 	return signedToken
@@ -45,7 +45,7 @@ func (generator *JwtGenerator) generateJwtRefreshToken(tokenData *data.TokenRefr
 	signedToken, err := token.SignedString(generator.SignKey)
 	if err != nil {
 		//todo(UMV): think what to do on Error
-		generator.logger.Error(stringFormatter.Format("An error occurred during signed Jwt Refresh Token Generation: {0}", err.Error()))
+		generator.Logger.Error(stringFormatter.Format("An error occurred during signed Jwt Refresh Token Generation: {0}", err.Error()))
 	}
 	return signedToken
 }

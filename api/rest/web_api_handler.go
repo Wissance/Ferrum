@@ -20,12 +20,14 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 	if len(realm) == 0 {
 		// 400
 		status = http.StatusBadRequest
+		wCtx.Logger.Debug("New token issue: realm wasn't provided")
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
 		// todo: validate ...
 		realmPtr := (*wCtx.DataProvider).GetRealm(realm)
 		if realmPtr == nil {
 			status = http.StatusNotFound
+			wCtx.Logger.Debug("New token issue: realm doesn't exist")
 			result = dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
 		} else {
 			// todo(UMV): think we don't have refresh strategy yet, add in v1.0 ...
@@ -34,6 +36,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 			err := request.ParseForm()
 			if err != nil {
 				status = http.StatusBadRequest
+				wCtx.Logger.Debug("New token issue: body is bad (unable to unmarshal to dto.TokenGenerationData)")
 				result = dto.ErrorDetails{Msg: errors.BadBodyForTokenGenerationMsg}
 			} else {
 				var decoder = schema.NewDecoder()
@@ -41,17 +44,20 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 				if err != nil {
 					// todo(UMV): log events
 					status = http.StatusBadRequest
+					wCtx.Logger.Debug("New token issue: body is bad (unable to unmarshal to dto.TokenGenerationData)")
 					result = dto.ErrorDetails{Msg: errors.BadBodyForTokenGenerationMsg}
 				} else {
 					// 1. Validate client data: client_id, client_secret (if we have so), scope
 					check := (*wCtx.Security).Validate(&tokenGenerationData, realmPtr)
 					if check != nil {
 						status = http.StatusBadRequest
+						wCtx.Logger.Debug("New token issue: client data is invalid (client_id or client_secret)")
 						result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 					} else {
 						// 2. Validate user credentials
 						check = (*wCtx.Security).CheckCredentials(&tokenGenerationData, realmPtr)
 						if check != nil {
+							wCtx.Logger.Debug("New token issue: user ")
 							status = http.StatusUnauthorized
 							result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 						} else {
