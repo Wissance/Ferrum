@@ -27,12 +27,12 @@ type DestinationConfig struct {
 type AppenderConfig struct {
 	Type        AppenderType       `json:"type"`
 	Enabled     bool               `json:"enabled"`
-	Level       *string            `json:"level"`
+	Level       string             `json:"level"`
 	Destination *DestinationConfig `json:"destination"`
 }
 
 type LoggingConfig struct {
-	Level          *string          `json:"level"`
+	Level          string           `json:"level"`
 	Appenders      []AppenderConfig `json:"appenders"`
 	ConsoleOutHTTP bool             `json:"console_out_http"`
 	LogHTTP        bool             `json:"http_log"`

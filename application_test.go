@@ -33,9 +33,10 @@ var testServerData = data.ServerData{
 			}},
 	},
 }
-var httpAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTP, Address: "127.0.0.1", Port: 8284}}
+var loggingConfig = config.LoggingConfig{Level: "info", Appenders: []config.AppenderConfig{config.AppenderConfig{Level: "info", Type: config.Console}}}
+var httpAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTP, Address: "127.0.0.1", Port: 8284}, Logging: loggingConfig}
 var httpsAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTPS, Address: "127.0.0.1", Port: 8672,
-	Security: config.SecurityConfig{KeyFile: "./certs/server.key", CertificateFile: "./certs/server.crt"}}}
+	Security: config.SecurityConfig{KeyFile: "./certs/server.key", CertificateFile: "./certs/server.crt"}}, Logging: loggingConfig}
 
 func TestApplicationOnHttp(t *testing.T) {
 	testRunCommonTestCycleImpl(t, &httpAppConfig, "http://127.0.0.1:8284")

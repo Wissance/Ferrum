@@ -69,10 +69,8 @@ func (l *AppLogger) Init() {
 			continue
 		}
 
-		level := l.getLevel(*l.loggerCfg.Level)
-		if a.Level != nil {
-			level = min(level, l.getLevel(*a.Level))
-		}
+		level := l.getLevel(l.loggerCfg.Level)
+		level = min(level, l.getLevel(a.Level))
 
 		switch a.Type {
 		case config.RollingFile:
