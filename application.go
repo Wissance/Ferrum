@@ -11,11 +11,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	r "github.com/wissance/gwuu/api/rest"
 	"github.com/wissance/stringFormatter"
+	"gopkg.in/natefinch/lumberjack.v2"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 )
 
@@ -30,6 +34,7 @@ type Application struct {
 	webApiHandler  *r.WebApiHandler
 	webApiContext  *rest.WebApiContext
 	logger         *logging.AppLogger
+	httpHandler    *http.Handler
 }
 
 func CreateAppWithConfigs(configFile string, dataFile string, secretKeyFile string) application.AppRunner {
@@ -145,6 +150,8 @@ func (app *Application) initRestApi() error {
 	router.StrictSlash(true)
 	app.initKeyCloakSimilarRestApiRoutes(router)
 	// Setting up listener for logging
+	appenderIndex := app.logger.GetAppenderIndex(config.RollingFile, app.appConfig.Logging.Appenders)
+	app.httpHandler = app.createHttpLoggingHandler(appenderIndex, router)
 	return nil
 }
 
@@ -162,7 +169,7 @@ func (app *Application) startWebService() error {
 	switch app.appConfig.ServerCfg.Schema { //nolint:exhaustive
 	case config.HTTP:
 		app.logger.Info(stringFormatter.Format("Starting \"HTTP\" WEB API Service on address: \"{0}\"", address))
-		err = http.ListenAndServe(address, app.webApiHandler.Router)
+		err = http.ListenAndServe(address, *app.httpHandler)
 		if err != nil {
 			app.logger.Error(stringFormatter.Format("An error occurred during attempt to start \"HTTP\" WEB API Service: {0}", err.Error()))
 		}
@@ -170,7 +177,7 @@ func (app *Application) startWebService() error {
 		app.logger.Info(stringFormatter.Format("Starting \"HTTPS\" REST API Service on address: \"{0}\"", address))
 		cert := app.appConfig.ServerCfg.Security.CertificateFile
 		key := app.appConfig.ServerCfg.Security.KeyFile
-		err = http.ListenAndServeTLS(address, cert, key, app.webApiHandler.Router)
+		err = http.ListenAndServeTLS(address, cert, key, *app.httpHandler)
 		if err != nil {
 			app.logger.Error(stringFormatter.Format("An error occurred during attempt tp start \"HTTPS\" REST API Service: {0}", err.Error()))
 		}
@@ -192,4 +199,28 @@ func (app *Application) readKey() *[]byte {
 	}
 
 	return &fileData
+}
+
+func (app *Application) createHttpLoggingHandler(index int, router *mux.Router) *http.Handler {
+	var resultRouter http.Handler = router
+
+	destination := app.appConfig.Logging.Appenders[index].Destination
+	lumberjackWriter := lumberjack.Logger{
+		Filename:   string(destination.File),
+		MaxSize:    destination.MaxSize,
+		MaxAge:     destination.MaxAge,
+		MaxBackups: destination.MaxBackups,
+		LocalTime:  destination.LocalTime,
+		Compress:   false,
+	}
+
+	if app.appConfig.Logging.LogHTTP {
+		if app.appConfig.Logging.ConsoleOutHTTP {
+			writer := io.MultiWriter(&lumberjackWriter, os.Stdout)
+			resultRouter = handlers.LoggingHandler(writer, router)
+		} else {
+			resultRouter = handlers.LoggingHandler(&lumberjackWriter, router)
+		}
+	}
+	return &resultRouter
 }
