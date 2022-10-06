@@ -34,6 +34,6 @@ type AppenderConfig struct {
 type LoggingConfig struct {
 	Level          string           `json:"level"`
 	Appenders      []AppenderConfig `json:"appenders"`
-	ConsoleOutHTTP bool             `json:"console_out_http"`
+	ConsoleOutHTTP bool             `json:"http_console_out"`
 	LogHTTP        bool             `json:"http_log"`
 }

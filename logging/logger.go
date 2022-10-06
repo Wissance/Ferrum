@@ -71,6 +71,7 @@ func (l *AppLogger) Init() {
 
 		level := l.getLevel(l.loggerCfg.Level)
 		level = min(level, l.getLevel(a.Level))
+		l.logger.SetLevel(level)
 
 		switch a.Type {
 		case config.RollingFile:
@@ -94,7 +95,6 @@ func (l *AppLogger) Init() {
 			l.logger.AddHook(hook)
 
 		case config.Console:
-			l.logger.SetLevel(level)
 			l.logger.SetOutput(colorable.NewColorableStdout())
 			l.logger.SetFormatter(&log.TextFormatter{
 				ForceColors:     true,
@@ -103,6 +103,16 @@ func (l *AppLogger) Init() {
 			})
 		}
 	}
+}
+
+func (l *AppLogger) GetAppenderIndex(appenderType config.AppenderType, appenders []config.AppenderConfig) int {
+	for i, v := range appenders {
+		if v.Type == appenderType {
+			return i
+		}
+	}
+
+	return -1
 }
 
 func (l *AppLogger) getLocation() string {
