@@ -57,7 +57,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 						// 2. Validate user credentials
 						check = (*wCtx.Security).CheckCredentials(&tokenGenerationData, realmPtr)
 						if check != nil {
-							wCtx.Logger.Debug("New token issue: user ")
+							wCtx.Logger.Debug("New token issue: invalid user credentials (username or password)")
 							status = http.StatusUnauthorized
 							result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 						} else {
@@ -96,11 +96,13 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 	status := http.StatusOK
 	if len(realm) == 0 {
 		// 400
+		wCtx.Logger.Debug("Get userinfo: realm wasn't provided")
 		status = http.StatusBadRequest
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
 		realmPtr := (*wCtx.DataProvider).GetRealm(realm)
 		if realmPtr == nil {
+			wCtx.Logger.Debug("Get userinfo: realm doesn't exist")
 			status = http.StatusNotFound
 			result = dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
 		} else {
@@ -108,16 +110,19 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 			authorization := request.Header.Get("Authorization")
 			parts := strings.Split(authorization, " ")
 			if parts[0] != "Bearer" {
+				wCtx.Logger.Debug("Get userinfo: expected only Bearer authorization yet")
 				status = http.StatusBadRequest
 				result = dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
 			} else {
 				session := (*wCtx.Security).GetSessionByAccessToken(realm, &parts[1])
 				if session == nil {
+					wCtx.Logger.Debug("Get userinfo: invalid token")
 					status = http.StatusUnauthorized
 					result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
 				} else {
 					if session.Expired.Before(time.Now()) {
 						status = http.StatusUnauthorized
+						wCtx.Logger.Debug("Get userinfo: token expired")
 						result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
 					} else {
 						user := (*wCtx.DataProvider).GetUserById(realmPtr, session.UserId)
