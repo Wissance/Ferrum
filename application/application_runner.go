@@ -1,8 +1,8 @@
 package application
 
 import (
-	"Ferrum/logging"
 	"context"
+	"github.com/wissance/Ferrum/logging"
 )
 
 type AppContextBase struct {

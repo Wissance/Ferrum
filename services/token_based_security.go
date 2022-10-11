@@ -5,6 +5,7 @@ import (
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/dto"
 	"github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/Ferrum/managers"
 	"time"
 )

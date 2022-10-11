@@ -10,6 +10,7 @@ import (
 	"github.com/wissance/Ferrum/application"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
+	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/Ferrum/managers"
 	"github.com/wissance/Ferrum/services"
 	r "github.com/wissance/gwuu/api/rest"
