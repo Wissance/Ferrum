@@ -1,4 +1,4 @@
-package main
+package ferrum
 
 import (
 	"crypto/tls"
