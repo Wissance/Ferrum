@@ -1,12 +1,12 @@
 package services
 
 import (
-	"Ferrum/data"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
+	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/stringFormatter"
 	"strings"
 )

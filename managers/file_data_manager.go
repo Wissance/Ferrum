@@ -1,10 +1,10 @@
 package managers
 
 import (
-	"Ferrum/data"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/stringFormatter"
 	"io/ioutil"
 	"path/filepath"

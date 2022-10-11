@@ -1,11 +1,11 @@
 package services
 
 import (
-	"Ferrum/data"
-	"Ferrum/dto"
-	"Ferrum/errors"
-	"Ferrum/managers"
 	"github.com/google/uuid"
+	"github.com/wissance/Ferrum/data"
+	"github.com/wissance/Ferrum/dto"
+	"github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/managers"
 	"time"
 )
 

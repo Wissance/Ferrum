@@ -1,10 +1,10 @@
 package rest
 
 import (
-	"Ferrum/dto"
-	"Ferrum/errors"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	"github.com/wissance/Ferrum/dto"
+	"github.com/wissance/Ferrum/errors"
 	"github.com/wissance/stringFormatter"
 	"net/http"
 	"strings"
