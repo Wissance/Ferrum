@@ -1,16 +1,16 @@
 package main
 
 import (
-	"Ferrum/api/rest"
-	"Ferrum/application"
-	"Ferrum/config"
-	"Ferrum/data"
-	"Ferrum/managers"
-	"Ferrum/services"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/wissance/Ferrum/api/rest"
+	"github.com/wissance/Ferrum/application"
+	"github.com/wissance/Ferrum/config"
+	"github.com/wissance/Ferrum/data"
+	"github.com/wissance/Ferrum/managers"
+	"github.com/wissance/Ferrum/services"
 	r "github.com/wissance/gwuu/api/rest"
 	"github.com/wissance/stringFormatter"
 	"io/ioutil"

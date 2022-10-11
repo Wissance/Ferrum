@@ -1,4 +1,4 @@
-module Ferrum
+module github.com/wissance/Ferrum
 
 go 1.18
 

@@ -1,8 +1,8 @@
 package managers
 
 import (
-	"Ferrum/data"
 	"github.com/google/uuid"
+	"github.com/wissance/Ferrum/data"
 )
 
 type DataContext interface {

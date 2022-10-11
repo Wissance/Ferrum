@@ -1,9 +1,9 @@
 package services
 
 import (
-	"Ferrum/data"
-	"Ferrum/dto"
 	"github.com/google/uuid"
+	"github.com/wissance/Ferrum/data"
+	"github.com/wissance/Ferrum/dto"
 )
 
 type SecurityService interface {

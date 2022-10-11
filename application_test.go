@@ -1,13 +1,13 @@
 package main
 
 import (
-	"Ferrum/config"
-	"Ferrum/data"
-	"Ferrum/dto"
-	"Ferrum/errors"
 	"crypto/tls"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"github.com/wissance/Ferrum/config"
+	"github.com/wissance/Ferrum/data"
+	"github.com/wissance/Ferrum/dto"
+	"github.com/wissance/Ferrum/errors"
 	"github.com/wissance/stringFormatter"
 	"io"
 	"net/http"
