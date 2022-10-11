@@ -14,14 +14,13 @@ require (
 	github.com/stretchr/testify v1.8.0
 	github.com/ttys3/rotatefilehook v1.0.0
 	github.com/wissance/gwuu v1.2.4
-	github.com/wissance/stringFormatter v0.2.1
+	github.com/wissance/stringFormatter v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
-	github.com/golang/glog v1.0.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

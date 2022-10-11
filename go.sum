@@ -21,8 +21,6 @@ github.com/golang-jwt/jwt/v4 v4.4.2 h1:rcc4lwaZgFMCZ5jxF9ABolDcIHdBytAFgqFPbSJQA
 github.com/golang-jwt/jwt/v4 v4.4.2/go.mod h1:m21LjoU+eqJr34lmDMbreY2eSTRJ1cv77w39/MY0Ch0=
 github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe/go.mod h1:8vg3r2VgvsThLBIFL93Qb5yWzgyZWhEmBwUJWevAkK0=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
-github.com/golang/glog v1.0.0 h1:nfP3RFugxnNRyKgeWd4oI1nYvXpxrx8ck8ZrcizshdQ=
-github.com/golang/glog v1.0.0/go.mod h1:EWib/APOK0SL3dFbYqvxE3UYd8E6s1ouQ7iEp/0LWV4=
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
@@ -138,8 +136,9 @@ github.com/ttys3/rotatefilehook v1.0.0 h1:vj0PsFZ0AAb7T9OqADrooBfSuDiG3uMSCDz/+j
 github.com/ttys3/rotatefilehook v1.0.0/go.mod h1:ZI8CxP/sPRbE10LkBhWkJYSP7smfuDNKcKpweSVWcKI=
 github.com/wissance/gwuu v1.2.4 h1:xn37b+wutKajq3ukOEWL6pj9arcqA3yVFrVGB1uYlTA=
 github.com/wissance/gwuu v1.2.4/go.mod h1:XAcqSL35PCoSg/4WeGOJcDxJgMKLMo0+YW+kxUT0tGw=
-github.com/wissance/stringFormatter v0.2.1 h1:vBUCmiKqN4B4XesFfPqsnNp7jiwCRR8nmqL45vK9s3M=
 github.com/wissance/stringFormatter v0.2.1/go.mod h1:lnql1aAB1vyG10k8UbRA0Srilb+tNjmtHRs860OmClM=
+github.com/wissance/stringFormatter v1.0.1 h1:6ijP/lsSX+IQIq8dNxEmzRmwmSQnRsWIGAhFE7sLP6w=
+github.com/wissance/stringFormatter v1.0.1/go.mod h1:H7Mz15+5i8ypmv6bLknM/uD+U1teUW99PlW0DNCNscA=
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
