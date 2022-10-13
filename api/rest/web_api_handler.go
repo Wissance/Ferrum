@@ -190,24 +190,6 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	afterHandle(&respWriter, status, &result)
 }
 
-//func checkSecret(realmPtr *data.Realm, secretPair []string) bool {
-//	clientId := secretPair[0]
-//	clientSecret := secretPair[1]
-//	for _, c := range realmPtr.Clients {
-//		if c.Name == clientId {
-//			if c.Type == data.Public {
-//				return true
-//			}
-//
-//			// here we make deal with confidential client
-//			if c.Auth.Type == data.ClientIdAndSecrets && c.Auth.Value == clientSecret {
-//				return true
-//			}
-//
-//		}
-//	}
-//	return false
-//}
 func (wCtx *WebApiContext) getRealmBaseUrl(realm string) string {
 	return stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
 }
