@@ -2,6 +2,7 @@ package ferrum
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/wissance/Ferrum/config"
@@ -12,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -64,9 +66,23 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	userInfo := getUserInfo(t, baseUrl, realm, token.AccessToken, "200 OK")
 	assert.True(t, len(userInfo) > 0)
 	assert.Equal(t, username, userInfo["preferred_username"])
+
+	// token introspect
+	tokenIntResult := checkIntrospectToken(t, baseUrl, realm, token.AccessToken, "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz", "200 OK")
+	active, ok := tokenIntResult["active"]
+	assert.True(t, ok)
+	assert.True(t, active.(bool))
+
+	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, "wrongClientId", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz", "401 Unauthorized")
+	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, "testclient1", "wrongSecret", "401 Unauthorized")
+	checkIntrospectToken(t, baseUrl, realm, "wrongToken", "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz", "401 Unauthorized")
+
 	time.Sleep(time.Second * time.Duration(10))
 	userInfo = getUserInfo(t, baseUrl, realm, token.AccessToken, "401 Unauthorized")
 	// wait token expiration and call one more, got 401
+	tokenIntResult = checkIntrospectToken(t, baseUrl, realm, token.AccessToken, "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz", "200 OK")
+	active, ok = tokenIntResult["active"]
+	assert.True(t, ok == false || active == nil || active.(bool) == false)
 
 	// try with bad client credentials
 	response = issueNewToken(t, baseUrl, realm, "unknownClient", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
@@ -119,6 +135,29 @@ func getUserInfo(t *testing.T, baseUrl string, realm string, token string, expec
 	response, err := client.Do(request)
 	assert.Equal(t, expectedStatus, response.Status)
 	assert.Nil(t, err)
+	responseBody, err := io.ReadAll(response.Body)
+	assert.Nil(t, err)
+	var result map[string]interface{}
+	err = json.Unmarshal(responseBody, &result)
+	assert.Nil(t, err)
+	return result
+}
+func checkIntrospectToken(t *testing.T, baseUrl string, realm string, token string, clientId string, clientSecret string, expectedStatus string) map[string]interface{} {
+	urlTemplate := "{0}/auth/realms/{1}/protocol/openid-connect/token/introspect/"
+	reqUrl := stringFormatter.Format(urlTemplate, baseUrl, realm)
+	client := http.Client{}
+	formData := url.Values{}
+	formData.Set("token_type_hint", "requesting_party_token")
+	formData.Set("token", token)
+	request, err := http.NewRequest("POST", reqUrl, strings.NewReader(formData.Encode()))
+	assert.NoError(t, err)
+	httpBasicAuth := base64.StdEncoding.EncodeToString([]byte(clientId + ":" + clientSecret))
+	request.Header.Set("Authorization", "Basic "+httpBasicAuth)
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	response, err := client.Do(request)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedStatus, response.Status)
 	responseBody, err := io.ReadAll(response.Body)
 	assert.Nil(t, err)
 	var result map[string]interface{}

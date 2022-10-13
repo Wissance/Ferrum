@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"encoding/base64"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/wissance/Ferrum/dto"
@@ -123,6 +124,68 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 				}
 			}
 		}
+	}
+	afterHandle(&respWriter, status, &result)
+}
+func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *http.Request) {
+	beforeHandle(&respWriter)
+	vars := mux.Vars(request)
+	realm := vars["realm"]
+	if len(realm) == 0 {
+		// 400
+		status := http.StatusBadRequest
+		result := dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
+		afterHandle(&respWriter, status, &result)
+		return
+	}
+	realmPtr := (*wCtx.DataProvider).GetRealm(realm)
+	if realmPtr == nil {
+		status := http.StatusNotFound
+		result := dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
+		afterHandle(&respWriter, status, &result)
+		return
+	}
+	authorization := request.Header.Get("Authorization")
+	parts := strings.Split(authorization, " ")
+	if parts[0] != "Basic" {
+		status := http.StatusBadRequest
+		result := dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
+		afterHandle(&respWriter, status, &result)
+		return
+	}
+	basicString, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		status := http.StatusBadRequest
+		result := dto.ErrorDetails{Msg: errors.InvalidClientMsg, Description: errors.InvalidClientCredentialDesc}
+		afterHandle(&respWriter, status, &result)
+		return
+	}
+	secretPair := strings.Split(string(basicString), ":")
+	checkResult := (*wCtx.Security).Validate(&dto.TokenGenerationData{
+		ClientSecret: secretPair[1],
+		ClientId:     secretPair[0],
+	}, realmPtr)
+	if checkResult != nil {
+		status := http.StatusUnauthorized
+		result := dto.ErrorDetails{Msg: errors.InvalidClientMsg, Description: errors.InvalidClientCredentialDesc}
+		afterHandle(&respWriter, status, &result)
+		return
+	}
+	token := request.FormValue("token")
+	session := (*wCtx.Security).GetSessionByAccessToken(realm, &token)
+	if session == nil {
+		status := http.StatusUnauthorized
+		result := dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
+		afterHandle(&respWriter, status, &result)
+		return
+	}
+	active := !session.Expired.Before(time.Now())
+	status := http.StatusOK
+	tokenType := "Bearer"
+	result := dto.IntrospectTokenResult{
+		Active: active,
+		Type:   tokenType,
+		Exp:    realmPtr.TokenExpiration,
 	}
 	afterHandle(&respWriter, status, &result)
 }
