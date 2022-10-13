@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
-	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/dto"
 	"github.com/wissance/Ferrum/errors"
 	"github.com/wissance/stringFormatter"
@@ -162,8 +161,11 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 		return
 	}
 	secretPair := strings.Split(string(basicString), ":")
-	checkResult := checkSecret(realmPtr, secretPair)
-	if !checkResult {
+	checkResult := (*wCtx.Security).Validate(&dto.TokenGenerationData{
+		ClientSecret: secretPair[1],
+		ClientId:     secretPair[0],
+	}, realmPtr)
+	if checkResult != nil {
 		status := http.StatusUnauthorized
 		result := dto.ErrorDetails{Msg: errors.InvalidClientMsg, Description: errors.InvalidClientCredentialDesc}
 		afterHandle(&respWriter, status, &result)
@@ -181,30 +183,31 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	status := http.StatusOK
 	tokenType := "Bearer"
 	result := dto.IntrospectTokenResult{
-		Active: &active,
-		Type:   &tokenType,
-		Exp:    &realmPtr.TokenExpiration,
+		Active: active,
+		Type:   tokenType,
+		Exp:    realmPtr.TokenExpiration,
 	}
 	afterHandle(&respWriter, status, &result)
 }
-func checkSecret(realmPtr *data.Realm, secretPair []string) bool {
-	clientId := secretPair[0]
-	clientSecret := secretPair[1]
-	for _, c := range realmPtr.Clients {
-		if c.Name == clientId {
-			if c.Type == data.Public {
-				return true
-			}
 
-			// here we make deal with confidential client
-			if c.Auth.Type == data.ClientIdAndSecrets && c.Auth.Value == clientSecret {
-				return true
-			}
-
-		}
-	}
-	return false
-}
+//func checkSecret(realmPtr *data.Realm, secretPair []string) bool {
+//	clientId := secretPair[0]
+//	clientSecret := secretPair[1]
+//	for _, c := range realmPtr.Clients {
+//		if c.Name == clientId {
+//			if c.Type == data.Public {
+//				return true
+//			}
+//
+//			// here we make deal with confidential client
+//			if c.Auth.Type == data.ClientIdAndSecrets && c.Auth.Value == clientSecret {
+//				return true
+//			}
+//
+//		}
+//	}
+//	return false
+//}
 func (wCtx *WebApiContext) getRealmBaseUrl(realm string) string {
 	return stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
 }
