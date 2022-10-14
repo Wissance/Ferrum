@@ -2,9 +2,9 @@ package managers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/data"
+	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/stringFormatter"
 	"io/ioutil"
 	"path/filepath"
@@ -13,19 +13,23 @@ import (
 type FileDataManager struct {
 	dataFile   string
 	serverData data.ServerData
+	logger     *logging.AppLogger
 }
 
-func CreateAndContextInitWithDataFile(dataFile string) DataContext {
+func CreateAndContextInitWithDataFile(dataFile string, logger *logging.AppLogger) DataContext {
 	absPath, err := filepath.Abs(dataFile)
 	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during attempt to get abs path of data file: {0}", err.Error()))
+		// todo: umv: think what to do on error
+		msg := stringFormatter.Format("An error occurred during attempt to get abs path of data file: {0}", err.Error())
+		logger.Error(msg)
 	}
 	// init, load data in memory ...
-	mn := &FileDataManager{dataFile: absPath}
+	mn := &FileDataManager{dataFile: absPath, logger: logger}
 	err = mn.loadData()
 	if err != nil {
 		// at least and think what to do further
-		fmt.Println(stringFormatter.Format("An error occurred during data loading: {0}", err.Error()))
+		msg := stringFormatter.Format("An error occurred during data loading: {0}", err.Error())
+		logger.Error(msg)
 	}
 	dc := DataContext(mn)
 	return dc
@@ -93,12 +97,12 @@ func (mn *FileDataManager) GetRealmUsers(realmName string) *[]data.User {
 func (mn *FileDataManager) loadData() error {
 	rawData, err := ioutil.ReadFile(mn.dataFile)
 	if err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during config file reading: {0}", err.Error()))
+		mn.logger.Error(stringFormatter.Format("An error occurred during config file reading: {0}", err.Error()))
 		return err
 	}
 	mn.serverData = data.ServerData{}
 	if err = json.Unmarshal(rawData, &mn.serverData); err != nil {
-		fmt.Println(stringFormatter.Format("An error occurred during data file unmarshal: {0}", err.Error()))
+		mn.logger.Error(stringFormatter.Format("An error occurred during data file unmarshal: {0}", err.Error()))
 		return err
 	}
 

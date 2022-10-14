@@ -5,6 +5,7 @@ import (
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/dto"
 	"github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/Ferrum/managers"
 	"time"
 )
@@ -12,10 +13,11 @@ import (
 type TokenBasedSecurityService struct {
 	DataProvider *managers.DataContext
 	UserSessions map[string][]data.UserSession
+	logger       *logging.AppLogger
 }
 
-func CreateSecurityService(dataProvider *managers.DataContext) SecurityService {
-	pwdSecService := &TokenBasedSecurityService{DataProvider: dataProvider, UserSessions: map[string][]data.UserSession{}}
+func CreateSecurityService(dataProvider *managers.DataContext, logger *logging.AppLogger) SecurityService {
+	pwdSecService := &TokenBasedSecurityService{DataProvider: dataProvider, UserSessions: map[string][]data.UserSession{}, logger: logger}
 	secService := SecurityService(pwdSecService)
 	return secService
 }
@@ -24,11 +26,13 @@ func (service *TokenBasedSecurityService) Validate(tokenIssueData *dto.TokenGene
 	for _, c := range realm.Clients {
 		if c.Name == tokenIssueData.ClientId {
 			if c.Type == data.Public {
+				service.logger.Trace("Public client was successfully validated")
 				return nil
 			}
 
 			// here we make deal with confidential client
 			if c.Auth.Type == data.ClientIdAndSecrets && c.Auth.Value == tokenIssueData.ClientSecret {
+				service.logger.Trace("Private client was successfully validated")
 				return nil
 			}
 
@@ -40,12 +44,14 @@ func (service *TokenBasedSecurityService) Validate(tokenIssueData *dto.TokenGene
 func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError {
 	user := (*service.DataProvider).GetUser(realm, tokenIssueData.Username)
 	if user == nil {
+		service.logger.Trace("Credential check: username mismatch")
 		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
 	}
 
 	// todo(UMV): use hash instead raw passwords
 	password := (*user).GetPassword()
 	if password != tokenIssueData.Password {
+		service.logger.Trace("Credential check: password mismatch")
 		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
 	}
 	return nil

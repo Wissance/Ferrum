@@ -21,12 +21,14 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 	if len(realm) == 0 {
 		// 400
 		status = http.StatusBadRequest
+		wCtx.Logger.Debug("New token issue: realm wasn't provided")
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
 		// todo: validate ...
 		realmPtr := (*wCtx.DataProvider).GetRealm(realm)
 		if realmPtr == nil {
 			status = http.StatusNotFound
+			wCtx.Logger.Debug("New token issue: realm doesn't exist")
 			result = dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
 		} else {
 			// todo(UMV): think we don't have refresh strategy yet, add in v1.0 ...
@@ -35,6 +37,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 			err := request.ParseForm()
 			if err != nil {
 				status = http.StatusBadRequest
+				wCtx.Logger.Debug("New token issue: body is bad (unable to unmarshal to dto.TokenGenerationData)")
 				result = dto.ErrorDetails{Msg: errors.BadBodyForTokenGenerationMsg}
 			} else {
 				var decoder = schema.NewDecoder()
@@ -42,17 +45,20 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 				if err != nil {
 					// todo(UMV): log events
 					status = http.StatusBadRequest
+					wCtx.Logger.Debug("New token issue: body is bad (unable to unmarshal to dto.TokenGenerationData)")
 					result = dto.ErrorDetails{Msg: errors.BadBodyForTokenGenerationMsg}
 				} else {
 					// 1. Validate client data: client_id, client_secret (if we have so), scope
 					check := (*wCtx.Security).Validate(&tokenGenerationData, realmPtr)
 					if check != nil {
 						status = http.StatusBadRequest
+						wCtx.Logger.Debug("New token issue: client data is invalid (client_id or client_secret)")
 						result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 					} else {
 						// 2. Validate user credentials
 						check = (*wCtx.Security).CheckCredentials(&tokenGenerationData, realmPtr)
 						if check != nil {
+							wCtx.Logger.Debug("New token issue: invalid user credentials (username or password)")
 							status = http.StatusUnauthorized
 							result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 						} else {
@@ -91,11 +97,13 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 	status := http.StatusOK
 	if len(realm) == 0 {
 		// 400
+		wCtx.Logger.Debug("Get userinfo: realm wasn't provided")
 		status = http.StatusBadRequest
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
 		realmPtr := (*wCtx.DataProvider).GetRealm(realm)
 		if realmPtr == nil {
+			wCtx.Logger.Debug("Get userinfo: realm doesn't exist")
 			status = http.StatusNotFound
 			result = dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
 		} else {
@@ -103,16 +111,19 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 			authorization := request.Header.Get("Authorization")
 			parts := strings.Split(authorization, " ")
 			if parts[0] != "Bearer" {
+				wCtx.Logger.Debug("Get userinfo: expected only Bearer authorization yet")
 				status = http.StatusBadRequest
 				result = dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
 			} else {
 				session := (*wCtx.Security).GetSessionByAccessToken(realm, &parts[1])
 				if session == nil {
+					wCtx.Logger.Debug("Get userinfo: invalid token")
 					status = http.StatusUnauthorized
 					result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
 				} else {
 					if session.Expired.Before(time.Now()) {
 						status = http.StatusUnauthorized
+						wCtx.Logger.Debug("Get userinfo: token expired")
 						result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
 					} else {
 						user := (*wCtx.DataProvider).GetUserById(realmPtr, session.UserId)
@@ -134,6 +145,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	if len(realm) == 0 {
 		// 400
 		status := http.StatusBadRequest
+		wCtx.Logger.Debug("Introspect: realm is missing")
 		result := dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 		afterHandle(&respWriter, status, &result)
 		return
@@ -141,6 +153,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	realmPtr := (*wCtx.DataProvider).GetRealm(realm)
 	if realmPtr == nil {
 		status := http.StatusNotFound
+		wCtx.Logger.Debug(stringFormatter.Format("Introspect: realm \"{0}\" doesn't exists", realm))
 		result := dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
 		afterHandle(&respWriter, status, &result)
 		return
@@ -149,6 +162,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	parts := strings.Split(authorization, " ")
 	if parts[0] != "Basic" {
 		status := http.StatusBadRequest
+		wCtx.Logger.Debug(stringFormatter.Format("Introspect: Basic value not provided in Authorization header value - \"{0}\"", parts[0]))
 		result := dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
 		afterHandle(&respWriter, status, &result)
 		return
@@ -156,6 +170,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	basicString, err := base64.StdEncoding.DecodeString(parts[1])
 	if err != nil {
 		status := http.StatusBadRequest
+		wCtx.Logger.Debug(stringFormatter.Format("Introspect: invalid client credentials encoding, should be base64, decoding error: {0}", err.Error()))
 		result := dto.ErrorDetails{Msg: errors.InvalidClientMsg, Description: errors.InvalidClientCredentialDesc}
 		afterHandle(&respWriter, status, &result)
 		return
@@ -167,6 +182,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	}, realmPtr)
 	if checkResult != nil {
 		status := http.StatusUnauthorized
+		wCtx.Logger.Debug("Introspect: invalid client credentials")
 		result := dto.ErrorDetails{Msg: errors.InvalidClientMsg, Description: errors.InvalidClientCredentialDesc}
 		afterHandle(&respWriter, status, &result)
 		return
@@ -176,6 +192,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	if session == nil {
 		status := http.StatusUnauthorized
 		result := dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
+		wCtx.Logger.Debug("Introspect: invalid token")
 		afterHandle(&respWriter, status, &result)
 		return
 	}
