@@ -1,4 +1,4 @@
-package ferrum
+package application
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/wissance/Ferrum/api/rest"
-	"github.com/wissance/Ferrum/application"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
@@ -37,18 +36,18 @@ type Application struct {
 	httpHandler    *http.Handler
 }
 
-func CreateAppWithConfigs(configFile string, dataFile string, secretKeyFile string) application.AppRunner {
+func CreateAppWithConfigs(configFile string, dataFile string, secretKeyFile string) AppRunner {
 	app := &Application{}
 	app.appConfigFile = &configFile
 	app.dataConfigFile = &dataFile
 	app.secretKeyFile = &secretKeyFile
-	appRunner := application.AppRunner(app)
+	appRunner := AppRunner(app)
 	return appRunner
 }
 
-func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte) application.AppRunner {
+func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte) AppRunner {
 	app := &Application{appConfig: appConfig, secretKey: &secretKey, serverData: serverData}
-	appRunner := application.AppRunner(app)
+	appRunner := AppRunner(app)
 	return appRunner
 }
 
