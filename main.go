@@ -1,10 +1,11 @@
 //go:generate openssl genrsa -out ./certs/server.key 2048
 //go:generate openssl ecparam -genkey -name secp384r1 -out ./certs/server.key
 //go:generate openssl req -new -x509 -sha256 -key ./certs/server.key -out ./certs/server.crt -days 3650 -subj "/C=RU"
-package ferrum
+package main
 
 import (
 	"fmt"
+	"github.com/wissance/Ferrum/application"
 	"github.com/wissance/stringFormatter"
 	"os"
 	"os/signal"
@@ -15,7 +16,7 @@ func main() {
 	osSignal := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	app := CreateAppWithConfigs("./config.json", "./data.json", "./keyfile")
+	app := application.CreateAppWithConfigs("./config.json", "./data.json", "./keyfile")
 	res, initErr := app.Init()
 	logger := app.GetLogger()
 	if initErr != nil {
