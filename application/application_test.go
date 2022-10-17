@@ -104,7 +104,7 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 
 func issueNewToken(t *testing.T, baseUrl string, realm string, clientId string, clientSecret string,
 	userName string, password string) *http.Response {
-	tokenUrlTemplate := "{0}/auth/realms/{1}/protocol/openid-connect/token/"
+	tokenUrlTemplate := "{0}/auth/realms/{1}/protocol/openid-connect/token"
 	tokenUrl := stringFormatter.Format(tokenUrlTemplate, baseUrl, realm)
 	getTokenData := url.Values{}
 	getTokenData.Set("client_id", clientId)
@@ -145,7 +145,7 @@ func getUserInfo(t *testing.T, baseUrl string, realm string, token string, expec
 	return result
 }
 func checkIntrospectToken(t *testing.T, baseUrl string, realm string, token string, clientId string, clientSecret string, expectedStatus string) map[string]interface{} {
-	urlTemplate := "{0}/auth/realms/{1}/protocol/openid-connect/token/introspect/"
+	urlTemplate := "{0}/auth/realms/{1}/protocol/openid-connect/token/introspect"
 	reqUrl := stringFormatter.Format(urlTemplate, baseUrl, realm)
 	client := http.Client{}
 	formData := url.Values{}
