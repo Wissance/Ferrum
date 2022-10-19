@@ -30,8 +30,9 @@ Ferrum is a **better** Authorization Server.
    and we'll make them enterprise)***.
 
 it has `endpoints` SIMILAR to `Keycloak`, at present time we are having following:
-1. `POST "/auth/realms/{realm}/protocol/openid-connect/token/"`
-2. `GET "/auth/realms/{realm}/protocol/openid-connect/userinfo/"`
+1. `POST "~/auth/realms/{realm}/protocol/openid-connect/token/"`
+2. `GET  "~/auth/realms/{realm}/protocol/openid-connect/userinfo/"`
+3. `GET  "~/auth/realms/{realm}/protocol/openid-connect/token/introspect"`
 
 ## How to use
 
