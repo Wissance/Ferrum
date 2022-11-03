@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30204.135
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wissance.Auth.FerrumChecker", "Wissance.Auth.FerrumChecker\Wissance.Auth.FerrumChecker.csproj", "{8DBDBEF0-D265-4624-81CC-CB1AC4B2444A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8DBDBEF0-D265-4624-81CC-CB1AC4B2444A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DBDBEF0-D265-4624-81CC-CB1AC4B2444A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DBDBEF0-D265-4624-81CC-CB1AC4B2444A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DBDBEF0-D265-4624-81CC-CB1AC4B2444A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {852CADB0-B17E-42AC-839D-19AEE3DEF0E0}
+	EndGlobalSection
+EndGlobal
