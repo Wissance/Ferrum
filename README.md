@@ -6,7 +6,7 @@ Ferrum is a **better** Authorization Server.
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/Ferrum?style=plastic) 
 ![GitHub issues](https://img.shields.io/github/issues/wissance/Ferrum?style=plastic)
 ![GitHub Release Date](https://img.shields.io/github/release-date/wissance/Ferrum) 
-![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.1.4/total?style=plastic)
+![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.0/total?style=plastic)
 
 ![Ferrum: A better Auth Server](/img/ferrum_cover.png)
 
@@ -152,3 +152,9 @@ if err != nil {
 
 app.Stop()
 ```
+
+## Contributors
+
+<a href="https://github.com/Wissance/Ferrum/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Wissance/Ferrum" />
+</a>
