@@ -1,6 +1,9 @@
 package config
 
-import "errors"
+import (
+	"errors"
+	"github.com/wissance/stringFormatter"
+)
 
 type DataSourceType string
 type MongoDbOption string
@@ -64,9 +67,17 @@ func (cfg *DataSourceConfig) Validate() error {
 	}
 	if cfg.Type == MONGODB {
 		// validate options values ...
+		allParamValidation := map[string]string{}
 		for k, v := range cfg.Options {
 			keyType := MongoDbOptionsTypes[k]
-			cfg.validateParam(&keyType, &v)
+			err := cfg.validateParam(&keyType, &v)
+			if err != nil {
+				explanation := stringFormatter.Format("Error at MongoDb parameter \"{0}\" validation, reason: {1}", k, err.Error())
+				allParamValidation[string(k)] = explanation
+			}
+		}
+		if len(allParamValidation) > 0 {
+			// todo(UMV): combine && return
 		}
 	}
 	return nil
