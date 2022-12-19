@@ -26,16 +26,18 @@ const (
 )
 
 const (
-	String MongoDbOptionValueType = "string"
-	Integer MongoDbOptionValueType = "integer"
-	Boolean MongoDbOptionValueType = "boolean"
+	String   MongoDbOptionValueType = "string"
+	Integer  MongoDbOptionValueType = "integer"
+	Boolean  MongoDbOptionValueType = "boolean"
 	StrOrInt MongoDbOptionValueType = "str or int"
 )
 
 var (
 	SourceISEmpty error = errors.New("field source (path to file or conn str to db) is empty")
 
-	MongoDbOptionsTypes = map[MongoDbOption]string
+	MongoDbOptionsTypes = map[MongoDbOption]MongoDbOptionValueType{
+		OperationTimeout: Integer,
+	}
 )
 
 // DataSourceConfig represent source where we can get
@@ -62,6 +64,14 @@ func (cfg *DataSourceConfig) Validate() error {
 	}
 	if cfg.Type == MONGODB {
 		// validate options values ...
+		for k, v := range cfg.Options {
+			keyType := MongoDbOptionsTypes[k]
+			cfg.validateParam(&keyType, &v)
+		}
 	}
+	return nil
+}
+
+func (cfg *DataSourceConfig) validateParam(keyType *MongoDbOptionValueType, value *string) error {
 	return nil
 }
