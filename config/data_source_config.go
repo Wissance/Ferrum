@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"github.com/wissance/stringFormatter"
+	"strconv"
 )
 
 type DataSourceType string
@@ -78,11 +79,22 @@ func (cfg *DataSourceConfig) Validate() error {
 		}
 		if len(allParamValidation) > 0 {
 			// todo(UMV): combine && return
+			
 		}
 	}
 	return nil
 }
 
 func (cfg *DataSourceConfig) validateParam(keyType *MongoDbOptionValueType, value *string) error {
-	return nil
+	switch *keyType {
+	case Integer:
+		_, e := strconv.Atoi(*value)
+		return e
+	case Boolean:
+		_, e := strconv.ParseBool(*value)
+		return e
+	default:
+		return nil
+
+	}
 }
