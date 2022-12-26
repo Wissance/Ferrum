@@ -2,8 +2,6 @@ package config
 
 import (
 	"errors"
-	"github.com/wissance/stringFormatter"
-	"strconv"
 )
 
 type DataSourceType string
@@ -11,11 +9,14 @@ type MongoDbOption string
 type MongoDbOptionValueType string
 
 const (
-	FILE    DataSourceType = "file"
+	FILE DataSourceType = "file"
+	// MONGODB TODO (UMV): Mongo won't be using for sometime, maybe it will be removed completely
 	MONGODB DataSourceType = "mongodb"
+	// REDIS : redis server should be running with dump every write on a disk (AOF)
+	REDIS DataSourceType = "redis"
 )
 
-const (
+/*const (
 	OperationTimeout       MongoDbOption = "timeoutMS"
 	ConnectionTimeout      MongoDbOption = "connectTimeoutMS"
 	ConnectionsPool        MongoDbOption = "maxPoolSize"
@@ -34,14 +35,14 @@ const (
 	Integer  MongoDbOptionValueType = "integer"
 	Boolean  MongoDbOptionValueType = "boolean"
 	StrOrInt MongoDbOptionValueType = "str or int"
-)
+)*/
 
 var (
 	SourceISEmpty error = errors.New("field source (path to file or conn str to db) is empty")
 
-	MongoDbOptionsTypes = map[MongoDbOption]MongoDbOptionValueType{
+	/*MongoDbOptionsTypes = map[MongoDbOption]MongoDbOptionValueType{
 		OperationTimeout: Integer,
-	}
+	}*/
 )
 
 // DataSourceConfig represent source where we can get
@@ -56,9 +57,10 @@ var (
  * Here we should have Validator too
  */
 type DataSourceConfig struct {
-	Type    DataSourceType           `json:"type"`
-	Source  string                   `json:"source"`
-	Options map[MongoDbOption]string `json:"options"`
+	Type        DataSourceType     `json:"type"`
+	Source      string             `json:"source"`
+	Credentials *CredentialsConfig `json:"credentials"`
+	//Options map[MongoDbOption]string `json:"options"`
 }
 
 func (cfg *DataSourceConfig) Validate() error {
@@ -67,6 +69,12 @@ func (cfg *DataSourceConfig) Validate() error {
 
 	}
 	if cfg.Type == MONGODB {
+		return errors.New("mongodb is not supported")
+	}
+	if cfg.Type == REDIS {
+
+	}
+	/*if cfg.Type == MONGODB {
 		// validate options values ...
 		allParamValidation := map[string]string{}
 		for k, v := range cfg.Options {
@@ -79,13 +87,13 @@ func (cfg *DataSourceConfig) Validate() error {
 		}
 		if len(allParamValidation) > 0 {
 			// todo(UMV): combine && return
-			
+
 		}
-	}
+	}*/
 	return nil
 }
 
-func (cfg *DataSourceConfig) validateParam(keyType *MongoDbOptionValueType, value *string) error {
+/*func (cfg *DataSourceConfig) validateParam(keyType *MongoDbOptionValueType, value *string) error {
 	switch *keyType {
 	case Integer:
 		_, e := strconv.Atoi(*value)
@@ -97,4 +105,4 @@ func (cfg *DataSourceConfig) validateParam(keyType *MongoDbOptionValueType, valu
 		return nil
 
 	}
-}
+}*/

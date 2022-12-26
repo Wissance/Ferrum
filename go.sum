@@ -137,8 +137,8 @@ github.com/ttys3/rotatefilehook v1.0.0/go.mod h1:ZI8CxP/sPRbE10LkBhWkJYSP7smfuDN
 github.com/wissance/gwuu v1.2.4 h1:xn37b+wutKajq3ukOEWL6pj9arcqA3yVFrVGB1uYlTA=
 github.com/wissance/gwuu v1.2.4/go.mod h1:XAcqSL35PCoSg/4WeGOJcDxJgMKLMo0+YW+kxUT0tGw=
 github.com/wissance/stringFormatter v0.2.1/go.mod h1:lnql1aAB1vyG10k8UbRA0Srilb+tNjmtHRs860OmClM=
-github.com/wissance/stringFormatter v1.0.1 h1:6ijP/lsSX+IQIq8dNxEmzRmwmSQnRsWIGAhFE7sLP6w=
-github.com/wissance/stringFormatter v1.0.1/go.mod h1:H7Mz15+5i8ypmv6bLknM/uD+U1teUW99PlW0DNCNscA=
+github.com/wissance/stringFormatter v1.1.0 h1:C7+i9J1jPqE17NWch6kmy0wT2BKUiDJVahUx+JSJUTc=
+github.com/wissance/stringFormatter v1.1.0/go.mod h1:H7Mz15+5i8ypmv6bLknM/uD+U1teUW99PlW0DNCNscA=
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
