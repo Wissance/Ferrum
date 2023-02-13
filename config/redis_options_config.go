@@ -2,8 +2,8 @@ package config
 
 import "crypto/tls"
 
-// RedisOptionConfig is a simplified redis.Options config
-type RedisOptionConfig struct {
+// RedisConfig is a simplified redis.Options config
+type RedisConfig struct {
 	Address  string `json:"address" example:"localhost:6379"`
 	Password string `json:"password"`
 	DbNumber int    `json:"db_number"`
