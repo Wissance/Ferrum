@@ -5,8 +5,8 @@ import (
 )
 
 type DataSourceType string
-type MongoDbOption string
-type MongoDbOptionValueType string
+type DataSourceConnOption string
+type DataSourceConnOptionValueType string
 
 const (
 	FILE DataSourceType = "file"
@@ -16,31 +16,31 @@ const (
 	REDIS DataSourceType = "redis"
 )
 
-/*const (
-	OperationTimeout       MongoDbOption = "timeoutMS"
-	ConnectionTimeout      MongoDbOption = "connectTimeoutMS"
-	ConnectionsPool        MongoDbOption = "maxPoolSize"
-	ReplicaSet             MongoDbOption = "replicaSet"
-	MaxIdleTime            MongoDbOption = "maxIdleTimeMS"
-	SocketTimeout          MongoDbOption = "socketTimeoutMS"
-	ServerSelectionTimeout MongoDbOption = "serverSelectionTimeoutMS"
-	HeartbeatFrequency     MongoDbOption = "heartbeatFrequencyMS"
-	Tls                    MongoDbOption = "tls"
-	WriteConcern           MongoDbOption = "w"
-	DirectConnection       MongoDbOption = "directConnection"
+const (
+	OperationTimeout       DataSourceConnOption = "timeoutMS"
+	ConnectionTimeout      DataSourceConnOption = "connectTimeoutMS"
+	ConnectionsPool        DataSourceConnOption = "maxPoolSize"
+	ReplicaSet             DataSourceConnOption = "replicaSet"
+	MaxIdleTime            DataSourceConnOption = "maxIdleTimeMS"
+	SocketTimeout          DataSourceConnOption = "socketTimeoutMS"
+	ServerSelectionTimeout DataSourceConnOption = "serverSelectionTimeoutMS"
+	HeartbeatFrequency     DataSourceConnOption = "heartbeatFrequencyMS"
+	Tls                    DataSourceConnOption = "tls"
+	WriteConcern           DataSourceConnOption = "w"
+	DirectConnection       DataSourceConnOption = "directConnection"
 )
 
 const (
-	String   MongoDbOptionValueType = "string"
-	Integer  MongoDbOptionValueType = "integer"
-	Boolean  MongoDbOptionValueType = "boolean"
-	StrOrInt MongoDbOptionValueType = "str or int"
-)*/
+	String   DataSourceConnOptionValueType = "string"
+	Integer  DataSourceConnOptionValueType = "integer"
+	Boolean  DataSourceConnOptionValueType = "boolean"
+	StrOrInt DataSourceConnOptionValueType = "str or int"
+)
 
 var (
 	SourceISEmpty error = errors.New("field source (path to file or conn str to db) is empty")
 
-	/*MongoDbOptionsTypes = map[MongoDbOption]MongoDbOptionValueType{
+	/*MongoDbOptionsTypes = map[DataSourceConnOption]DataSourceConnOptionValueType{
 		OperationTimeout: Integer,
 	}*/
 )
@@ -52,15 +52,15 @@ var (
  * - mongodb (but here we have very simple question how to pass parameters)
  * Source contains:
  * 1) if Type is FILE - full path to Json File
- * 2) if Type is MONGODB - connection string without options, which looks like mongodb://user:password@host:port/
+ * 2) if Type is REDIS - connection string without options, which looks like mongodb://user:password@host:port/
  * Options are connection options, see - https://www.mongodb.com/docs/drivers/go/current/fundamentals/connection/#std-label-golang-connection-guide
  * Here we should have Validator too
  */
 type DataSourceConfig struct {
-	Type        DataSourceType     `json:"type"`
-	Source      string             `json:"source"`
-	Credentials *CredentialsConfig `json:"credentials"`
-	//Options map[MongoDbOption]string `json:"options"`
+	Type        DataSourceType                  `json:"type"`
+	Source      string                          `json:"source"`
+	Credentials *CredentialsConfig              `json:"credentials"`
+	Options     map[DataSourceConnOption]string `json:"options"`
 }
 
 func (cfg *DataSourceConfig) Validate() error {
@@ -69,7 +69,7 @@ func (cfg *DataSourceConfig) Validate() error {
 
 	}
 	if cfg.Type == MONGODB {
-		return errors.New("mongodb is not supported")
+		return errors.New("mongodb is not supported ")
 	}
 	if cfg.Type == REDIS {
 
@@ -93,7 +93,7 @@ func (cfg *DataSourceConfig) Validate() error {
 	return nil
 }
 
-/*func (cfg *DataSourceConfig) validateParam(keyType *MongoDbOptionValueType, value *string) error {
+/*func (cfg *DataSourceConfig) validateParam(keyType *DataSourceConnOptionValueType, value *string) error {
 	switch *keyType {
 	case Integer:
 		_, e := strconv.Atoi(*value)
