@@ -2,11 +2,14 @@ package config
 
 import (
 	"errors"
+	"github.com/wissance/Ferrum/utils/validators"
+	sf "github.com/wissance/stringFormatter"
+	"strconv"
+	"strings"
 )
 
 type DataSourceType string
 type DataSourceConnOption string
-type DataSourceConnOptionValueType string
 
 const (
 	FILE DataSourceType = "file"
@@ -17,32 +20,12 @@ const (
 )
 
 const (
-	OperationTimeout       DataSourceConnOption = "timeoutMS"
-	ConnectionTimeout      DataSourceConnOption = "connectTimeoutMS"
-	ConnectionsPool        DataSourceConnOption = "maxPoolSize"
-	ReplicaSet             DataSourceConnOption = "replicaSet"
-	MaxIdleTime            DataSourceConnOption = "maxIdleTimeMS"
-	SocketTimeout          DataSourceConnOption = "socketTimeoutMS"
-	ServerSelectionTimeout DataSourceConnOption = "serverSelectionTimeoutMS"
-	HeartbeatFrequency     DataSourceConnOption = "heartbeatFrequencyMS"
-	Tls                    DataSourceConnOption = "tls"
-	WriteConcern           DataSourceConnOption = "w"
-	DirectConnection       DataSourceConnOption = "directConnection"
-)
-
-const (
-	String   DataSourceConnOptionValueType = "string"
-	Integer  DataSourceConnOptionValueType = "integer"
-	Boolean  DataSourceConnOptionValueType = "boolean"
-	StrOrInt DataSourceConnOptionValueType = "str or int"
+	// DbNumber is a REDIS connection options
+	DbNumber DataSourceConnOption = "db_number"
 )
 
 var (
 	SourceISEmpty error = errors.New("field source (path to file or conn str to db) is empty")
-
-	/*MongoDbOptionsTypes = map[DataSourceConnOption]DataSourceConnOptionValueType{
-		OperationTimeout: Integer,
-	}*/
 )
 
 // DataSourceConfig represent source where we can get
@@ -52,9 +35,12 @@ var (
  * - mongodb (but here we have very simple question how to pass parameters)
  * Source contains:
  * 1) if Type is FILE - full path to Json File
- * 2) if Type is REDIS - connection string without options, which looks like mongodb://user:password@host:port/
+ * 2) if Type is REDIS - redis server address i.e. localhost:6739
  * Options are connection options, see - https://www.mongodb.com/docs/drivers/go/current/fundamentals/connection/#std-label-golang-connection-guide
  * Here we should have Validator too
+ * Credentials contains Username && Password could be null id authorization is not required:
+ * {}
+ *
  */
 type DataSourceConfig struct {
 	Type        DataSourceType                  `json:"type"`
@@ -72,11 +58,32 @@ func (cfg *DataSourceConfig) Validate() error {
 		return errors.New("mongodb is not supported ")
 	}
 	if cfg.Type == REDIS {
-
+		// 1. Check whether source contains address or not
+		// 1.1 Check format
+		parts := strings.Split(cfg.Source, ":")
+		if len(parts) != 2 {
+			return errors.New("field source for Redis datasource must contain pair IP Address/Domain Name:Port, i.e. 127.0.0.1:6379")
+		}
+		// 1.2
+		// todo(UMV): check IP Address / Domain Name is Valid
+		_, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return errors.New(sf.Format("second part must be integer value, got parsing error: {0}", err.Error()))
+		}
+		// 1.3 Check we have following required fields: dbNumber
+		dbNumber, ok := cfg.Options[DbNumber]
+		if !ok {
+			return errors.New("config must contain \"db_number\" in options")
+		}
+		checkResult := validators.IsStrValueOfRequiredType(validators.Integer, &dbNumber)
+		if !checkResult {
+			return errors.New("\"db_number\" redis config options must be int value")
+		}
+		return nil
 	}
-	/*if cfg.Type == MONGODB {
+	if cfg.Type == MONGODB {
 		// validate options values ...
-		allParamValidation := map[string]string{}
+		/*allParamValidation := map[string]string{}
 		for k, v := range cfg.Options {
 			keyType := MongoDbOptionsTypes[k]
 			err := cfg.validateParam(&keyType, &v)
@@ -88,8 +95,9 @@ func (cfg *DataSourceConfig) Validate() error {
 		if len(allParamValidation) > 0 {
 			// todo(UMV): combine && return
 
-		}
-	}*/
+		}*/
+		return errors.New("MongoDB is not supported")
+	}
 	return nil
 }
 
