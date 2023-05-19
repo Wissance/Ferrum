@@ -20,8 +20,12 @@ const (
 )
 
 const (
-	// DbNumber is a REDIS connection options
+	// DbNumber is a REDIS connection options, here we expect to receive int in a string
 	DbNumber DataSourceConnOption = "db_number"
+	// UseTls is a REDIS option to set up tls.Config and use TLS connection, here we expect to receive bool value in a string
+	UseTls DataSourceConnOption = "use_tls"
+	// InsecureTls is a REDIS option to set up TLSConfig: &tls.Config{InsecureSkipVerify: true}, here we expect to receive bool value in a string
+	InsecureTls DataSourceConnOption = "allow_insecure_tls"
 )
 
 var (
@@ -39,7 +43,6 @@ var (
  * Options are connection options, see - https://www.mongodb.com/docs/drivers/go/current/fundamentals/connection/#std-label-golang-connection-guide
  * Here we should have Validator too
  * Credentials contains Username && Password could be null id authorization is not required:
- * {}
  *
  */
 type DataSourceConfig struct {
