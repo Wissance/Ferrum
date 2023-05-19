@@ -11,7 +11,7 @@ type RedisDataManager struct {
 }
 
 func CreateRedisDataManager() DataContext {
-	rClient := redis.NewClient(nil)
+	rClient := redis.NewClient(&redis.Options{})
 	mn := &RedisDataManager{redisClient: rClient}
 	// todo(umv) think about preload ???
 	dc := DataContext(mn)
