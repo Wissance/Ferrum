@@ -1,6 +1,7 @@
 package managers
 
 import (
+	"crypto/tls"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/wissance/Ferrum/config"
@@ -17,7 +18,7 @@ type RedisDataManager struct {
 }
 
 func CreateRedisDataManager(dataSourceCfd *config.DataSourceConfig, logger *logging.AppLogger) DataContext {
-	opts := buildRedisConfig(dataSourceCfd)
+	opts := buildRedisConfig(dataSourceCfd, logger)
 	rClient := redis.NewClient(opts)
 	mn := &RedisDataManager{logger: logger, redisOption: opts, redisClient: rClient}
 	// todo(umv) think about preload ???
@@ -61,6 +62,20 @@ func buildRedisConfig(dataSourceCfd *config.DataSourceConfig, logger *logging.Ap
 		opts.Password = dataSourceCfd.Credentials.Password
 	}
 	// passing TLS if we have it
+	val, ok := dataSourceCfd.Options[config.UseTls]
+	if ok {
+		useTls, parseErr := strconv.ParseBool(val)
+		if parseErr == nil && useTls {
+			opts.TLSConfig = &tls.Config{}
+			val, ok = dataSourceCfd.Options[config.InsecureTls]
+			if ok {
+				inSecTls, parseErr := strconv.ParseBool(val)
+				if parseErr == nil {
+					opts.TLSConfig.InsecureSkipVerify = inSecTls
+				}
+			}
+		}
+	}
 
 	return &opts
 }
