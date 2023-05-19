@@ -1,6 +1,7 @@
 package config
 
 type AppConfig struct {
-	ServerCfg ServerConfig  `json:"server"`
-	Logging   LoggingConfig `json:"logging"`
+	ServerCfg  ServerConfig     `json:"server"`
+	DataSource DataSourceConfig `json:"data_source"`
+	Logging    LoggingConfig    `json:"logging"`
 }
