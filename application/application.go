@@ -126,6 +126,8 @@ func (app *Application) readAppConfig() error {
 		return err
 	}
 
+	app.appConfig.Validate()
+	
 	return nil
 }
 

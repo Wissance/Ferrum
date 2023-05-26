@@ -1,5 +1,7 @@
 package config
 
+import "errors"
+
 type Schema string
 
 const (
@@ -13,8 +15,17 @@ type SecurityConfig struct {
 }
 
 type ServerConfig struct {
-	Schema   Schema         `json:"schema" example:"http or https"`
-	Address  string         `json:"address" example:"127.0.0.1 or mydomain.com"`
-	Port     int            `json:"port" example:"8080"`
-	Security SecurityConfig `json:"security"`
+	Schema   Schema          `json:"schema" example:"http or https"`
+	Address  string          `json:"address" example:"127.0.0.1 or mydomain.com"`
+	Port     int             `json:"port" example:"8080"`
+	Security *SecurityConfig `json:"security"`
+}
+
+func (cfg *ServerConfig) Validate() error {
+	if cfg.Schema == HTTPS {
+		if cfg.Security == nil {
+			return errors.New("https schema requires a certs pair (\"security\" property)")
+		}
+	}
+	return nil
 }
