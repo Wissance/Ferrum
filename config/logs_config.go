@@ -37,3 +37,7 @@ type LoggingConfig struct {
 	ConsoleOutHTTP bool             `json:"http_console_out"`
 	LogHTTP        bool             `json:"http_log"`
 }
+
+func (cfg *LoggingConfig) Validate() error {
+	return nil
+}
