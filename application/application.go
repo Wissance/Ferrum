@@ -127,7 +127,7 @@ func (app *Application) readAppConfig() error {
 	}
 
 	app.appConfig.Validate()
-	
+
 	return nil
 }
 
