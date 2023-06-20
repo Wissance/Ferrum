@@ -24,6 +24,14 @@ const (
 	realmUsersKeyTemplate   = "fe_realm_{0}_users"
 )
 
+type objectType string
+
+const (
+	Realm  objectType = "realm"
+	Client            = "client"
+	User              = "user"
+)
+
 // RedisDataManager is a redis client
 type RedisDataManager struct {
 	redisOption *redis.Options
@@ -43,7 +51,7 @@ func CreateRedisDataManager(dataSourceCfd *config.DataSourceConfig, logger *logg
 
 func (mn *RedisDataManager) GetRealm(realmName string) *data.Realm {
 	realmKey := sf.Format(realmKeyTemplate, realmName)
-	realm := getObjectFromRedis[data.Realm](mn.redisClient, mn.ctx, mn.logger, "realm", realmKey)
+	realm := getObjectFromRedis[data.Realm](mn.redisClient, mn.ctx, mn.logger, Realm, realmKey)
 	return realm
 	/*redisCmd := mn.redisClient.Get(mn.ctx, realmKey)
 	if redisCmd.Err() != nil {
@@ -62,13 +70,17 @@ func (mn *RedisDataManager) GetRealm(realmName string) *data.Realm {
 
 func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Client {
 	clientKey := sf.Format(clientKeyTemplate, name)
-	client := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, "client", clientKey)
-	// todo (UMV): check that client is from Realm, if not warn
+	client := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
+	// todo (UMV): check that client is from Realm, get another obj - realmClientsKeyTemplate
 	return client
 }
 
 func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.User {
-	return nil
+	userKey := sf.Format(userKeyTemplate, userName)
+	rawUser := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
+	user := data.CreateUser(rawUser)
+	// todo (UMV): check that client is from Realm, get another obj - realmClientsKeyTemplate
+	return &user
 }
 
 func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *data.User {
@@ -80,7 +92,7 @@ func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 }
 
 func getObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
-	objName string, objKey string) *T {
+	objName objectType, objKey string) *T {
 	redisCmd := redisClient.Get(ctx, objKey)
 	if redisCmd.Err() != nil {
 		logger.Warn(sf.Format("An error occurred during fetching {0}: \"{1}\" from Redis server", objName, objKey))
