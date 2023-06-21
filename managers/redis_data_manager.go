@@ -43,6 +43,14 @@ const (
  * 3. Every Client (data.Client) stores separately by key forming from client id (different realms could have clients with same name but in different realm,
  *    Client Name is unique only in Realm) and template clientKeyTemplate, therefore realm with pair (ID: 6e09faca-1004-11ee-be56-0242ac120002 Name: homeApp)
  *    could be received by key - fe_client_6e09faca-1004-11ee-be56-0242ac120002
+ * 4. Every User in Redis storing by it own key forming by userId + template (userKeyTemplate) -> i.e. user with id 6dee45ee-1056-11ee-be56-0242ac120002 stored
+ *    by key fe_user_6dee45ee-1056-11ee-be56-0242ac120002
+ * 5. Client to Realm and User to Realm relation stored by separate keys forming using template and realm name, these relations stores array of data.ExtendedIdentifier
+ *    that wires together Realm Name with User.ID and User.Name.
+ *    IMPORTANT NOTES:
+ *    1. When save Client or User don't forget to save relations in Redis too (see templates realmClientsKeyTemplate && realmUsersKeyTemplate)
+ *    2. When add/modify new or existing user don't forget to update realmUsersFullDataKeyTemplate maybe this collection will be removed in future but currently
+ *       we have it.
  */
 type RedisDataManager struct {
 	redisOption *redis.Options
@@ -142,7 +150,7 @@ func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *da
 }
 
 func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
-	// TODO(UMV): possibly we should not use this method ??? what if we have 1M+ users .... ?
+	// TODO(UMV): possibly we should not use this method ??? what if we have 1M+ users .... ? think maybe it should be somehow optimized ...
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, realmName)
 	realmUsers := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if realmUsers == nil {
