@@ -27,12 +27,23 @@ const (
 type objectType string
 
 const (
-	Realm  objectType = "realm"
-	Client            = "client"
-	User              = "user"
+	Realm        objectType = "realm"
+	RealmClients            = "realm clients"
+	Client                  = "client"
+	User                    = "user"
 )
 
 // RedisDataManager is a redis client
+/*
+ * Redis Data Manager is a service class for managing authorization server data in Redis
+ * There are following store Rules:
+ * 1. Realms (data.Realm) in Redis storing separately from Clients && Users, every Realm stores in Redis by key forming from template && Realm name
+ *    i.e. if we have Realm with name "wissance" it could be accessed by key fe_realm_wissance (realmKeyTemplate)
+ * 2. Realm Clients ([]uuid.UUID) storing in Redis by key forming from template, Realm with name wissance has array of clients is by key
+ *    fe_realm_wissance_clients (realmClientsKeyTemplate)
+ * 3. Every Client (data.Client) stores separately by key forming from client id (different realms could have clients with same name but in different realm,
+ *    Client Name is unique only in Realm) and template clientKeyTemplate, therefore realm
+ */
 type RedisDataManager struct {
 	redisOption *redis.Options
 	redisClient *redis.Client
@@ -44,7 +55,6 @@ func CreateRedisDataManager(dataSourceCfd *config.DataSourceConfig, logger *logg
 	opts := buildRedisConfig(dataSourceCfd, logger)
 	rClient := redis.NewClient(opts)
 	mn := &RedisDataManager{logger: logger, redisOption: opts, redisClient: rClient, ctx: context.Background()}
-	// todo(umv) think about preload ???
 	dc := DataContext(mn)
 	return dc
 }
@@ -53,26 +63,28 @@ func (mn *RedisDataManager) GetRealm(realmName string) *data.Realm {
 	realmKey := sf.Format(realmKeyTemplate, realmName)
 	realm := getObjectFromRedis[data.Realm](mn.redisClient, mn.ctx, mn.logger, Realm, realmKey)
 	return realm
-	/*redisCmd := mn.redisClient.Get(mn.ctx, realmKey)
-	if redisCmd.Err() != nil {
-		mn.logger.Warn(sf.Format("An error occurred during fetching realm: \"{0}\" from Redis server", realmName))
-		return nil
-	}
-
-	var realm data.Realm
-	realmJson := []byte(redisCmd.Val())
-	err := json.Unmarshal(realmJson, &realm)
-	if err != nil {
-		mn.logger.Error(sf.Format("An error occurred during realm : \"{0}\" unmarshall", realmName))
-	}
-	return &realm*/
 }
 
 func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Client {
 	clientKey := sf.Format(clientKeyTemplate, name)
+	// todo (UMV): change order query realms client first ...
 	client := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
-	// todo (UMV): check that client is from Realm, get another obj - realmClientsKeyTemplate
-	return client
+	if client == nil {
+		return client
+	}
+	realmClientsKey := sf.Format(realmClientsKeyTemplate, realm.Name)
+	// realm_%name%_clients contains array with configured clients ID (uuid.UUID) for that realm
+	realmClients := getObjectFromRedis[[]uuid.UUID](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
+	if realmClients == nil {
+		mn.logger.Error(sf.Format("There are no clients for realm: \"{0} \" in Redis", realm.Name))
+		return nil
+	}
+	for _, rc := range *realmClients {
+		if rc == client.ID {
+			return client
+		}
+	}
+	return nil
 }
 
 func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.User {
