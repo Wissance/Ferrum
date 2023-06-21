@@ -14,14 +14,12 @@ import (
 )
 
 const (
-	realmCollection         = "realms"
-	clientsCollection       = "clients"
-	usersCollection         = "users"
-	userKeyTemplate         = "fe_user_{0}"
-	realmKeyTemplate        = "fe_realm_{0}"
-	realmClientsKeyTemplate = "fe_realm_{0}_clients"
-	clientKeyTemplate       = "fe_client_{0}"
-	realmUsersKeyTemplate   = "fe_realm_{0}_users"
+	userKeyTemplate               = "fe_user_{0}"
+	realmKeyTemplate              = "fe_realm_{0}"
+	realmClientsKeyTemplate       = "fe_realm_{0}_clients"
+	clientKeyTemplate             = "fe_client_{0}"
+	realmUsersKeyTemplate         = "fe_realm_{0}_users"
+	realmUsersFullDataKeyTemplate = "fe_realm_{0}_users_full_data"
 )
 
 type objectType string
@@ -94,11 +92,31 @@ func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Clie
 }
 
 func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.User {
-	// todo(umv): have to fetch user by Id ...
-	userKey := sf.Format(userKeyTemplate, userName)
+	userRealmsKey := sf.Format(realmUsersKeyTemplate, realm.Name)
+	realmUsers := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
+	if realmUsers == nil {
+		mn.logger.Error(sf.Format("There are no user with name :\"{0}\" in realm: \"{1} \" in Redis, BAD data config", userName, realm.Name))
+		return nil
+	}
+
+	var extendedUserId data.ExtendedIdentifier
+	userFound := false
+	for _, rc := range *realmUsers {
+		if rc.Name == userName {
+			userFound = true
+			extendedUserId = rc
+			break
+		}
+	}
+
+	if !userFound {
+		mn.logger.Debug(sf.Format("User with name: \"{0}\" was not found for realm: \"{1}\"", userName, realm.Name))
+		return nil
+	}
+
+	userKey := sf.Format(userKeyTemplate, extendedUserId.Name)
 	rawUser := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
 	user := data.CreateUser(rawUser)
-	// todo (UMV): check that client is from Realm, get another obj - realmClientsKeyTemplate
 	return &user
 }
 
@@ -125,6 +143,23 @@ func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *da
 
 func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 	// TODO(UMV): possibly we should not use this method ??? what if we have 1M+ users .... ?
+	userRealmsKey := sf.Format(realmUsersKeyTemplate, realmName)
+	realmUsers := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
+	if realmUsers == nil {
+		mn.logger.Error(sf.Format("There are no users in realm: \"{0} \" in Redis, BAD data config", realmName))
+		return nil
+	}
+
+	userFullDataRealmsKey := sf.Format(realmUsersFullDataKeyTemplate, realmName)
+	realmUsersData := getObjectFromRedis[[]interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
+
+	if realmUsersData != nil {
+		userData := make([]data.User, len(*realmUsersData))
+		for i, u := range *realmUsersData {
+			userData[i] = data.CreateUser(u)
+		}
+		return &userData
+	}
 	return nil
 }
 
