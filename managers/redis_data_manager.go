@@ -39,7 +39,7 @@ const (
  * There are following store Rules:
  * 1. Realms (data.Realm) in Redis storing separately from Clients && Users, every Realm stores in Redis by key forming from template && Realm name
  *    i.e. if we have Realm with name "wissance" it could be accessed by key fe_realm_wissance (realmKeyTemplate)
- * 2. Realm Clients ([]uuid.UUID) storing in Redis by key forming from template, Realm with name wissance has array of clients is by key
+ * 2. Realm Clients ([]data.ExtendedIdentifier) storing in Redis by key forming from template, Realm with name wissance has array of clients id by key
  *    fe_realm_wissance_clients (realmClientsKeyTemplate)
  * 3. Every Client (data.Client) stores separately by key forming from client id (different realms could have clients with same name but in different realm,
  *    Client Name is unique only in Realm) and template clientKeyTemplate, therefore realm
@@ -66,25 +66,29 @@ func (mn *RedisDataManager) GetRealm(realmName string) *data.Realm {
 }
 
 func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Client {
-	clientKey := sf.Format(clientKeyTemplate, name)
-	// todo (UMV): change order query realms client first ...
-	client := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
-	if client == nil {
-		return client
-	}
 	realmClientsKey := sf.Format(realmClientsKeyTemplate, realm.Name)
-	// realm_%name%_clients contains array with configured clients ID (uuid.UUID) for that realm
-	realmClients := getObjectFromRedis[[]uuid.UUID](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
+	// realm_%name%_clients contains array with configured clients ID (data.ExtendedIdentifier) for that realm
+	realmClients := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
 	if realmClients == nil {
-		mn.logger.Error(sf.Format("There are no clients for realm: \"{0} \" in Redis", realm.Name))
+		mn.logger.Error(sf.Format("There are no clients for realm: \"{0} \" in Redis, BAD data config", realm.Name))
 		return nil
 	}
+	realmHasClient := false
+	var clientId data.ExtendedIdentifier
 	for _, rc := range *realmClients {
-		if rc == client.ID {
-			return client
+		if rc.Name == name {
+			realmHasClient = true
+			clientId = rc
+			break
 		}
 	}
-	return nil
+	if !realmHasClient {
+		mn.logger.Debug(sf.Format("Realm: \"{0}\" doesn't have client : \"{1}\" in Redis", realm.Name, name))
+		return nil
+	}
+	clientKey := sf.Format(clientKeyTemplate, clientId.ID)
+	client := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
+	return client
 }
 
 func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.User {
