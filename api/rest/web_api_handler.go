@@ -31,7 +31,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 			wCtx.Logger.Debug("New token issue: realm doesn't exist")
 			result = dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
 		} else {
-			// todo(UMV): think we don't have refresh strategy yet, add in v1.0 ...
+			// todo (UMV): think we don't have refresh strategy yet, add in v1.0 ...
 			// New token issue strategy ...
 			tokenGenerationData := dto.TokenGenerationData{}
 			err := request.ParseForm()
@@ -43,44 +43,53 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 				var decoder = schema.NewDecoder()
 				err = decoder.Decode(&tokenGenerationData, request.PostForm)
 				if err != nil {
-					// todo(UMV): log events
+					// todo (UMV): log events
 					status = http.StatusBadRequest
 					wCtx.Logger.Debug("New token issue: body is bad (unable to unmarshal to dto.TokenGenerationData)")
 					result = dto.ErrorDetails{Msg: errors.BadBodyForTokenGenerationMsg}
 				} else {
 					// 1. Validate client data: client_id, client_secret (if we have so), scope
-					check := (*wCtx.Security).Validate(&tokenGenerationData, realmPtr)
-					if check != nil {
-						status = http.StatusBadRequest
-						wCtx.Logger.Debug("New token issue: client data is invalid (client_id or client_secret)")
-						result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
+					// todo think maybe it should be removed from service
+					isRefresh := (*wCtx.Security).IsRefresh(&tokenGenerationData)
+					issueTokens := true
+					if isRefresh == true {
+						// todo(UMV): here we check refresh token and make decision to issue if it is valid && fresh enough
+						// 1.-2. Validate refresh token and check is it fresh enough
 					} else {
-						// 2. Validate user credentials
+						check := (*wCtx.Security).Validate(&tokenGenerationData, realmPtr)
+						// 1. Pair client_id && client_secret validation
+						if check != nil {
+							status = http.StatusBadRequest
+							wCtx.Logger.Debug("New token issue: client data is invalid (client_id or client_secret)")
+							issueTokens = false
+							result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
+						}
+						// 2. User credentials validation
 						check = (*wCtx.Security).CheckCredentials(&tokenGenerationData, realmPtr)
 						if check != nil {
 							wCtx.Logger.Debug("New token issue: invalid user credentials (username or password)")
 							status = http.StatusUnauthorized
+							issueTokens = false
 							result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
-						} else {
-							currentUser := (*wCtx.Security).GetCurrentUser(realmPtr, tokenGenerationData.Username)
-							userId := (*currentUser).GetId()
-							// 3. Create access token && refresh token
-							// 4. Generate new token
-							duration := realmPtr.TokenExpiration
-							refreshDuration := realmPtr.RefreshTokenExpiration
-							// 4. Save session
-							sessionId := (*wCtx.Security).StartOrUpdateSession(realm, userId, duration)
-							session := (*wCtx.Security).GetSession(realm, userId)
-							// 5. Generate new tokens
-							accessToken := wCtx.TokenGenerator.GenerateJwtAccessToken(wCtx.getRealmBaseUrl(realm), "Bearer", "profile email", session, currentUser)
-							refreshToken := wCtx.TokenGenerator.GenerateJwtRefreshToken(wCtx.getRealmBaseUrl(realm), "Refresh", "profile email", session)
-							(*wCtx.Security).AssignTokens(realm, userId, &accessToken, &refreshToken)
-							// 6. Assign token to result
-							result = dto.Token{AccessToken: accessToken, Expires: duration, RefreshToken: refreshToken,
-								RefreshExpires: refreshDuration, TokenType: "Bearer", NotBeforePolicy: 0,
-								Session: sessionId.String()}
-
 						}
+					}
+					if issueTokens {
+						currentUser := (*wCtx.Security).GetCurrentUser(realmPtr, tokenGenerationData.Username)
+						userId := (*currentUser).GetId()
+						// 3. Create access token && refresh token
+						duration := realmPtr.TokenExpiration
+						refreshDuration := realmPtr.RefreshTokenExpiration
+						// 4. Save session
+						sessionId := (*wCtx.Security).StartOrUpdateSession(realm, userId, duration)
+						session := (*wCtx.Security).GetSession(realm, userId)
+						// 5. Generate new tokens
+						accessToken := wCtx.TokenGenerator.GenerateJwtAccessToken(wCtx.getRealmBaseUrl(realm), "Bearer", "profile email", session, currentUser)
+						refreshToken := wCtx.TokenGenerator.GenerateJwtRefreshToken(wCtx.getRealmBaseUrl(realm), "Refresh", "profile email", session)
+						(*wCtx.Security).AssignTokens(realm, userId, &accessToken, &refreshToken)
+						// 6. Assign token to result
+						result = dto.Token{AccessToken: accessToken, Expires: duration, RefreshToken: refreshToken,
+							RefreshExpires: refreshDuration, TokenType: "Bearer", NotBeforePolicy: 0, Session: sessionId.String()}
+
 					}
 				}
 			}
@@ -205,6 +214,11 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 		Exp:    realmPtr.TokenExpiration,
 	}
 	afterHandle(&respWriter, status, &result)
+}
+
+func (wCtx *WebApiContext) RefreshToken(respWriter http.ResponseWriter, request *http.Request) {
+	// beforeHandle(&respWriter)
+	// afterHandle(&respWriter, status, &result)
 }
 
 func (wCtx *WebApiContext) getRealmBaseUrl(realm string) string {

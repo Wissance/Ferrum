@@ -7,6 +7,7 @@ import (
 )
 
 type SecurityService interface {
+	IsRefresh(tokenIssueData *dto.TokenGenerationData) bool
 	Validate(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError
 	CheckCredentials(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError
 	GetCurrentUser(realm *data.Realm, userName string) *data.User

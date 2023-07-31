@@ -22,6 +22,14 @@ func CreateSecurityService(dataProvider *managers.DataContext, logger *logging.A
 	return secService
 }
 
+func (service *TokenBasedSecurityService) IsRefresh(tokenIssueData *dto.TokenGenerationData) bool {
+	// todo (UMV): move all constants in a separate package
+	if len(tokenIssueData.RefreshToken) == 0 || tokenIssueData.GrantType != "refresh_token" {
+		return false
+	}
+	return true
+}
+
 func (service *TokenBasedSecurityService) Validate(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError {
 	for _, c := range realm.Clients {
 		if c.Name == tokenIssueData.ClientId {
