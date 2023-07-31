@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/wissance/Ferrum/dto"
 	"github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/globals"
 	"github.com/wissance/stringFormatter"
 	"net/http"
 	"strings"
@@ -15,7 +16,7 @@ import (
 func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request *http.Request) {
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
-	realm := vars["realm"]
+	realm := vars[globals.RealmPathVar]
 	var result interface{}
 	status := http.StatusOK
 	if len(realm) == 0 {
@@ -83,12 +84,14 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 						sessionId := (*wCtx.Security).StartOrUpdateSession(realm, userId, duration)
 						session := (*wCtx.Security).GetSession(realm, userId)
 						// 5. Generate new tokens
-						accessToken := wCtx.TokenGenerator.GenerateJwtAccessToken(wCtx.getRealmBaseUrl(realm), "Bearer", "profile email", session, currentUser)
-						refreshToken := wCtx.TokenGenerator.GenerateJwtRefreshToken(wCtx.getRealmBaseUrl(realm), "Refresh", "profile email", session)
+						accessToken := wCtx.TokenGenerator.GenerateJwtAccessToken(wCtx.getRealmBaseUrl(realm), string(BearerToken),
+							globals.ProfileEmailScope, session, currentUser)
+						refreshToken := wCtx.TokenGenerator.GenerateJwtRefreshToken(wCtx.getRealmBaseUrl(realm), string(RefreshToken),
+							globals.ProfileEmailScope, session)
 						(*wCtx.Security).AssignTokens(realm, userId, &accessToken, &refreshToken)
 						// 6. Assign token to result
 						result = dto.Token{AccessToken: accessToken, Expires: duration, RefreshToken: refreshToken,
-							RefreshExpires: refreshDuration, TokenType: "Bearer", NotBeforePolicy: 0, Session: sessionId.String()}
+							RefreshExpires: refreshDuration, TokenType: string(BearerToken), NotBeforePolicy: 0, Session: sessionId.String()}
 
 					}
 				}
@@ -101,7 +104,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *http.Request) {
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
-	realm := vars["realm"]
+	realm := vars[globals.RealmPathVar]
 	var result interface{}
 	status := http.StatusOK
 	if len(realm) == 0 {
@@ -150,7 +153,7 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *http.Request) {
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
-	realm := vars["realm"]
+	realm := vars[globals.RealmPathVar]
 	if len(realm) == 0 {
 		// 400
 		status := http.StatusBadRequest
@@ -167,7 +170,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 		afterHandle(&respWriter, status, &result)
 		return
 	}
-	authorization := request.Header.Get("Authorization")
+	authorization := request.Header.Get(authorizationHeader)
 	parts := strings.Split(authorization, " ")
 	if parts[0] != "Basic" {
 		status := http.StatusBadRequest
@@ -196,7 +199,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 		afterHandle(&respWriter, status, &result)
 		return
 	}
-	token := request.FormValue("token")
+	token := request.FormValue(globals.TokenFormKey)
 	session := (*wCtx.Security).GetSessionByAccessToken(realm, &token)
 	if session == nil {
 		status := http.StatusUnauthorized
@@ -207,20 +210,16 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	}
 	active := !session.Expired.Before(time.Now())
 	status := http.StatusOK
-	tokenType := "Bearer"
+	authTokenType := string(BearerToken)
 	result := dto.IntrospectTokenResult{
 		Active: active,
-		Type:   tokenType,
+		Type:   authTokenType,
 		Exp:    realmPtr.TokenExpiration,
 	}
 	afterHandle(&respWriter, status, &result)
 }
 
-func (wCtx *WebApiContext) RefreshToken(respWriter http.ResponseWriter, request *http.Request) {
-	// beforeHandle(&respWriter)
-	// afterHandle(&respWriter, status, &result)
-}
-
+// todo(UMV) pass real address ...
 func (wCtx *WebApiContext) getRealmBaseUrl(realm string) string {
 	return stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
 }

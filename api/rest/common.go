@@ -12,7 +12,8 @@ const (
 type tokenType string
 
 const (
-	BearerToken tokenType = "Bearer"
+	BearerToken  tokenType = "Bearer"
+	RefreshToken tokenType = "Refresh"
 )
 
 // beforeHandle
