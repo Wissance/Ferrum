@@ -117,9 +117,9 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 			result = dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
 		} else {
 			// Just get access token,  find user + session
-			authorization := request.Header.Get("Authorization")
+			authorization := request.Header.Get(authorizationHeader)
 			parts := strings.Split(authorization, " ")
-			if parts[0] != "Bearer" {
+			if parts[0] != string(BearerToken) {
 				wCtx.Logger.Debug("Get userinfo: expected only Bearer authorization yet")
 				status = http.StatusBadRequest
 				result = dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}

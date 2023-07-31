@@ -5,6 +5,7 @@ import (
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/dto"
 	"github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/globals"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/Ferrum/managers"
 	"time"
@@ -23,8 +24,7 @@ func CreateSecurityService(dataProvider *managers.DataContext, logger *logging.A
 }
 
 func (service *TokenBasedSecurityService) IsRefresh(tokenIssueData *dto.TokenGenerationData) bool {
-	// todo (UMV): move all constants in a separate package
-	if len(tokenIssueData.RefreshToken) == 0 || tokenIssueData.GrantType != "refresh_token" {
+	if len(tokenIssueData.RefreshToken) == 0 || tokenIssueData.GrantType != globals.RefreshTokenGrantType {
 		return false
 	}
 	return true
