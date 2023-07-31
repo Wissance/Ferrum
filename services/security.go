@@ -10,6 +10,7 @@ type SecurityService interface {
 	Validate(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError
 	CheckCredentials(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError
 	GetCurrentUserByName(realm *data.Realm, userName string) *data.User
+	GetCurrentUserById(realm *data.Realm, userId uuid.UUID) *data.User
 	StartOrUpdateSession(realm string, userId uuid.UUID, duration int) uuid.UUID
 	AssignTokens(realm string, userId uuid.UUID, accessToken *string, refreshToken *string)
 	GetSession(realm string, userId uuid.UUID) *data.UserSession

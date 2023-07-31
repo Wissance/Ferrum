@@ -61,6 +61,10 @@ func (service *TokenBasedSecurityService) GetCurrentUserByName(realm *data.Realm
 	return (*service.DataProvider).GetUser(realm, userName)
 }
 
+func (service *TokenBasedSecurityService) GetCurrentUserById(realm *data.Realm, userId uuid.UUID) *data.User {
+	return (*service.DataProvider).GetUserById(realm, userId)
+}
+
 func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, userId uuid.UUID, duration int) uuid.UUID {
 	realmSessions, ok := service.UserSessions[realm]
 	sessionId := uuid.New()

@@ -69,8 +69,10 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							if (*wCtx.Security).IsSessionExpired(realm, userId) {
 								// session expired, should request new one
 							} else {
-								issueTokens = true
-								// currentUser = (*wCtx.DataProvider).GetUserById()
+								currentUser = (*wCtx.Security).GetCurrentUserById(realmPtr, userId)
+								if currentUser != nil {
+									issueTokens = true
+								}
 							}
 
 						}
@@ -90,9 +92,9 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 								status = http.StatusUnauthorized
 								result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 							} else {
-								issueTokens = true
 								currentUser = (*wCtx.Security).GetCurrentUserByName(realmPtr, tokenGenerationData.Username)
 								userId = (*currentUser).GetId()
+								issueTokens = true
 							}
 						}
 					}
