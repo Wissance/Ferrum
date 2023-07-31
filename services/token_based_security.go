@@ -57,7 +57,7 @@ func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.T
 	return nil
 }
 
-func (service *TokenBasedSecurityService) GetCurrentUser(realm *data.Realm, userName string) *data.User {
+func (service *TokenBasedSecurityService) GetCurrentUserByName(realm *data.Realm, userName string) *data.User {
 	return (*service.DataProvider).GetUser(realm, userName)
 }
 
@@ -128,6 +128,15 @@ func (service *TokenBasedSecurityService) GetSessionByAccessToken(realm string, 
 }
 
 func (service *TokenBasedSecurityService) GetSessionByRefreshToken(realm string, token *string) *data.UserSession {
+	realmSessions, ok := service.UserSessions[realm]
+	if !ok {
+		return nil
+	}
+	for _, s := range realmSessions {
+		if s.JwtRefreshToken == *token {
+			return &s
+		}
+	}
 	return nil
 }
 

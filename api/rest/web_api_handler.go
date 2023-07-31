@@ -2,8 +2,10 @@ package rest
 
 import (
 	"encoding/base64"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/dto"
 	"github.com/wissance/Ferrum/errors"
 	"github.com/wissance/Ferrum/globals"
@@ -49,34 +51,52 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 					wCtx.Logger.Debug("New token issue: body is bad (unable to unmarshal to dto.TokenGenerationData)")
 					result = dto.ErrorDetails{Msg: errors.BadBodyForTokenGenerationMsg}
 				} else {
+					var currentUser *data.User
+					var userId uuid.UUID
+					issueTokens := false
 					// 0. Check whether we deal with issuing a new token or refresh previous one
-					issueTokens := true
-
 					isRefresh := isTokenRefreshRequest(&tokenGenerationData)
 					if isRefresh == true {
 						// todo(UMV): here we check refresh token and make decision to issue if it is valid && fresh enough
 						// 1-2. Validate refresh token and check is it fresh enough
+						session := (*wCtx.Security).GetSessionByRefreshToken(realm, &tokenGenerationData.RefreshToken)
+						if session == nil {
+							// todo (UMV): make like KeyCloak
+							status = http.StatusUnauthorized
+							result = dto.ErrorDetails{Msg: "+", Description: "+++"}
+						} else {
+							userId = session.UserId
+							if (*wCtx.Security).IsSessionExpired(realm, userId) {
+								// session expired, should request new one
+							} else {
+								issueTokens = true
+								// currentUser = (*wCtx.DataProvider).GetUserById()
+							}
+
+						}
+
 					} else {
 						check := (*wCtx.Security).Validate(&tokenGenerationData, realmPtr)
 						// 1. Pair client_id && client_secret validation
 						if check != nil {
 							status = http.StatusBadRequest
 							wCtx.Logger.Debug("New token issue: client data is invalid (client_id or client_secret)")
-							issueTokens = false
 							result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
-						}
-						// 2. User credentials validation
-						check = (*wCtx.Security).CheckCredentials(&tokenGenerationData, realmPtr)
-						if check != nil {
-							wCtx.Logger.Debug("New token issue: invalid user credentials (username or password)")
-							status = http.StatusUnauthorized
-							issueTokens = false
-							result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
+						} else {
+							// 2. User credentials validation
+							check = (*wCtx.Security).CheckCredentials(&tokenGenerationData, realmPtr)
+							if check != nil {
+								wCtx.Logger.Debug("New token issue: invalid user credentials (username or password)")
+								status = http.StatusUnauthorized
+								result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
+							} else {
+								issueTokens = true
+								currentUser = (*wCtx.Security).GetCurrentUserByName(realmPtr, tokenGenerationData.Username)
+								userId = (*currentUser).GetId()
+							}
 						}
 					}
 					if issueTokens {
-						currentUser := (*wCtx.Security).GetCurrentUser(realmPtr, tokenGenerationData.Username)
-						userId := (*currentUser).GetId()
 						// 3. Create access token && refresh token
 						duration := realmPtr.TokenExpiration
 						refreshDuration := realmPtr.RefreshTokenExpiration
