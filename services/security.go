@@ -7,7 +7,6 @@ import (
 )
 
 type SecurityService interface {
-	IsRefresh(tokenIssueData *dto.TokenGenerationData) bool
 	Validate(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError
 	CheckCredentials(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError
 	GetCurrentUser(realm *data.Realm, userName string) *data.User
@@ -15,5 +14,6 @@ type SecurityService interface {
 	AssignTokens(realm string, userId uuid.UUID, accessToken *string, refreshToken *string)
 	GetSession(realm string, userId uuid.UUID) *data.UserSession
 	GetSessionByAccessToken(realm string, token *string) *data.UserSession
+	GetSessionByRefreshToken(realm string, token *string) *data.UserSession
 	IsSessionExpired(realm string, userId uuid.UUID) bool
 }

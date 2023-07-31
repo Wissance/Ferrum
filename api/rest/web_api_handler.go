@@ -49,13 +49,13 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 					wCtx.Logger.Debug("New token issue: body is bad (unable to unmarshal to dto.TokenGenerationData)")
 					result = dto.ErrorDetails{Msg: errors.BadBodyForTokenGenerationMsg}
 				} else {
-					// 1. Validate client data: client_id, client_secret (if we have so), scope
-					// todo think maybe it should be removed from service
-					isRefresh := (*wCtx.Security).IsRefresh(&tokenGenerationData)
+					// 0. Check whether we deal with issuing a new token or refresh previous one
 					issueTokens := true
+
+					isRefresh := isTokenRefreshRequest(&tokenGenerationData)
 					if isRefresh == true {
 						// todo(UMV): here we check refresh token and make decision to issue if it is valid && fresh enough
-						// 1.-2. Validate refresh token and check is it fresh enough
+						// 1-2. Validate refresh token and check is it fresh enough
 					} else {
 						check := (*wCtx.Security).Validate(&tokenGenerationData, realmPtr)
 						// 1. Pair client_id && client_secret validation
@@ -222,4 +222,11 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 // todo(UMV) pass real address ...
 func (wCtx *WebApiContext) getRealmBaseUrl(realm string) string {
 	return stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
+}
+
+func isTokenRefreshRequest(tokenIssueData *dto.TokenGenerationData) bool {
+	if len(tokenIssueData.RefreshToken) == 0 || tokenIssueData.GrantType != globals.RefreshTokenGrantType {
+		return false
+	}
+	return true
 }

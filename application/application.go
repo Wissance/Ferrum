@@ -151,7 +151,7 @@ func (app *Application) initRestApi() error {
 	// Setting up listener for logging
 	appenderIndex := app.logger.GetAppenderIndex(config.RollingFile, app.appConfig.Logging.Appenders)
 	if appenderIndex == -1 {
-		app.logger.Info("The RollingFile appender is not found.")
+		app.logger.Info("The RollingFile appender was not found.")
 		var resultRouter http.Handler = router
 		app.httpHandler = &resultRouter
 		return nil

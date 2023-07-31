@@ -5,7 +5,6 @@ import (
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/dto"
 	"github.com/wissance/Ferrum/errors"
-	"github.com/wissance/Ferrum/globals"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/Ferrum/managers"
 	"time"
@@ -21,13 +20,6 @@ func CreateSecurityService(dataProvider *managers.DataContext, logger *logging.A
 	pwdSecService := &TokenBasedSecurityService{DataProvider: dataProvider, UserSessions: map[string][]data.UserSession{}, logger: logger}
 	secService := SecurityService(pwdSecService)
 	return secService
-}
-
-func (service *TokenBasedSecurityService) IsRefresh(tokenIssueData *dto.TokenGenerationData) bool {
-	if len(tokenIssueData.RefreshToken) == 0 || tokenIssueData.GrantType != globals.RefreshTokenGrantType {
-		return false
-	}
-	return true
 }
 
 func (service *TokenBasedSecurityService) Validate(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError {
@@ -132,6 +124,10 @@ func (service *TokenBasedSecurityService) GetSessionByAccessToken(realm string, 
 			return &s
 		}
 	}
+	return nil
+}
+
+func (service *TokenBasedSecurityService) GetSessionByRefreshToken(realm string, token *string) *data.UserSession {
 	return nil
 }
 
