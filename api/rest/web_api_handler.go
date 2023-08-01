@@ -34,8 +34,6 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 			wCtx.Logger.Debug("New token issue: realm doesn't exist")
 			result = dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
 		} else {
-			// todo (UMV): think we don't have refresh strategy yet, add in v1.0 ...
-			// New token issue strategy ...
 			tokenGenerationData := dto.TokenGenerationData{}
 			err := request.ParseForm()
 			if err != nil {
@@ -64,14 +62,14 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
 						} else {
 							userId = session.UserId
-							sessionExpired, rereshExpired := (*wCtx.Security).CheckSessionAndRefreshExpired(realm, userId)
+							sessionExpired, refreshExpired := (*wCtx.Security).CheckSessionAndRefreshExpired(realm, userId)
 							if sessionExpired {
 								// session expired, should request new one
 								status = http.StatusBadRequest
 								result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
 							} else {
-								if rereshExpired {
-									// todo(UMV): add proper msg && status
+								if refreshExpired {
+									status = http.StatusBadRequest
 									result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
 								} else {
 									currentUser = (*wCtx.Security).GetCurrentUserById(realmPtr, userId)

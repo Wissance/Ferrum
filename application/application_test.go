@@ -69,6 +69,7 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	assert.Nil(t, err)
 	realm := testRealm1
 	username := "vano"
+	// 1. Issue new valid token and get userInfo
 	response := issueNewToken(t, baseUrl, realm, testClient1, testClient1Secret, username, "1234567890")
 	token := getDataFromResponse[dto.Token](t, response)
 	assert.True(t, len(token.AccessToken) > 0)
@@ -78,32 +79,33 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	assert.True(t, len(userInfo) > 0)
 	assert.Equal(t, username, userInfo["preferred_username"])
 
-	// token introspect
+	// 2. Introspect valid token
+	// todo(UMV): add Introspect result check
 	tokenIntResult := checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, testClient1Secret, "200 OK")
 	active, ok := tokenIntResult["active"]
 	assert.True(t, ok)
 	assert.True(t, active.(bool))
 	delay := 3
 	time.Sleep(time.Second * time.Duration(delay))
-	// refresh here
+	// 3. Refresh token successfully
 	response = refreshToken(t, baseUrl, realm, testClient1, testClient1Secret, token.RefreshToken)
 	assert.Equal(t, response.Status, "200 OK")
 	token = getDataFromResponse[dto.Token](t, response)
 	time.Sleep(time.Second * time.Duration(testAccessTokenExpiration-delay+1))
 	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, testClient1Secret, "200 OK")
-
+	// 4. Use wrong params to  token introspection and check status
 	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, "wrongClientId", testClient1Secret, "401 Unauthorized")
 	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, "wrongSecret", "401 Unauthorized")
 	checkIntrospectToken(t, baseUrl, realm, "wrongToken", testClient1, testClient1Secret, "401 Unauthorized")
 
+	// 5. Expire token by timeout and got 401 (Unauthorized) status
 	time.Sleep(time.Second * time.Duration(testAccessTokenExpiration))
 	userInfo = getUserInfo(t, baseUrl, realm, token.AccessToken, "401 Unauthorized")
-	// wait token expiration and call one more, got 401
+	// todo(UMV): this one looking strange because token expired and we expect here 200 as status
 	tokenIntResult = checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, testClient1Secret, "200 OK")
 	active, ok = tokenIntResult["active"]
 	assert.True(t, ok == false || active == nil || active.(bool) == false)
-
-	// try with bad client credentials
+	// 6. Attempt to get new tokens with wrong credentials
 	response = issueNewToken(t, baseUrl, realm, "unknownClient", testClient1Secret, username, "1234567890")
 	errResp := getDataFromResponse[dto.ErrorDetails](t, response)
 	assert.Equal(t, errors.InvalidClientMsg, errResp.Msg)
@@ -111,6 +113,18 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	response = issueNewToken(t, baseUrl, realm, testClient1, testClient1Secret, username, "wrongPass!!!")
 	errResp = getDataFromResponse[dto.ErrorDetails](t, response)
 	assert.Equal(t, errors.InvalidUserCredentialsMsg, errResp.Msg)
+
+	// 6. Issue new valid token and wait refresh expiration and check
+	response = issueNewToken(t, baseUrl, realm, testClient1, testClient1Secret, username, "1234567890")
+	assert.Equal(t, response.Status, "200 OK")
+	token = getDataFromResponse[dto.Token](t, response)
+	time.Sleep(time.Second * time.Duration(testRefreshTokenExpiration+2))
+	response = refreshToken(t, baseUrl, realm, testClient1, testClient1Secret, token.RefreshToken)
+	assert.Equal(t, response.Status, "400 Bad Request")
+	// but still possible to get userInfo with accessToken
+	userInfo = getUserInfo(t, baseUrl, realm, token.AccessToken, "200 OK")
+	assert.True(t, len(userInfo) > 0)
+	assert.Equal(t, username, userInfo["preferred_username"])
 
 	res, err = app.Stop()
 	assert.True(t, res)
