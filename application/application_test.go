@@ -39,16 +39,20 @@ var testServerData = data.ServerData{
 			}},
 	},
 }
+
+// todo (UMV): add here Path combine instead of  //
 var loggingConfig = config.LoggingConfig{Level: "info", Appenders: []config.AppenderConfig{{Level: "info", Type: config.Console},
 	{Level: "info", Type: config.RollingFile, Destination: &config.DestinationConfig{File: "logs//ferrum_tests.log"}}}}
 var httpAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTP, Address: "127.0.0.1", Port: 8284}, Logging: loggingConfig}
 var httpsAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTPS, Address: "127.0.0.1", Port: 8672,
 	Security: config.SecurityConfig{KeyFile: "../certs/server.key", CertificateFile: "../certs/server.crt"}}, Logging: loggingConfig}
 
+// todo(UMV): take from config
 func TestApplicationOnHttp(t *testing.T) {
 	testRunCommonTestCycleImpl(t, &httpAppConfig, "http://127.0.0.1:8284")
 }
 
+// todo(UMV): take from config
 func TestApplicationOnHttps(t *testing.T) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	testRunCommonTestCycleImpl(t, &httpsAppConfig, "https://127.0.0.1:8672")
@@ -79,17 +83,21 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	active, ok := tokenIntResult["active"]
 	assert.True(t, ok)
 	assert.True(t, active.(bool))
-	// time.Sleep(time.Second * time.Duration(2))
+	delay := 3
+	time.Sleep(time.Second * time.Duration(delay))
 	// refresh here
+	response = refreshToken(t, baseUrl, realm, testClient1, testClient1Secret, token.RefreshToken)
+	time.Sleep(time.Second * time.Duration(testAccessTokenExpiration-delay+1))
+	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, testClient1Secret, "200 OK")
 
 	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, "wrongClientId", testClient1Secret, "401 Unauthorized")
 	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, "wrongSecret", "401 Unauthorized")
 	checkIntrospectToken(t, baseUrl, realm, "wrongToken", testClient1, testClient1Secret, "401 Unauthorized")
 
-	time.Sleep(time.Second * time.Duration(10))
+	time.Sleep(time.Second * time.Duration(testAccessTokenExpiration))
 	userInfo = getUserInfo(t, baseUrl, realm, token.AccessToken, "401 Unauthorized")
 	// wait token expiration and call one more, got 401
-	tokenIntResult = checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, testClient1Secret, "200 OK")
+	tokenIntResult = checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, testClient1Secret, "401 Unauthorized")
 	active, ok = tokenIntResult["active"]
 	assert.True(t, ok == false || active == nil || active.(bool) == false)
 
@@ -118,6 +126,21 @@ func issueNewToken(t *testing.T, baseUrl string, realm string, clientId string, 
 	getTokenData.Set("grant_type", "password")
 	getTokenData.Set("username", userName)
 	getTokenData.Set("password", password)
+	response, err := http.PostForm(tokenUrl, getTokenData)
+	assert.Nil(t, err)
+	return response
+}
+
+func refreshToken(t *testing.T, baseUrl string, realm string, clientId string, clientSecret string,
+	refreshToken string) *http.Response {
+	tokenUrlTemplate := "{0}/auth/realms/{1}/protocol/openid-connect/token"
+	tokenUrl := stringFormatter.Format(tokenUrlTemplate, baseUrl, realm)
+	getTokenData := url.Values{}
+	getTokenData.Set("client_id", clientId)
+	getTokenData.Set("client_secret", clientSecret)
+	getTokenData.Set("scope", "profile")
+	getTokenData.Set("grant_type", "refresh_token")
+	getTokenData.Set("refresh_token", refreshToken)
 	response, err := http.PostForm(tokenUrl, getTokenData)
 	assert.Nil(t, err)
 	return response
