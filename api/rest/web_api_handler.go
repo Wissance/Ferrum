@@ -64,17 +64,22 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
 						} else {
 							userId = session.UserId
-							sessionExpired := (*wCtx.Security).IsSessionExpired(realm, userId)
+							sessionExpired, rereshExpired := (*wCtx.Security).CheckSessionAndRefreshExpired(realm, userId)
 							if sessionExpired {
 								// session expired, should request new one
+								status = http.StatusBadRequest
 								result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
 							} else {
-								// todo(UMV): token not expired
-								currentUser = (*wCtx.Security).GetCurrentUserById(realmPtr, userId)
-								if currentUser != nil {
-									issueTokens = true
-								} else {
+								if rereshExpired {
+									// todo(UMV): add proper msg && status
 									result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
+								} else {
+									currentUser = (*wCtx.Security).GetCurrentUserById(realmPtr, userId)
+									if currentUser != nil {
+										issueTokens = true
+									} else {
+										result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
+									}
 								}
 							}
 
@@ -104,9 +109,10 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 					if issueTokens {
 						// 3. Create access token && refresh token
 						duration := realmPtr.TokenExpiration
+						refresh := realmPtr.RefreshTokenExpiration
 						refreshDuration := realmPtr.RefreshTokenExpiration
 						// 4. Save session
-						sessionId := (*wCtx.Security).StartOrUpdateSession(realm, userId, duration)
+						sessionId := (*wCtx.Security).StartOrUpdateSession(realm, userId, duration, refresh)
 						session := (*wCtx.Security).GetSession(realm, userId)
 						// 5. Generate new tokens
 						accessToken := wCtx.TokenGenerator.GenerateJwtAccessToken(wCtx.getRealmBaseUrl(realm), string(BearerToken),
