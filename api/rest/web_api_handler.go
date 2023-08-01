@@ -57,13 +57,11 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 					// 0. Check whether we deal with issuing a new token or refresh previous one
 					isRefresh := isTokenRefreshRequest(&tokenGenerationData)
 					if isRefresh == true {
-						// todo(UMV): here we check refresh token and make decision to issue if it is valid && fresh enough
 						// 1-2. Validate refresh token and check is it fresh enough
 						session := (*wCtx.Security).GetSessionByRefreshToken(realm, &tokenGenerationData.RefreshToken)
 						if session == nil {
-							// todo (UMV): make like KeyCloak
 							status = http.StatusUnauthorized
-							result = dto.ErrorDetails{Msg: "+", Description: "+++"}
+							result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
 						} else {
 							userId = session.UserId
 							if (*wCtx.Security).IsSessionExpired(realm, userId) {
@@ -72,6 +70,8 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 								currentUser = (*wCtx.Security).GetCurrentUserById(realmPtr, userId)
 								if currentUser != nil {
 									issueTokens = true
+								} else {
+									result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
 								}
 							}
 
