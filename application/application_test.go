@@ -87,6 +87,8 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	time.Sleep(time.Second * time.Duration(delay))
 	// refresh here
 	response = refreshToken(t, baseUrl, realm, testClient1, testClient1Secret, token.RefreshToken)
+	assert.Equal(t, response.Status, "200 OK")
+	token = getDataFromResponse[dto.Token](t, response)
 	time.Sleep(time.Second * time.Duration(testAccessTokenExpiration-delay+1))
 	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, testClient1Secret, "200 OK")
 
@@ -97,7 +99,7 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	time.Sleep(time.Second * time.Duration(testAccessTokenExpiration))
 	userInfo = getUserInfo(t, baseUrl, realm, token.AccessToken, "401 Unauthorized")
 	// wait token expiration and call one more, got 401
-	tokenIntResult = checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, testClient1Secret, "401 Unauthorized")
+	tokenIntResult = checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, testClient1Secret, "200 OK")
 	active, ok = tokenIntResult["active"]
 	assert.True(t, ok == false || active == nil || active.(bool) == false)
 

@@ -64,9 +64,12 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
 						} else {
 							userId = session.UserId
-							if (*wCtx.Security).IsSessionExpired(realm, userId) {
+							sessionExpired := (*wCtx.Security).IsSessionExpired(realm, userId)
+							if sessionExpired {
 								// session expired, should request new one
+								result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
 							} else {
+								// todo(UMV): token not expired
 								currentUser = (*wCtx.Security).GetCurrentUserById(realmPtr, userId)
 								if currentUser != nil {
 									issueTokens = true

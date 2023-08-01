@@ -70,8 +70,9 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 	sessionId := uuid.New()
 	// if there are no realm sessions ...
 	if !ok {
-		userSession := data.UserSession{Id: sessionId, UserId: userId, Started: time.Now(),
-			Expired: time.Now().Add(time.Second * time.Duration(duration))}
+		started := time.Now()
+		userSession := data.UserSession{Id: sessionId, UserId: userId, Started: started,
+			Expired: started.Add(time.Second * time.Duration(duration))}
 		service.UserSessions[realm] = append(realmSessions, userSession)
 		return sessionId
 	}
@@ -149,5 +150,6 @@ func (service *TokenBasedSecurityService) IsSessionExpired(realm string, userId 
 	if s == nil {
 		return true
 	}
-	return s.Expired.Before(time.Now())
+	current := time.Now().In(time.UTC)
+	return s.Expired.In(time.UTC).Before(current)
 }
