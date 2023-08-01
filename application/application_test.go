@@ -18,13 +18,19 @@ import (
 	"time"
 )
 
+const testAccessTokenExpiration = 10
+const testRefreshTokenExpiration = 5
+const testRealm1 = "testrealm1"
+const testClient1 = "testclient1"
+const testClient1Secret = "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz"
+
 var testKey = []byte("qwerty1234567890")
 var testServerData = data.ServerData{
 	Realms: []data.Realm{
-		{Name: "testrealm1", TokenExpiration: 10, RefreshTokenExpiration: 5,
+		{Name: testRealm1, TokenExpiration: testAccessTokenExpiration, RefreshTokenExpiration: testRefreshTokenExpiration,
 			Clients: []data.Client{
-				{Name: "testclient1", Type: data.Confidential, Auth: data.Authentication{Type: data.ClientIdAndSecrets,
-					Value: "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz"}},
+				{Name: testClient1, Type: data.Confidential, Auth: data.Authentication{Type: data.ClientIdAndSecrets,
+					Value: testClient1Secret}},
 			}, Users: []interface{}{
 				map[string]interface{}{"info": map[string]interface{}{"sub": "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
 					"name": "vano", "preferred_username": "vano",
@@ -57,10 +63,9 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	res, err = app.Start()
 	assert.True(t, res)
 	assert.Nil(t, err)
-	realm := "testrealm1"
+	realm := testRealm1
 	username := "vano"
-	response := issueNewToken(t, baseUrl, realm, "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
-		username, "1234567890")
+	response := issueNewToken(t, baseUrl, realm, testClient1, testClient1Secret, username, "1234567890")
 	token := getDataFromResponse[dto.Token](t, response)
 	assert.True(t, len(token.AccessToken) > 0)
 	assert.True(t, len(token.RefreshToken) > 0)
@@ -70,30 +75,30 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	assert.Equal(t, username, userInfo["preferred_username"])
 
 	// token introspect
-	tokenIntResult := checkIntrospectToken(t, baseUrl, realm, token.AccessToken, "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz", "200 OK")
+	tokenIntResult := checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, testClient1Secret, "200 OK")
 	active, ok := tokenIntResult["active"]
 	assert.True(t, ok)
 	assert.True(t, active.(bool))
+	// time.Sleep(time.Second * time.Duration(2))
+	// refresh here
 
-	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, "wrongClientId", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz", "401 Unauthorized")
-	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, "testclient1", "wrongSecret", "401 Unauthorized")
-	checkIntrospectToken(t, baseUrl, realm, "wrongToken", "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz", "401 Unauthorized")
+	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, "wrongClientId", testClient1Secret, "401 Unauthorized")
+	checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, "wrongSecret", "401 Unauthorized")
+	checkIntrospectToken(t, baseUrl, realm, "wrongToken", testClient1, testClient1Secret, "401 Unauthorized")
 
 	time.Sleep(time.Second * time.Duration(10))
 	userInfo = getUserInfo(t, baseUrl, realm, token.AccessToken, "401 Unauthorized")
 	// wait token expiration and call one more, got 401
-	tokenIntResult = checkIntrospectToken(t, baseUrl, realm, token.AccessToken, "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz", "200 OK")
+	tokenIntResult = checkIntrospectToken(t, baseUrl, realm, token.AccessToken, testClient1, testClient1Secret, "200 OK")
 	active, ok = tokenIntResult["active"]
 	assert.True(t, ok == false || active == nil || active.(bool) == false)
 
 	// try with bad client credentials
-	response = issueNewToken(t, baseUrl, realm, "unknownClient", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
-		username, "1234567890")
+	response = issueNewToken(t, baseUrl, realm, "unknownClient", testClient1Secret, username, "1234567890")
 	errResp := getDataFromResponse[dto.ErrorDetails](t, response)
 	assert.Equal(t, errors.InvalidClientMsg, errResp.Msg)
 	// try with bad user credentials
-	response = issueNewToken(t, baseUrl, realm, "testclient1", "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
-		username, "wrongPass!!!")
+	response = issueNewToken(t, baseUrl, realm, testClient1, testClient1Secret, username, "wrongPass!!!")
 	errResp = getDataFromResponse[dto.ErrorDetails](t, response)
 	assert.Equal(t, errors.InvalidUserCredentialsMsg, errResp.Msg)
 
