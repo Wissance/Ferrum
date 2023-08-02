@@ -41,8 +41,7 @@ var testServerData = data.ServerData{
 }
 
 // todo (UMV): add here Path combine instead of  //
-var loggingConfig = config.LoggingConfig{Level: "info", Appenders: []config.AppenderConfig{{Level: "info", Type: config.Console},
-	{Level: "info", Type: config.RollingFile, Destination: &config.DestinationConfig{File: "logs//ferrum_tests.log"}}}}
+var loggingConfig = config.LoggingConfig{Level: "info", Appenders: []config.AppenderConfig{{Level: "info", Type: config.Console}}}
 var httpAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTP, Address: "127.0.0.1", Port: 8284}, Logging: loggingConfig}
 var httpsAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTPS, Address: "127.0.0.1", Port: 8672,
 	Security: config.SecurityConfig{KeyFile: "../certs/server.key", CertificateFile: "../certs/server.crt"}}, Logging: loggingConfig}
