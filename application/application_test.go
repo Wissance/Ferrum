@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -32,18 +33,19 @@ var testServerData = data.ServerData{
 				{Name: testClient1, Type: data.Confidential, Auth: data.Authentication{Type: data.ClientIdAndSecrets,
 					Value: testClient1Secret}},
 			}, Users: []interface{}{
-				map[string]interface{}{"info": map[string]interface{}{"sub": "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
-					"name": "vano", "preferred_username": "vano",
-					"given_name": "vano ivanov", "family_name": "ivanov", "email_verified": true},
-					"credentials": map[string]interface{}{"password": "1234567890"}},
-			}},
+			map[string]interface{}{"info": map[string]interface{}{"sub": "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
+				"name": "vano", "preferred_username": "vano",
+				"given_name": "vano ivanov", "family_name": "ivanov", "email_verified": true},
+				"credentials": map[string]interface{}{"password": "1234567890"}},
+		}},
 	},
 }
 
 var loggingConfig = config.LoggingConfig{Level: "info", Appenders: []config.AppenderConfig{{Level: "info", Type: config.Console}}}
 var httpAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTP, Address: "127.0.0.1", Port: 8284}, Logging: loggingConfig}
 var httpsAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTPS, Address: "127.0.0.1", Port: 8672,
-	Security: config.SecurityConfig{KeyFile: "../certs/server.key", CertificateFile: "../certs/server.crt"}}, Logging: loggingConfig}
+	Security: config.SecurityConfig{KeyFile: filepath.Join("..", "certs", "server.key"),
+		CertificateFile: filepath.Join("..", "certs", "server.crt")}}, Logging: loggingConfig}
 
 func TestApplicationOnHttp(t *testing.T) {
 	serverAddress := stringFormatter.Format("{0}:{1}", httpAppConfig.ServerCfg.Address, httpAppConfig.ServerCfg.Port)
