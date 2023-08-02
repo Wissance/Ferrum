@@ -12,4 +12,5 @@ const (
 	InvalidRequestDesc           = "Token not provided"
 	InvalidTokenMsg              = "Invalid token"
 	InvalidTokenDesc             = "Token verification failed"
+	TokenIsNotActive             = "Token is not active"
 )

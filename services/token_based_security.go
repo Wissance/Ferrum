@@ -57,17 +57,24 @@ func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.T
 	return nil
 }
 
-func (service *TokenBasedSecurityService) GetCurrentUser(realm *data.Realm, userName string) *data.User {
+func (service *TokenBasedSecurityService) GetCurrentUserByName(realm *data.Realm, userName string) *data.User {
 	return (*service.DataProvider).GetUser(realm, userName)
 }
 
-func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, userId uuid.UUID, duration int) uuid.UUID {
+func (service *TokenBasedSecurityService) GetCurrentUserById(realm *data.Realm, userId uuid.UUID) *data.User {
+	return (*service.DataProvider).GetUserById(realm, userId)
+}
+
+func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, userId uuid.UUID, duration int, refresh int) uuid.UUID {
 	realmSessions, ok := service.UserSessions[realm]
 	sessionId := uuid.New()
 	// if there are no realm sessions ...
 	if !ok {
-		userSession := data.UserSession{Id: sessionId, UserId: userId, Started: time.Now(),
-			Expired: time.Now().Add(time.Second * time.Duration(duration))}
+		started := time.Now()
+		userSession := data.UserSession{Id: sessionId, UserId: userId, Started: started,
+			Expired:        started.Add(time.Second * time.Duration(duration)),
+			RefreshExpired: started.Add(time.Second * time.Duration(refresh)),
+		}
 		service.UserSessions[realm] = append(realmSessions, userSession)
 		return sessionId
 	}
@@ -127,10 +134,24 @@ func (service *TokenBasedSecurityService) GetSessionByAccessToken(realm string, 
 	return nil
 }
 
-func (service *TokenBasedSecurityService) IsSessionExpired(realm string, userId uuid.UUID) bool {
+func (service *TokenBasedSecurityService) GetSessionByRefreshToken(realm string, token *string) *data.UserSession {
+	realmSessions, ok := service.UserSessions[realm]
+	if !ok {
+		return nil
+	}
+	for _, s := range realmSessions {
+		if s.JwtRefreshToken == *token {
+			return &s
+		}
+	}
+	return nil
+}
+
+func (service *TokenBasedSecurityService) CheckSessionAndRefreshExpired(realm string, userId uuid.UUID) (bool, bool) {
 	s := service.GetSession(realm, userId)
 	if s == nil {
-		return true
+		return true, true
 	}
-	return s.Expired.Before(time.Now())
+	current := time.Now().In(time.UTC)
+	return s.Expired.In(time.UTC).Before(current), s.RefreshExpired.In(time.UTC).Before(current)
 }

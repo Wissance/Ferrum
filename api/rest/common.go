@@ -5,7 +5,18 @@ import (
 	"net/http"
 )
 
-// BeforeHandle
+const (
+	authorizationHeader = "Authorization"
+)
+
+type tokenType string
+
+const (
+	BearerToken  tokenType = "Bearer"
+	RefreshToken tokenType = "Refresh"
+)
+
+// beforeHandle
 /* This function prepare response headers prior to response handle. It sets content-type and CORS headers.
  * Parameters:
  *     - respWriter - gorilla/mux response writer
@@ -16,7 +27,7 @@ func beforeHandle(respWriter *http.ResponseWriter) {
 	(*respWriter).Header().Set("Accept", "application/json")
 }
 
-// AfterHandle
+// afterHandle
 /* This function finalize response handle: serialize (json) and write object and set status code. If error occur during object serialization status code sets to 500
  * Parameters:
  *     - respWriter - gorilla/mux response writer

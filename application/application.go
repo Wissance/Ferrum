@@ -143,7 +143,9 @@ func (app *Application) initDataProviders() error {
 func (app *Application) initRestApi() error {
 	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
 	securityService := services.CreateSecurityService(app.dataProvider, app.logger)
-	app.webApiContext = &rest.WebApiContext{DataProvider: app.dataProvider, Security: &securityService,
+	serverAddress := stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
+	app.webApiContext = &rest.WebApiContext{Address: serverAddress, Schema: string(app.appConfig.ServerCfg.Schema),
+		DataProvider: app.dataProvider, Security: &securityService,
 		TokenGenerator: &services.JwtGenerator{SignKey: *app.secretKey, Logger: app.logger}, Logger: app.logger}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
@@ -151,7 +153,7 @@ func (app *Application) initRestApi() error {
 	// Setting up listener for logging
 	appenderIndex := app.logger.GetAppenderIndex(config.RollingFile, app.appConfig.Logging.Appenders)
 	if appenderIndex == -1 {
-		app.logger.Info("The RollingFile appender is not found.")
+		app.logger.Info("The RollingFile appender was not found.")
 		var resultRouter http.Handler = router
 		app.httpHandler = &resultRouter
 		return nil

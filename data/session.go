@@ -10,6 +10,7 @@ type UserSession struct {
 	UserId          uuid.UUID
 	Started         time.Time
 	Expired         time.Time
+	RefreshExpired  time.Time
 	JwtAccessToken  string
 	JwtRefreshToken string
 }

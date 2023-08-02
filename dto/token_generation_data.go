@@ -7,4 +7,5 @@ type TokenGenerationData struct {
 	Scope        string `json:"scope" schema:"scope"`
 	Username     string `json:"username" schema:"username"`
 	Password     string `json:"password" schema:"password"`
+	RefreshToken string `json:"refresh_token" schema:"refresh_token"`
 }
