@@ -45,15 +45,15 @@ var httpAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: conf
 var httpsAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTPS, Address: "127.0.0.1", Port: 8672,
 	Security: config.SecurityConfig{KeyFile: "../certs/server.key", CertificateFile: "../certs/server.crt"}}, Logging: loggingConfig}
 
-// todo(UMV): take from config
 func TestApplicationOnHttp(t *testing.T) {
-	testRunCommonTestCycleImpl(t, &httpAppConfig, "http://127.0.0.1:8284")
+	serverAddress := stringFormatter.Format("{0}:{1}", httpAppConfig.ServerCfg.Address, httpAppConfig.ServerCfg.Port)
+	testRunCommonTestCycleImpl(t, &httpAppConfig, stringFormatter.Format("{0}://{1}", httpAppConfig.ServerCfg.Schema, serverAddress))
 }
 
-// todo(UMV): take from config
 func TestApplicationOnHttps(t *testing.T) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	testRunCommonTestCycleImpl(t, &httpsAppConfig, "https://127.0.0.1:8672")
+	serverAddress := stringFormatter.Format("{0}:{1}", httpsAppConfig.ServerCfg.Address, httpsAppConfig.ServerCfg.Port)
+	testRunCommonTestCycleImpl(t, &httpsAppConfig, stringFormatter.Format("{0}://{1}", httpsAppConfig.ServerCfg.Schema, serverAddress))
 }
 
 func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseUrl string) {
