@@ -248,9 +248,8 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	afterHandle(&respWriter, status, &result)
 }
 
-// todo(UMV) pass real address ...
 func (wCtx *WebApiContext) getRealmBaseUrl(realm string) string {
-	return stringFormatter.Format("/{0}/{1}/auth/realms/{2}", "http", "localhost:8182", realm)
+	return stringFormatter.Format("/{0}/{1}/auth/realms/{2}", wCtx.Schema, wCtx.Address, realm)
 }
 
 func isTokenRefreshRequest(tokenIssueData *dto.TokenGenerationData) bool {

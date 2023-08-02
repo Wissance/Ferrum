@@ -7,6 +7,8 @@ import (
 )
 
 type WebApiContext struct {
+	Address        string
+	Schema         string
 	DataProvider   *managers.DataContext
 	Security       *services.SecurityService
 	TokenGenerator *services.JwtGenerator
