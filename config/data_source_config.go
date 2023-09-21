@@ -26,6 +26,8 @@ const (
 	UseTls DataSourceConnOption = "use_tls"
 	// InsecureTls is a REDIS option to set up TLSConfig: &tls.Config{InsecureSkipVerify: true}, here we expect to receive bool value in a string
 	InsecureTls DataSourceConnOption = "allow_insecure_tls"
+	// Namespace is a prefix before any key
+	Namespace DataSourceConnOption = "namespace"
 )
 
 var (
@@ -103,17 +105,3 @@ func (cfg *DataSourceConfig) Validate() error {
 	}
 	return nil
 }
-
-/*func (cfg *DataSourceConfig) validateParam(keyType *DataSourceConnOptionValueType, value *string) error {
-	switch *keyType {
-	case Integer:
-		_, e := strconv.Atoi(*value)
-		return e
-	case Boolean:
-		_, e := strconv.ParseBool(*value)
-		return e
-	default:
-		return nil
-
-	}
-}*/

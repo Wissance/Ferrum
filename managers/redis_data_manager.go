@@ -13,13 +13,14 @@ import (
 	"strconv"
 )
 
+// This set of const of a templates to all data storing in Redis it contains prefix - a namespace {0}
 const (
-	userKeyTemplate               = "fe_user_{0}"
-	realmKeyTemplate              = "fe_realm_{0}"
-	realmClientsKeyTemplate       = "fe_realm_{0}_clients"
-	clientKeyTemplate             = "fe_client_{0}"
-	realmUsersKeyTemplate         = "fe_realm_{0}_users"
-	realmUsersFullDataKeyTemplate = "fe_realm_{0}_users_full_data"
+	userKeyTemplate               = "{0}_user_{1}"
+	realmKeyTemplate              = "{0}_realm_{1}"
+	realmClientsKeyTemplate       = "{0}_realm_{1}_clients"
+	clientKeyTemplate             = "{0}_client_{1}"
+	realmUsersKeyTemplate         = "{0}_realm_{1}_users"
+	realmUsersFullDataKeyTemplate = "{0}_realm_{1}_users_full_data"
 )
 
 type objectType string
@@ -31,6 +32,8 @@ const (
 	Client                  = "client"
 	User                    = "user"
 )
+
+const defaultNamespace = "fe"
 
 // RedisDataManager is a redis client
 /*
@@ -53,6 +56,7 @@ const (
  *       we have it.
  */
 type RedisDataManager struct {
+	namespace   string
 	redisOption *redis.Options
 	redisClient *redis.Client
 	logger      *logging.AppLogger
@@ -62,19 +66,24 @@ type RedisDataManager struct {
 func CreateRedisDataManager(dataSourceCfd *config.DataSourceConfig, logger *logging.AppLogger) DataContext {
 	opts := buildRedisConfig(dataSourceCfd, logger)
 	rClient := redis.NewClient(opts)
-	mn := &RedisDataManager{logger: logger, redisOption: opts, redisClient: rClient, ctx: context.Background()}
+	namespace, ok := dataSourceCfd.Options[config.Namespace]
+	if !ok || len(namespace) == 0 {
+		namespace = defaultNamespace
+	}
+	mn := &RedisDataManager{logger: logger, redisOption: opts, redisClient: rClient, ctx: context.Background(),
+		namespace: namespace}
 	dc := DataContext(mn)
 	return dc
 }
 
 func (mn *RedisDataManager) GetRealm(realmName string) *data.Realm {
-	realmKey := sf.Format(realmKeyTemplate, realmName)
+	realmKey := sf.Format(realmKeyTemplate, mn.namespace, realmName)
 	realm := getObjectFromRedis[data.Realm](mn.redisClient, mn.ctx, mn.logger, Realm, realmKey)
 	return realm
 }
 
 func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Client {
-	realmClientsKey := sf.Format(realmClientsKeyTemplate, realm.Name)
+	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realm.Name)
 	// realm_%name%_clients contains array with configured clients ID (data.ExtendedIdentifier) for that realm
 	realmClients := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
 	if realmClients == nil {
@@ -94,13 +103,13 @@ func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Clie
 		mn.logger.Debug(sf.Format("Realm: \"{0}\" doesn't have client : \"{1}\" in Redis", realm.Name, name))
 		return nil
 	}
-	clientKey := sf.Format(clientKeyTemplate, clientId.ID)
+	clientKey := sf.Format(clientKeyTemplate, mn.namespace, clientId.ID)
 	client := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
 	return client
 }
 
 func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.User {
-	userRealmsKey := sf.Format(realmUsersKeyTemplate, realm.Name)
+	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realm.Name)
 	realmUsers := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if realmUsers == nil {
 		mn.logger.Error(sf.Format("There are no user with name :\"{0}\" in realm: \"{1} \" in Redis, BAD data config", userName, realm.Name))
@@ -122,17 +131,17 @@ func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.Us
 		return nil
 	}
 
-	userKey := sf.Format(userKeyTemplate, extendedUserId.Name)
+	userKey := sf.Format(userKeyTemplate, mn.namespace, extendedUserId.Name)
 	rawUser := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
 	user := data.CreateUser(rawUser)
 	return &user
 }
 
 func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *data.User {
-	userKey := sf.Format(userKeyTemplate, userId)
+	userKey := sf.Format(userKeyTemplate, mn.namespace, userId)
 	rawUser := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
 	user := data.CreateUser(rawUser)
-	userRealmsKey := sf.Format(realmUsersKeyTemplate, realm.Name)
+	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realm.Name)
 	realmUsers := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if realmUsers == nil {
 		mn.logger.Error(sf.Format("There are no user with ID:\"{0}\" in realm: \"{1} \" in Redis, BAD data config", userId.String(), realm.Name))
@@ -151,14 +160,14 @@ func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *da
 
 func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 	// TODO(UMV): possibly we should not use this method ??? what if we have 1M+ users .... ? think maybe it should be somehow optimized ...
-	userRealmsKey := sf.Format(realmUsersKeyTemplate, realmName)
+	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realmName)
 	realmUsers := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if realmUsers == nil {
 		mn.logger.Error(sf.Format("There are no users in realm: \"{0} \" in Redis, BAD data config", realmName))
 		return nil
 	}
 
-	userFullDataRealmsKey := sf.Format(realmUsersFullDataKeyTemplate, realmName)
+	userFullDataRealmsKey := sf.Format(realmUsersFullDataKeyTemplate, mn.namespace, realmName)
 	realmUsersData := getObjectFromRedis[[]interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
 
 	if realmUsersData != nil {

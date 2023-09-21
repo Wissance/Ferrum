@@ -4,9 +4,10 @@ import "crypto/tls"
 
 // RedisConfig is a simplified redis.Options config
 type RedisConfig struct {
-	Address  string `json:"address" example:"localhost:6379"`
-	Password string `json:"password"`
-	DbNumber int    `json:"db_number"`
+	Address   string `json:"address" example:"localhost:6379"`
+	Password  string `json:"password"`
+	DbNumber  int    `json:"db_number"`
+	Namespace string `json:"namespace"`
 	// MaxRetries is a number of attempts to
 	MaxRetries int `json:"max_retries"`
 	// MinRetryBackoff is a backoff in milliseconds
