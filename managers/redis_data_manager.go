@@ -139,14 +139,14 @@ func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.Us
 
 	userKey := sf.Format(userKeyTemplate, mn.namespace, extendedUserId.Name)
 	rawUser := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
-	user := data.CreateUser(rawUser)
+	user := data.CreateUser(*rawUser)
 	return &user
 }
 
 func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *data.User {
 	userKey := sf.Format(userKeyTemplate, mn.namespace, userId)
 	rawUser := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
-	user := data.CreateUser(rawUser)
+	user := data.CreateUser(*rawUser)
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realm.Name)
 	realmUsers := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if realmUsers == nil {
