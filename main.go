@@ -15,9 +15,10 @@ import (
 
 const defaultConfig = "./config.json"
 
-var configFile = flag.String("profile", defaultConfig, "config profile.")
+var configFile = flag.String("config", defaultConfig, "--config ./config_w_redis.json")
 
 func main() {
+	flag.Parse()
 	osSignal := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
