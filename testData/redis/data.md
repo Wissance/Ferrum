@@ -5,14 +5,14 @@ We are using `ferrum_1` as a Redis namespace (prefix before every key)
 ```json
 {
     "ferrum_1.realm_myApp": {
-         "name": "myapp",
+         "name": "myApp",
          "token_expiration": 600,
          "refresh_expiration": 300,
          "clients": [
          ]
     },
     "ferrum_1.realm_testApp": {
-         "name": "testApp",
+         "name": "testapp",
          "token_expiration": 6000,
          "refresh_expiration": 3000,
          "clients": [

@@ -80,6 +80,11 @@ func CreateRedisDataManager(dataSourceCfg *config.DataSourceConfig, logger *logg
 func (mn *RedisDataManager) GetRealm(realmName string) *data.Realm {
 	realmKey := sf.Format(realmKeyTemplate, mn.namespace, realmName)
 	realm := getObjectFromRedis[data.Realm](mn.redisClient, mn.ctx, mn.logger, Realm, realmKey)
+	// should get realms too
+	// if realms were stored without clients (we expected so), get clients related to realm and assign here
+	if len(realm.Clients) == 0 {
+		realm.Clients = mn.GetRealmClients(realmName)
+	}
 	return realm
 }
 
@@ -181,6 +186,25 @@ func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 	return nil
 }
 
+func (mn *RedisDataManager) GetRealmClients(realmName string) []data.Client {
+	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realmName)
+	realmClients := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
+	if realmClients == nil {
+		mn.logger.Error(sf.Format("There are no clients for realm: \"{0} \" in Redis, BAD data config", realmName))
+		return nil
+	}
+	clients := make([]data.Client, len(*realmClients))
+	for i, rc := range *realmClients {
+		// todo(UMV) get all them at once
+		clientKey := sf.Format(clientKeyTemplate, mn.namespace, rc.Name)
+		client := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
+		clients[i] = *client
+	}
+
+	return clients
+}
+
+// getObjectFromRedis is a method that DOESN'T work with List type object, only a String
 func getObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
 	objName objectType, objKey string) *T {
 	redisCmd := redisClient.Get(ctx, objKey)
@@ -190,12 +214,37 @@ func getObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, l
 	}
 
 	var obj T
-	realmJson := []byte(redisCmd.Val())
-	err := json.Unmarshal(realmJson, &obj)
+	jsonBin := []byte(redisCmd.Val())
+	err := json.Unmarshal(jsonBin, &obj)
 	if err != nil {
 		logger.Error(sf.Format("An error occurred during {0} : \"{1}\" unmarshall", objName, objKey))
 	}
 	return &obj
+}
+
+func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
+	objName objectType, objKey string) *[]T {
+
+	redisCmd := redisClient.LRange(ctx, objKey, 0, -1)
+	if redisCmd.Err() != nil {
+		logger.Warn(sf.Format("An error occurred during fetching {0}: \"{1}\" from Redis server", objName, objKey))
+		return nil
+	}
+
+	//var obj T
+	items := redisCmd.Val()
+	var result []T
+	var portion []T
+	for _, rawVal := range items {
+		jsonBin := []byte(rawVal)
+		err := json.Unmarshal(jsonBin, &portion) // already contains all SLICE in one object
+		if err != nil {
+			logger.Error(sf.Format("An error occurred during {0} : \"{1}\" unmarshall", objName, objKey))
+		}
+		result = append(result, portion...)
+	}
+
+	return &result
 }
 
 func buildRedisConfig(dataSourceCfd *config.DataSourceConfig, logger *logging.AppLogger) *redis.Options {
