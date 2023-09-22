@@ -116,7 +116,7 @@ func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Clie
 
 func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.User {
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realm.Name)
-	realmUsers := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
+	realmUsers := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if realmUsers == nil {
 		mn.logger.Error(sf.Format("There are no user with name :\"{0}\" in realm: \"{1} \" in Redis, BAD data config", userName, realm.Name))
 		return nil
@@ -167,14 +167,14 @@ func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *da
 func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 	// TODO(UMV): possibly we should not use this method ??? what if we have 1M+ users .... ? think maybe it should be somehow optimized ...
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realmName)
-	realmUsers := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
+	realmUsers := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if realmUsers == nil {
 		mn.logger.Error(sf.Format("There are no users in realm: \"{0} \" in Redis, BAD data config", realmName))
 		return nil
 	}
 
 	userFullDataRealmsKey := sf.Format(realmUsersFullDataKeyTemplate, mn.namespace, realmName)
-	realmUsersData := getObjectFromRedis[[]interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
+	realmUsersData := getObjectsListFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
 
 	if realmUsersData != nil {
 		userData := make([]data.User, len(*realmUsersData))
