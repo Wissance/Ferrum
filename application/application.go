@@ -134,14 +134,17 @@ func (app *Application) readAppConfig() error {
 }
 
 func (app *Application) initDataProviders() error {
-	if app.dataConfigFile != nil {
-		dataProvider := managers.CreateAndContextInitWithDataFile(*app.dataConfigFile, app.logger)
+	var err error
+	if app.dataConfigFile != nil || app.appConfig.DataSource.Type != config.FILE {
+		dataProvider, prepareErr := managers.PrepareContext(&app.appConfig.DataSource, app.dataConfigFile, app.logger)
 		app.dataProvider = &dataProvider
+		err = prepareErr
 	} else {
-		dataProvider := managers.CreateAndContextInitUsingData(app.serverData)
+		dataProvider, prepareErr := managers.PrepareFileDataContextUsingData(app.serverData)
 		app.dataProvider = &dataProvider
+		err = prepareErr
 	}
-	return nil
+	return err
 }
 
 func (app *Application) initRestApi() error {

@@ -7,7 +7,6 @@ import (
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/stringFormatter"
 	"io/ioutil"
-	"path/filepath"
 )
 
 type FileDataManager struct {
@@ -16,29 +15,11 @@ type FileDataManager struct {
 	logger     *logging.AppLogger
 }
 
-func CreateAndContextInitWithDataFile(dataFile string, logger *logging.AppLogger) DataContext {
-	absPath, err := filepath.Abs(dataFile)
-	if err != nil {
-		// todo: umv: think what to do on error
-		msg := stringFormatter.Format("An error occurred during attempt to get abs path of data file: {0}", err.Error())
-		logger.Error(msg)
-	}
-	// init, load data in memory ...
-	mn := &FileDataManager{dataFile: absPath, logger: logger}
-	err = mn.loadData()
-	if err != nil {
-		// at least and think what to do further
-		msg := stringFormatter.Format("An error occurred during data loading: {0}", err.Error())
-		logger.Error(msg)
-	}
-	dc := DataContext(mn)
-	return dc
-}
-
-func CreateAndContextInitUsingData(serverData *data.ServerData) DataContext {
+func PrepareFileDataContextUsingData(serverData *data.ServerData) (DataContext, error) {
+	// todo(UMV): todo provide an error handling
 	mn := &FileDataManager{serverData: *serverData}
 	dc := DataContext(mn)
-	return dc
+	return dc, nil
 }
 
 func (mn *FileDataManager) GetRealm(realmName string) *data.Realm {

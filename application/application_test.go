@@ -42,10 +42,12 @@ var testServerData = data.ServerData{
 }
 
 var loggingConfig = config.LoggingConfig{Level: "info", Appenders: []config.AppenderConfig{{Level: "info", Type: config.Console}}}
-var httpAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTP, Address: "127.0.0.1", Port: 8284}, Logging: loggingConfig}
+var httpAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTP, Address: "127.0.0.1", Port: 8284},
+	Logging: loggingConfig, DataSource: config.DataSourceConfig{Type: config.FILE}}
 var httpsAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTPS, Address: "127.0.0.1", Port: 8672,
 	Security: &config.SecurityConfig{KeyFile: filepath.Join("..", "certs", "server.key"),
-		CertificateFile: filepath.Join("..", "certs", "server.crt")}}, Logging: loggingConfig}
+		CertificateFile: filepath.Join("..", "certs", "server.crt")}},
+	Logging: loggingConfig, DataSource: config.DataSourceConfig{Type: config.FILE}}
 
 func TestApplicationOnHttp(t *testing.T) {
 	serverAddress := stringFormatter.Format("{0}:{1}", httpAppConfig.ServerCfg.Address, httpAppConfig.ServerCfg.Port)

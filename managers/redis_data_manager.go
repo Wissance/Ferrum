@@ -63,17 +63,18 @@ type RedisDataManager struct {
 	ctx         context.Context
 }
 
-func CreateRedisDataManager(dataSourceCfd *config.DataSourceConfig, logger *logging.AppLogger) DataContext {
-	opts := buildRedisConfig(dataSourceCfd, logger)
+func CreateRedisDataManager(dataSourceCfg *config.DataSourceConfig, logger *logging.AppLogger) (DataContext, error) {
+	// todo(UMV): todo provide an error handling
+	opts := buildRedisConfig(dataSourceCfg, logger)
 	rClient := redis.NewClient(opts)
-	namespace, ok := dataSourceCfd.Options[config.Namespace]
+	namespace, ok := dataSourceCfg.Options[config.Namespace]
 	if !ok || len(namespace) == 0 {
 		namespace = defaultNamespace
 	}
 	mn := &RedisDataManager{logger: logger, redisOption: opts, redisClient: rClient, ctx: context.Background(),
 		namespace: namespace}
 	dc := DataContext(mn)
-	return dc
+	return dc, nil
 }
 
 func (mn *RedisDataManager) GetRealm(realmName string) *data.Realm {
