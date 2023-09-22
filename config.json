@@ -31,6 +31,6 @@
     },
     "data_source": {
         "type": "file",
-        "source": "./data,json"
+        "source": "./data.json"
     }
 }
