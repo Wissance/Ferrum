@@ -144,9 +144,18 @@ func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.Us
 }
 
 func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *data.User {
-	userKey := sf.Format(userKeyTemplate, mn.namespace, userId)
-	rawUser := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
-	user := data.CreateUser(*rawUser)
+	// userKey := sf.Format(userKeyTemplate, mn.namespace, userId)
+	var rawUser data.User
+	users := mn.GetRealmUsers(realm.Name)
+	for _, u := range *users {
+		if u.GetId() == userId {
+			rawUser = u
+			break
+		}
+	}
+	// we can't get user such way
+	//rawUser := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
+	user := data.CreateUser(rawUser)
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realm.Name)
 	realmUsers := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if realmUsers == nil {
@@ -174,6 +183,7 @@ func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 	}
 
 	userFullDataRealmsKey := sf.Format(realmUsersFullDataKeyTemplate, mn.namespace, realmName)
+	// this is incorrert, we can't get rawUsers such way ...
 	realmUsersData := getObjectsListFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
 
 	if realmUsersData != nil {
