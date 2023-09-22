@@ -16,6 +16,7 @@ func main() {
 	osSignal := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	// todo(UMV): pass config file
 	app := application.CreateAppWithConfigs("./config.json", "./data.md", "./keyfile")
 	res, initErr := app.Init()
 	logger := app.GetLogger()
