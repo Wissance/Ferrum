@@ -2,6 +2,8 @@ package config
 
 import "crypto/tls"
 
+// todo (UMV): probably we don't need RedisConfig, because we are using map 4 this
+
 // RedisConfig is a simplified redis.Options config
 type RedisConfig struct {
 	Address   string `json:"address" example:"localhost:6379"`

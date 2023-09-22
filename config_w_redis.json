@@ -30,7 +30,15 @@
         "http_console_out": true
     },
     "data_source": {
-        "type": "file",
-        "source": "./data,json"
+        "type": "redis",
+        "source": "localhost:6379",
+        "credentials": {
+            "username": "default",
+            "password": ""
+        },
+        "options": {
+            "namespace": "ferrum_1",
+            "db_number": "11"
+        }
     }
 }
