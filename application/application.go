@@ -36,11 +36,9 @@ type Application struct {
 	httpHandler    *http.Handler
 }
 
-func CreateAppWithConfigs(configFile string, dataFile string, secretKeyFile string) AppRunner {
+func CreateAppWithConfigs(configFile string) AppRunner {
 	app := &Application{}
 	app.appConfigFile = &configFile
-	app.dataConfigFile = &dataFile
-	app.secretKeyFile = &secretKeyFile
 	appRunner := AppRunner(app)
 	return appRunner
 }
@@ -70,7 +68,11 @@ func (app *Application) Init() (bool, error) {
 			fmt.Println(stringFormatter.Format("An error occurred during reading app config file: {0}", err.Error()))
 			return false, err
 		}
-
+		// after config read init secretKey file and data file (if provider.type == FLE)
+		app.secretKeyFile = &app.appConfig.ServerCfg.SecretFile
+		if app.appConfig.DataSource.Type == config.FILE {
+			app.dataConfigFile = &app.appConfig.DataSource.Source
+		}
 		// reading secrets key
 		key := app.readKey()
 		if key == nil {

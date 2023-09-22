@@ -4,6 +4,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/wissance/Ferrum/application"
 	"github.com/wissance/stringFormatter"
@@ -12,12 +13,16 @@ import (
 	"syscall"
 )
 
+const defaultConfig = "./config.json"
+
+var configFile = flag.String("profile", defaultConfig, "config profile.")
+
 func main() {
 	osSignal := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	// todo(UMV): pass config file
-	app := application.CreateAppWithConfigs("./config.json", "./data.md", "./keyfile")
+	app := application.CreateAppWithConfigs(*configFile)
 	res, initErr := app.Init()
 	logger := app.GetLogger()
 	if initErr != nil {
