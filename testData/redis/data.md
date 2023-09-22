@@ -4,14 +4,14 @@ We are using `ferrum_1` as a Redis namespace (prefix before every key)
 1. Realms
 ```json
 {
-    "ferrum_1.myApp": {
+    "ferrum_1.realm_myApp": {
          "name": "myapp",
          "token_expiration": 600,
          "refresh_expiration": 300,
          "clients": [
          ]
     },
-    "ferrum_1.testApp": {
+    "ferrum_1.realm_testApp": {
          "name": "testApp",
          "token_expiration": 6000,
          "refresh_expiration": 3000,
@@ -20,8 +20,8 @@ We are using `ferrum_1` as a Redis namespace (prefix before every key)
     }
 }
 ```
-`myApp` and `testApp` are ACTUAL Realms names, but they must be stored in `Redis` with keys `ferrum_1.myApp` and `ferrum_1.testApp` respectively, we left client 
-blank, clients to realm relation is setting in a separate onject
+`myApp` and `testApp` are ACTUAL Realms names, but they must be stored in `Redis` with keys `ferrum_1.realm_myApp` and `ferrum_1.testApp` respectively, we left client 
+blank, clients to realm relation is setting in a separate object
 
 2. Clients
 All the clients should have the following key pattern `namespace.client_{clientName}`
