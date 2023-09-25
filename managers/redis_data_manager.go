@@ -148,7 +148,8 @@ func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *da
 	var rawUser data.User
 	users := mn.GetRealmUsers(realm.Name)
 	for _, u := range *users {
-		if u.GetId() == userId {
+		checkingUserId := u.GetId()
+		if checkingUserId == userId {
 			rawUser = u
 			break
 		}
@@ -176,15 +177,22 @@ func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *da
 func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 	// TODO(UMV): possibly we should not use this method ??? what if we have 1M+ users .... ? think maybe it should be somehow optimized ...
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realmName)
+
 	realmUsers := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if realmUsers == nil {
 		mn.logger.Error(sf.Format("There are no users in realm: \"{0} \" in Redis, BAD data config", realmName))
 		return nil
 	}
 
-	userFullDataRealmsKey := sf.Format(realmUsersFullDataKeyTemplate, mn.namespace, realmName)
-	// this is incorrert, we can't get rawUsers such way ...
-	realmUsersData := getObjectsListFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
+	userRedisKeys := make([]string, len(*realmUsers))
+	for i, ru := range *realmUsers {
+		userRedisKeys[i] = sf.Format(userKeyTemplate, mn.namespace, ru.Name)
+	}
+
+	// userFullDataRealmsKey := sf.Format(realmUsersFullDataKeyTemplate, mn.namespace, realmName)
+	// this is wrong, we can't get rawUsers such way ...
+	realmUsersData := getMultipleObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRedisKeys)
+	//getObjectsListFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
 
 	if realmUsersData != nil {
 		userData := make([]data.User, len(*realmUsersData))
@@ -214,7 +222,7 @@ func (mn *RedisDataManager) GetRealmClients(realmName string) []data.Client {
 	return clients
 }
 
-// getObjectFromRedis is a method that DOESN'T work with List type object, only a String
+// getObjectFromRedis is a method that DOESN'T work with List type object, only a String object type
 func getObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
 	objName objectType, objKey string) *T {
 	redisCmd := redisClient.Get(ctx, objKey)
@@ -232,6 +240,25 @@ func getObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, l
 	return &obj
 }
 
+// getObjectFromRedis is a method that DOESN'T work with List type object, only a String object type
+func getMultipleObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
+	objName objectType, objKey []string) *[]T {
+	redisCmd := redisClient.MGet(ctx, objKey...)
+	if redisCmd.Err() != nil {
+		// todo(UMV): print when this will be done https://github.com/Wissance/stringFormatter/issues/14
+		logger.Warn(sf.Format("An error occurred during fetching {0}: from Redis server", objName))
+		return nil
+	}
+
+	raw := redisCmd.Val()
+	result := make([]T, len(raw))
+	for i, v := range raw {
+		result[i] = v.(T)
+	}
+	return &result
+}
+
+// this functions gets object that stored as a LIST Object type
 func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
 	objName objectType, objKey string) *[]T {
 
