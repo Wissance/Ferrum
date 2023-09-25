@@ -1,0 +1,193 @@
+{
+	"info": {
+		"_postman_id": "66ffb895-5dc5-49a0-b853-96c952f9f67e",
+		"name": "wissance",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "ferrum",
+			"item": [
+				{
+					"name": "create token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "admin",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "1s2d3f4g90xs",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "test-service-app-client",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "profile",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8182/auth/realms/myapp/protocol/openid-connect/token",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8182",
+							"path": [
+								"auth",
+								"realms",
+								"myapp",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get userinfo",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiIyMDIzLTA5LTI1VDExOjQ4OjI4LjUyNjUyNDMrMDU6MDAiLCJleHAiOiIyMDIzLTA5LTI1VDEyOjAzOjA5LjE1NDE2NTMrMDU6MDAiLCJqdGkiOiIwMzg5YWMzMC01MzExLTQxNWItOTYwZS02Zjg1YWI5YjNiOWIiLCJ0eXAiOiJCZWFyZXIiLCJpc3MiOiIvaHR0cC9sb2NhbGhvc3Q6ODE4Mi9hdXRoL3JlYWxtcy9teUFwcCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiI2NjdmZjZhNy0zZjZiLTQ0OWItYTIxNy02ZmM1ZDlhYzA3MjQiLCJzZXNzaW9uX3N0YXRlIjoiMWIyNmQ4MWQtNWQ5Ny00ZjA1LWFlZjUtOTEzMjYyOWI4YWU5Iiwic2lkIjoiMWIyNmQ4MWQtNWQ5Ny00ZjA1LWFlZjUtOTEzMjYyOWI4YWU5Iiwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmYW1pbHlfbmFtZSI6InN5cyIsImdpdmVuX25hbWUiOiJhZG1pbiIsIm5hbWUiOiJhZG1pbiBzeXMiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIl0sInN1YiI6IjY2N2ZmNmE3LTNmNmItNDQ5Yi1hMjE3LTZmYzVkOWFjMDcyNCJ9.wxKuAhO3UDsZEtHAKSO-SBuPqZNtUyQlPIoFfgKcDAA",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8182/auth/realms/myApp/protocol/openid-connect/userinfo",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8182",
+							"path": [
+								"auth",
+								"realms",
+								"myApp",
+								"protocol",
+								"openid-connect",
+								"userinfo"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "refresh token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "test-service-app-client",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "refresh_token",
+									"type": "text"
+								},
+								{
+									"key": "refresh_token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiIyMDIzLTA5LTI1VDExOjQ4OjI4LjUyNjUyNDMrMDU6MDAiLCJleHAiOiIyMDIzLTA5LTI1VDExOjU4OjI4LjUyNjUyNDMrMDU6MDAiLCJqdGkiOiI5YWUyNjliZi03ZWE0LTRlZTEtYWQ0Mi00ZDY5YTQwNTZiNWEiLCJ0eXAiOiJSZWZyZXNoIiwiaXNzIjoiL2h0dHAvbG9jYWxob3N0OjgxODIvYXV0aC9yZWFsbXMvbXlBcHAiLCJhdWQiOiIvaHR0cC9sb2NhbGhvc3Q6ODE4Mi9hdXRoL3JlYWxtcy9teUFwcCIsInN1YiI6IjY2N2ZmNmE3LTNmNmItNDQ5Yi1hMjE3LTZmYzVkOWFjMDcyNCIsInNlc3Npb25fc3RhdGUiOiIxYjI2ZDgxZC01ZDk3LTRmMDUtYWVmNS05MTMyNjI5YjhhZTkiLCJzaWQiOiIxYjI2ZDgxZC01ZDk3LTRmMDUtYWVmNS05MTMyNjI5YjhhZTkiLCJzY29wZSI6InByb2ZpbGUgZW1haWwifQ.IokvCzPe4mhr4IncXVrjj7X1qDvQekGV8bNonfuVkYU",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8182/auth/realms/myApp/protocol/openid-connect/token",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8182",
+							"path": [
+								"auth",
+								"realms",
+								"myApp",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Introspect token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo=",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiIyMDIzLTA5LTI1VDEyOjI3OjUyLjkxMzQ4ODQrMDU6MDAiLCJleHAiOiIyMDIzLTA5LTI1VDEyOjM3OjUyLjkxMzQ4ODQrMDU6MDAiLCJqdGkiOiJkZjk4NzVlMi05MzVhLTRhMTItYThhMi0wYWM1YTE4MTNiZWQiLCJ0eXAiOiJCZWFyZXIiLCJpc3MiOiIvaHR0cC9sb2NhbGhvc3Q6ODE4Mi9hdXRoL3JlYWxtcy9teUFwcCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiI2NjdmZjZhNy0zZjZiLTQ0OWItYTIxNy02ZmM1ZDlhYzA3MjQiLCJzZXNzaW9uX3N0YXRlIjoiM2VkNjU2YWUtYWE1NS00YjViLTk1YjQtNjU0MTk3ZTYwNWFmIiwic2lkIjoiM2VkNjU2YWUtYWE1NS00YjViLTk1YjQtNjU0MTk3ZTYwNWFmIiwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmYW1pbHlfbmFtZSI6InN5cyIsImdpdmVuX25hbWUiOiJhZG1pbiIsIm5hbWUiOiJhZG1pbiBzeXMiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIl0sInN1YiI6IjY2N2ZmNmE3LTNmNmItNDQ5Yi1hMjE3LTZmYzVkOWFjMDcyNCJ9.JnhWveW9QBEZBvfdtxm74l5i9Gt9CrH9zj2rLabGe04",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8182/auth/realms/myApp/protocol/openid-connect/token/introspect",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8182",
+							"path": [
+								"auth",
+								"realms",
+								"myApp",
+								"protocol",
+								"openid-connect",
+								"token",
+								"introspect"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
