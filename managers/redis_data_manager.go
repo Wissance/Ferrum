@@ -146,32 +146,21 @@ func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.Us
 func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *data.User {
 	// userKey := sf.Format(userKeyTemplate, mn.namespace, userId)
 	var rawUser data.User
+	userFound := false
 	users := mn.GetRealmUsers(realm.Name)
 	for _, u := range *users {
 		checkingUserId := u.GetId()
 		if checkingUserId == userId {
 			rawUser = u
+			userFound = true
 			break
 		}
 	}
-	// we can't get user such way
-	//rawUser := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
-	user := data.CreateUser(rawUser)
-	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realm.Name)
-	realmUsers := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
-	if realmUsers == nil {
-		mn.logger.Error(sf.Format("There are no user with ID:\"{0}\" in realm: \"{1} \" in Redis, BAD data config", userId.String(), realm.Name))
+	if !userFound {
 		return nil
 	}
 
-	for _, rc := range *realmUsers {
-		if rc.ID == userId {
-			return &user
-		}
-	}
-
-	mn.logger.Debug(sf.Format("User with id: \"{0}\" wasn't found in Realm: {1}", userId, realm.Name))
-	return nil
+	return &rawUser
 }
 
 func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
@@ -252,8 +241,14 @@ func getMultipleObjectFromRedis[T any](redisClient *redis.Client, ctx context.Co
 
 	raw := redisCmd.Val()
 	result := make([]T, len(raw))
+	var unMarshalledRaw interface{}
+
 	for i, v := range raw {
-		result[i] = v.(T)
+		err := json.Unmarshal([]byte(v.(string)), &unMarshalledRaw)
+		if err != nil {
+			return nil
+		}
+		result[i] = unMarshalledRaw.(T)
 	}
 	return &result
 }
