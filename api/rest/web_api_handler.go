@@ -179,6 +179,13 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 	}
 	afterHandle(&respWriter, status, &result)
 }
+
+// Introspect -is a function that analyzes state of a token and getting some data from it
+/* To call introspect we should form a POST HTTP Request with Authorization header, value for this header is: Basic base64({client_id}:{client_secret})
+ * Consider we have client_id -> test-service-app-client and client_secret -> fb6Z4RsOadVycQoeQiN57xpu8w8wplYz, we get following base64 value for this pair:
+ * dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo= (you could use -https://www.base64encode.org/)
+ * In body of this request we should pass token as key, and value as x-www-urlencoded.
+ */
 func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *http.Request) {
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
