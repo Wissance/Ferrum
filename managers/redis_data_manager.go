@@ -63,6 +63,13 @@ type RedisDataManager struct {
 	ctx         context.Context
 }
 
+// CreateRedisDataManager is factory function that creates instance of RedisDataManager
+/* Simply creates instance of RedisDataManager and initializes redis client, this function requires config.Namespace to be set up in configs, otherwise
+ * defaultNamespace is using
+ * Parameters:
+ *     - dataSourceCfg contains Redis specific settings in Options map (see allowed keys of map in config.DataSourceConnOption)
+ *     - logger - initialized logger instance
+ */
 func CreateRedisDataManager(dataSourceCfg *config.DataSourceConfig, logger *logging.AppLogger) (DataContext, error) {
 	// todo(UMV): todo provide an error handling
 	opts := buildRedisConfig(dataSourceCfg, logger)
