@@ -1,0 +1,44 @@
+{
+    "server": {
+        "schema": "{SCHEMA}",
+        "address": "{HOST}",
+        "port": {PORT},
+        "secret_file": "./keyfile"
+    },
+    "logging": {
+        "level": "debug",
+        "appenders": [
+            {
+                "type": "rolling_file",
+                "enabled": true,
+                "level": "debug",
+                "destination": {
+                    "file": "./logs/ferrum.log",
+                    "max_size": 100,
+                    "max_age": 5,
+                    "max_backups": 5,
+                    "local_time": true
+                }
+            },
+            {
+                "type": "console",
+                "enabled": true,
+                "level": "debug"
+            }
+        ],
+        "http_log": true,
+        "http_console_out": true
+    },
+    "data_source": {
+        "type": "redis",
+        "source": "{REDIS_HOST}:{REDIS_PORT}",
+        "credentials": {
+            "username": "{REDIS_USER}",
+            "password": "{REDIS_PASSWORD}"
+        },
+        "options": {
+            "namespace": "{NAMESPACE}",
+            "db_number": "{DB_NUMBER}"
+        }
+    }
+}
