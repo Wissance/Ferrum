@@ -1,6 +1,6 @@
 package data
 
-// ServerData is obsolete, see
-/*type ServerData struct {
+// ServerData is used in managers.FileDataManager
+type ServerData struct {
 	Realms []Realm
-}*/
+}
