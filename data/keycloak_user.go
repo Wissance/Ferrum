@@ -54,7 +54,7 @@ func (user *KeyCloakUser) GetId() uuid.UUID {
 	idStrValue := getPathStringValue[string](user.rawData, "info.sub")
 	id, err := uuid.Parse(idStrValue)
 	if err != nil {
-		//todo(UMV): think what to do here
+		//todo(UMV): think what to do here, return error!
 	}
 	return id
 }

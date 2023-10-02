@@ -1,5 +1,6 @@
 package data
 
-type ServerData struct {
+// ServerData is obsolete, see
+/*type ServerData struct {
 	Realms []Realm
-}
+}*/
