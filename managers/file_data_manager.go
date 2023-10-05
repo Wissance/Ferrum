@@ -9,12 +9,20 @@ import (
 	"io/ioutil"
 )
 
+// FileDataManager is the simplest Data Storage without any dependencies, it uses single JSON file (it is users and clients RO auth server)
+// This context type is extremely useful for simple systems
 type FileDataManager struct {
 	dataFile   string
 	serverData data.ServerData
 	logger     *logging.AppLogger
 }
 
+// PrepareFileDataContextUsingData initializes instance of FileDataManager and sets loaded data to serverData
+/* This factory function creates initialize with data instance of  FileDataManager, error reserved for usage but always nil here
+ * Parameters:
+ *    serverData already loaded data.ServerData from Json file in memory
+ * Returns: context and error (currently is nil)
+ */
 func PrepareFileDataContextUsingData(serverData *data.ServerData) (DataContext, error) {
 	// todo(UMV): todo provide an error handling
 	mn := &FileDataManager{serverData: *serverData}
@@ -22,6 +30,7 @@ func PrepareFileDataContextUsingData(serverData *data.ServerData) (DataContext, 
 	return dc, nil
 }
 
+// GetRealm function for getting Realm by name
 func (mn *FileDataManager) GetRealm(realmName string) *data.Realm {
 	for _, e := range mn.serverData.Realms {
 		// case-sensitive comparison, myapp and MyApP are different realms
@@ -32,6 +41,7 @@ func (mn *FileDataManager) GetRealm(realmName string) *data.Realm {
 	return nil
 }
 
+// GetClient function for getting Realm Client by name
 func (mn *FileDataManager) GetClient(realm *data.Realm, name string) *data.Client {
 	for _, c := range realm.Clients {
 		if c.Name == name {
@@ -75,6 +85,7 @@ func (mn *FileDataManager) GetRealmUsers(realmName string) *[]data.User {
 	return &users
 }
 
+// loadData this function loads data from JSON file (dataFile) to serverData
 func (mn *FileDataManager) loadData() error {
 	rawData, err := ioutil.ReadFile(mn.dataFile)
 	if err != nil {
