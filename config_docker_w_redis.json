@@ -1,8 +1,8 @@
 {
     "server": {
-        "schema": "{SCHEMA}",
-        "address": "{HOST}",
-        "port": {PORT},
+        "schema": "http",
+        "address": "ferrum",
+        "port": 8182,
         "secret_file": "./keyfile"
     },
     "logging": {
@@ -31,14 +31,14 @@
     },
     "data_source": {
         "type": "redis",
-        "source": "{REDIS_HOST}:{REDIS_PORT}",
+        "source": "redis:6379",
         "credentials": {
-            "username": "{REDIS_USER}",
-            "password": "{REDIS_PASSWORD}"
+            "username": "test_user",
+            "password": "test_password"
         },
         "options": {
-            "namespace": "{NAMESPACE}",
-            "db_number": "{DB_NUMBER}"
+            "namespace": "ferrum_1",
+            "db_number": "0"
         }
     }
 }

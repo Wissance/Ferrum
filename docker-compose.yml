@@ -1,7 +1,7 @@
 version: '3.9'
 services:
   redis:
-    image: "redis/redis-stack"
+    image: "redis/redis-stack:7.2.0-v2"
     restart: always
     environment:
       REDIS_ARGS: "--user test_user on >test_password allkeys allchannels allcommands --user default off"
@@ -16,18 +16,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        SCHEMA: http
-        HOST: ferrum
-        PORT: 8182
-
-        REDIS_HOST: redis #name service in docker-compose
-        REDIS_PORT: 6379
-        REDIS_USER: test_user
-        REDIS_PASSWORD: test_password
-
-        NAMESPACE: ferrum_1
-        DB_NUMBER: 0
+    volumes:
+      - ./config_docker_w_redis.json:/app/config_docker_w_redis.json
     restart: always
     depends_on:
       - redis

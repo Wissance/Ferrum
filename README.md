@@ -30,17 +30,16 @@ Ferrum is a **better** Authorization Server.
    and we'll make them enterprise)***.
 
 it has `endpoints` SIMILAR to `Keycloak`, at present time we are having following:
-1. `POST "~/auth/realms/{realm}/protocol/openid-connect/token/"`
-2. `GET  "~/auth/realms/{realm}/protocol/openid-connect/userinfo/"`
-3. `GET  "~/auth/realms/{realm}/protocol/openid-connect/token/introspect"`
+1. `POST "~/auth/realms/{realm}/protocol/openid-connect/token"`
+2. `GET  "~/auth/realms/{realm}/protocol/openid-connect/userinfo"`
+3. `POST  "~/auth/realms/{realm}/protocol/openid-connect/token/introspect"`
 
 ## How to use
 
 ### Build
 
 First of all build is simple run `go build` from application root directory. Additionally it is possible
-to generate self signed certificates - run `go generate` from command line (if you are going to generate 
-new certs **remove certs and key file from ./certs directory** prior to generate new)
+to generate self signed certificates - run `go generate` from command line
 
 If you don't specify the name of executable (by passing -o {execName} to go build) than name of executable = name of project
 
