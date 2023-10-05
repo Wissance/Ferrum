@@ -63,7 +63,7 @@ type RedisDataManager struct {
 	ctx         context.Context
 }
 
-// CreateRedisDataManager is factory function that creates instance of RedisDataManager
+// CreateRedisDataManager is factory function for instance of RedisDataManager creation and return as interface DataContext
 /* Simply creates instance of RedisDataManager and initializes redis client, this function requires config.Namespace to be set up in configs, otherwise
  * defaultNamespace is using
  * Parameters:
@@ -84,6 +84,13 @@ func CreateRedisDataManager(dataSourceCfg *config.DataSourceConfig, logger *logg
 	return dc, nil
 }
 
+// GetRealm function for getting realm by name
+/* This function constructs Redis key by pattern combines namespace and realm name (realmKeyTemplate). Unlike from FILE provider
+ * Realm stored in Redis does not have Clients and Users inside Realm itself, these objects must be queried separately.
+ * Parameters:
+ *     - realmName name of a realm
+ * Returns: realms or nil (if realm was not found)
+ */
 func (mn *RedisDataManager) GetRealm(realmName string) *data.Realm {
 	realmKey := sf.Format(realmKeyTemplate, mn.namespace, realmName)
 	realm := getObjectFromRedis[data.Realm](mn.redisClient, mn.ctx, mn.logger, Realm, realmKey)
@@ -95,6 +102,13 @@ func (mn *RedisDataManager) GetRealm(realmName string) *data.Realm {
 	return realm
 }
 
+// GetClient function for get realm client by name
+/* This function constructs Redis key by pattern combines namespace and realm name (realmClientsKeyTemplate)
+ * Parameters:
+ *     - realm - pointer to realm
+ *     - name - client name
+ * Returns: client or nil
+ */
 func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Client {
 	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realm.Name)
 	// realm_%name%_clients contains array with configured clients ID (data.ExtendedIdentifier) for that realm
@@ -121,6 +135,13 @@ func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Clie
 	return client
 }
 
+// GetUser function for getting realm user by username
+/* This function constructs Redis key by pattern combines namespace, realm name and username (realmUsersKeyTemplate)
+ * Parameters:
+ *    - realm - pointer to realm
+ *    - userName - name of user
+ * Returns: User or nil
+ */
 func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.User {
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realm.Name)
 	realmUsers := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
@@ -150,6 +171,14 @@ func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.Us
 	return &user
 }
 
+// GetUserById function for getting realm user by userId
+/* This function is more complex than GetUser, because we are using combination of realm name and username to store user data,
+ * therefore this function extracts all realm users data and find appropriate by relation id-name after that it behaves like GetUser function
+ * Parameters:
+ *    - realm - pointer to realm
+ *    - userId - identifier of searching user
+ * Returns: User or nil
+ */
 func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *data.User {
 	// userKey := sf.Format(userKeyTemplate, mn.namespace, userId)
 	var rawUser data.User
@@ -170,6 +199,16 @@ func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *da
 	return &rawUser
 }
 
+// GetRealmUsers function for getting all realm users
+/* This function select all realm users (used by GetUserById) by constructing redis key from namespace and realm name
+ * Probably in future this function could consume a lot of memory (if we would have a lot of users in a realm) probably we should limit amount of Users to fetch
+ * This function works in two steps:
+ *     1. Get all data.ExtendedIdentifier pairs id-name
+ *     2. Get all User objects at once by key slices (every redis key for user combines from namespace, realm, username)
+ * Parameters:
+ *    - realmName - name of the realm
+ * Returns slice of Users or nil
+ */
 func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 	// TODO(UMV): possibly we should not use this method ??? what if we have 1M+ users .... ? think maybe it should be somehow optimized ...
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realmName)
@@ -180,6 +219,7 @@ func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 		return nil
 	}
 
+	// todo(UMV): probably we should organize batching here if we have many users i.e. 100K+
 	userRedisKeys := make([]string, len(*realmUsers))
 	for i, ru := range *realmUsers {
 		userRedisKeys[i] = sf.Format(userKeyTemplate, mn.namespace, ru.Name)
@@ -188,7 +228,6 @@ func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 	// userFullDataRealmsKey := sf.Format(realmUsersFullDataKeyTemplate, mn.namespace, realmName)
 	// this is wrong, we can't get rawUsers such way ...
 	realmUsersData := getMultipleObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRedisKeys)
-	//getObjectsListFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
 
 	if realmUsersData != nil {
 		userData := make([]data.User, len(*realmUsersData))
@@ -200,6 +239,15 @@ func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 	return nil
 }
 
+// GetRealmClients function for getting all realm clients
+/* This function gets all realm client.
+ * This function works in two steps:
+ *     1. Get all data.ExtendedIdentifier pairs id-name
+ *     2. Get all Client objects at once by key slices (every redis key for client combines from namespace, realm and client name)
+ * Parameters:
+ *    - realmName - name of the realm
+ * Returns slice of Clients or nil
+ */
 func (mn *RedisDataManager) GetRealmClients(realmName string) []data.Client {
 	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realmName)
 	realmClients := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
@@ -286,6 +334,7 @@ func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Conte
 	return &result
 }
 
+// buildRedisConfig builds redis.Options from map of values by known in config package set of keys
 func buildRedisConfig(dataSourceCfd *config.DataSourceConfig, logger *logging.AppLogger) *redis.Options {
 	dbNum, err := strconv.Atoi(dataSourceCfd.Options[config.DbNumber])
 	if err != nil {
