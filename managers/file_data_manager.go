@@ -31,6 +31,11 @@ func PrepareFileDataContextUsingData(serverData *data.ServerData) (DataContext, 
 }
 
 // GetRealm function for getting Realm by name
+/* Searches for a realm with name realmName in serverData adn return it. Realm contains all related entities (clients, Users)
+ * Parameters:
+ *     - realmName - name of a realm
+ * Returns: Realm or nil (if Realm isn't found0
+ */
 func (mn *FileDataManager) GetRealm(realmName string) *data.Realm {
 	for _, e := range mn.serverData.Realms {
 		// case-sensitive comparison, myapp and MyApP are different realms
@@ -42,6 +47,12 @@ func (mn *FileDataManager) GetRealm(realmName string) *data.Realm {
 }
 
 // GetClient function for getting Realm Client by name
+/* Searches for a client with name realmName in a realm. This function must be used after Realm was found.
+ * Parameters:
+ *     - realm - realm containing clients to search
+ *     - name - name of a client
+ * Returns: Client or nil (if Client isn't found0
+ */
 func (mn *FileDataManager) GetClient(realm *data.Realm, name string) *data.Client {
 	for _, c := range realm.Clients {
 		if c.Name == name {
@@ -51,6 +62,13 @@ func (mn *FileDataManager) GetClient(realm *data.Realm, name string) *data.Clien
 	return nil
 }
 
+// GetUser function for getting Realm User by userName
+/* Searches for a user with specified name in a realm.  This function must be used after Realm was found.
+ * Parameters:
+ *     - realm - realm containing users to search
+ *     - userName - name of a user
+ * Returns: realm user or nil
+ */
 func (mn *FileDataManager) GetUser(realm *data.Realm, userName string) *data.User {
 	for _, u := range realm.Users {
 		user := data.CreateUser(u)
@@ -62,6 +80,9 @@ func (mn *FileDataManager) GetUser(realm *data.Realm, userName string) *data.Use
 	return nil
 }
 
+// GetUserById function for getting Realm User by Id
+/* same functions as GetUser but uses userId to search instead of username
+ */
 func (mn *FileDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *data.User {
 	for _, u := range realm.Users {
 		user := data.CreateUser(u)
@@ -73,6 +94,12 @@ func (mn *FileDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *dat
 	return nil
 }
 
+// GetRealmUsers function for getting all Realm User
+/* This function get realm by name ant extract all its users
+ * Parameters:
+ *     - realmName - name of a realm
+ * Returns: slice of users or nil
+ */
 func (mn *FileDataManager) GetRealmUsers(realmName string) *[]data.User {
 	realm := mn.GetRealm(realmName)
 	if realm == nil {

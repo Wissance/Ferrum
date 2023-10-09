@@ -11,17 +11,38 @@ import (
 	"strings"
 )
 
+// JwtGenerator is useful struct that has methods to generate JWT tokens using golang-jwt utility
 type JwtGenerator struct {
 	SignKey []byte
 	Logger  *logging.AppLogger
 }
 
+// GenerateJwtAccessToken generates encoded string of access token in JWT format
+/* This function combines a lot of arguments into one big JSON and encode it using SignKey (should be loaded by application)
+ * Parameters:
+ *    - realmBaseUrl - common path of all routes, usually ~/auth/realms/{realm}/ (see api/rest/getRealmBaseUrl)
+ *    - tokenType - string with type of token, rest.Bearer
+ *    - scope - verification scope, currently used only globals.ProfileEmailScope
+ *    - sessionData - full session data of authorized user
+ *    - userData - full public user data
+ * Returns: JWT-encoded string with access token
+ */
 func (generator *JwtGenerator) GenerateJwtAccessToken(realmBaseUrl string, tokenType string, scope string, sessionData *data.UserSession,
 	userData *data.User) string {
 	accessToken := generator.prepareAccessToken(realmBaseUrl, tokenType, scope, sessionData, userData)
 	return generator.generateJwtAccessToken(accessToken)
 }
 
+// GenerateJwtRefreshToken generates encoded string of refresh token in JWT format
+/* This function combines a lot of arguments into one big JSON and encode it using SignKey (should be loaded by application).
+ * FULLY SIMILAR To GenerateJwtAccessToken except it has not userData like previous func
+ * Parameters:
+ *    - realmBaseUrl - common path of all routes, usually ~/auth/realms/{realm}/ (see api/rest/getRealmBaseUrl)
+ *    - tokenType - string with type of token, rest.Refresh
+ *    - scope - verification scope, currently used only globals.ProfileEmailScope
+ *    - sessionData - full session data of authorized user
+ * Returns: JWT-encoded string with refresh token
+ */
 func (generator *JwtGenerator) GenerateJwtRefreshToken(realmBaseUrl string, tokenType string, scope string, sessionData *data.UserSession) string {
 	refreshToken := generator.prepareRefreshToken(realmBaseUrl, tokenType, scope, sessionData)
 	return generator.generateJwtRefreshToken(refreshToken)
