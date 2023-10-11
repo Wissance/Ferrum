@@ -10,69 +10,68 @@ Ferrum is a **better** Authorization Server.
 
 ![Ferrum: A better Auth Server](/img/ferrum_cover.png)
 
-## Communication
+## 1. Communication
 
 * Discord channel : https://discord.gg/9RYNYu2Mxq
 
-## General info
+## 2. General info
 
-`Ferrum` is `OpenId-Connect` Authorization server written on GO. It behaves like `Keycloak` server (**minimal `Keycloak`**
- but we'll grow to full-fledged `KeyCloak`) and could:
+`Ferrum` is `OpenId-Connect` Authorization server written on GO. It has Data Contract similar to
+`Keycloak` server (**minimal `Keycloak`** and we'll grow to full-fledged `KeyCloak` analog).
 
-1. issue new tokens:
-2. control user sessions;
-3. get useinfo;
-4. managed from external code (`Start` and `Stop`) making them an ***ideal candidate*** for using in ***integration
+Today we are having **following features**:
+
+1. Issue new tokens.
+2. Refresh tokens.
+2. Control user sessions (token expiration).
+3. Get UserInfo.
+4. Token Introspect.
+4. Managed from external code (`Start` and `Stop`) making them an ***ideal candidate*** for using in ***integration
    tests*** for WEB API services that uses `Keycloak` as authorization server;
-5. ability to use any user data and attributes (any valid JSON but with some requirements), if you have to
+5. Ability to use different data storage:
+   * `FILE` data storage for small Read only systems
+   * `REDIS` data storage for systems with large number of users and small response time;
+6. Ability to use any user data and attributes (any valid JSON but with some requirements), if you have to
    properly configure your users just add what user have to `data.json` or in memory
-6. ability to ***become serious enterprise level Authorization server (GIVE US 100+ STARS on Github
-   and we'll make them enterprise)***.
+7. Ability to ***become high performance enterprise level Authorization server***.
 
 it has `endpoints` SIMILAR to `Keycloak`, at present time we are having following:
-1. `POST "~/auth/realms/{realm}/protocol/openid-connect/token"`
-2. `GET  "~/auth/realms/{realm}/protocol/openid-connect/userinfo"`
-3. `POST  "~/auth/realms/{realm}/protocol/openid-connect/token/introspect"`
 
-## How to use
+1. Issue and Refresh tokens: `POST ~/auth/realms/{realm}/protocol/openid-connect/token/`
+2. Get UserInfo `GET  ~/auth/realms/{realm}/protocol/openid-connect/userinfo/`
+3. Introspect tokens `POST ~/auth/realms/{realm}/protocol/openid-connect/token/introspect`
 
-### Build
+## 3. How to use
+
+### 3.1 Build
 
 First of all build is simple run `go build` from application root directory. Additionally it is possible
 to generate self signed certificates - run `go generate` from command line
 
 If you don't specify the name of executable (by passing -o {execName} to go build) than name of executable = name of project
 
-### Run application
+### 3.2 Run application as Standalone
 
-run is simple:
+Run is simple (`Ferrum` starts with default config - `config.json`):
 ```ps1
 ./Ferrum
 ```
 
+To run `Ferrum` with selected config i.e. `config_w_redis.json` :
+
+```ps1
+./Ferrum --config ./config_w_redis.json
+```
+
+### 3.3 Run application in docker
+
+... to be described soon
+
+### 3.4 Run with direct configuration && data pass from code (embedding Authorization server in you applications)
+
 There are 2 ways to use `Ferrum`:
-1. It could be started as traditional application and depends from following files:
-      - application config file - file with name `config.json` in repo we have config that starts
-        application as `HTTP` if you need `HTTPS` change server section like this:
-        ```json
-        "server": {
-            "schema": "https",
-            "address": "localhost",
-            "port": 8182,
-            "security": {
-                "key_file": "./certs/server.key",
-                "certificate_file": "./certs/server.crt"
-            }
-        }
-        ```
-      - data file: `realms`, `clients` and `users` application takes from this data file and stores in 
-        app memory, data file name - `data.json`
-      - key file that is using for `JWT` tokens generation (`access_token` && `refresh_token`), 
-        name `keyfile` (without extensions).
-   
-   Names are standard, in future we allow to pass own files from cmd
-2. It could be started without reading files, all data could be passed as arguments (see 
-   `application_test.go` for details):
+1. Start with config file (described above)
+2. Start with direct pass `config.AppConfig` and `data.ServerData` in application, i.e.
    ```go
     app := CreateAppWithData(appConfig, &testServerData, testKey)
 	res, err := app.Init()
@@ -92,7 +91,29 @@ At present moment we have 2 fully integration tests, and number of them continue
 go test
 ```
 
-## Configure user data as you wish
+## 4.
+
+### 4.1 Server configuration
+
+Configuration splitted onto several sections:
+
+        ```json
+        "server": {
+            "schema": "https",
+            "address": "localhost",
+            "port": 8182,
+            "security": {
+                "key_file": "./certs/server.key",
+                "certificate_file": "./certs/server.crt"
+            }
+        }
+        ```
+      - data file: `realms`, `clients` and `users` application takes from this data file and stores in 
+        app memory, data file name - `data.json`
+      - key file that is using for `JWT` tokens generation (`access_token` && `refresh_token`), 
+        name `keyfile` (without extensions).
+
+### 4.2 Configure user data as you wish
 
 Users does not have any specific structure, you could add whatever you want, but for compatibility
 with keycloak and for ability to check password minimal user looks like:

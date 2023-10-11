@@ -15,6 +15,13 @@ import (
 	"time"
 )
 
+// IssueNewToken this function is a Http Request Handler that is responsible for issue New or Refresh existing tokens
+/* For issue new token user should send POST request of type x-www-from-urlencoded with following pairs key=value
+ * grant_type=password (password only supported), client_id (data.Client name), if client is Confidential also client_secret,
+ * scope=profile email, username and password
+ * For refreshing existing token user should send POST request of type x-www-from-urlencoded with following
+ * pairs key=value client_id, client_secret (if data.Client is Confidential), grant_type=refresh_token and refresh_token itself
+ */
 func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request *http.Request) {
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
@@ -130,6 +137,10 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 	afterHandle(&respWriter, status, &result)
 }
 
+// GetUserInfo this function is a Http Request Handler that is responsible for getting public data.UserInfo
+/* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
+ *
+ */
 func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *http.Request) {
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
