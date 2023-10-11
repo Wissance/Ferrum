@@ -13,6 +13,7 @@ import (
 
 // JwtGenerator is useful struct that has methods to generate JWT tokens using golang-jwt utility
 type JwtGenerator struct {
+	// TODO(UMV): we should add possibility to regenerate SignKey (probably via CLI)
 	SignKey []byte
 	Logger  *logging.AppLogger
 }
@@ -48,6 +49,7 @@ func (generator *JwtGenerator) GenerateJwtRefreshToken(realmBaseUrl string, toke
 	return generator.generateJwtRefreshToken(refreshToken)
 }
 
+// generateJwtAccessToken this is actual access token JWT generation with SignKey as a Token signature (HMAC-SHA-256)
 func (generator *JwtGenerator) generateJwtAccessToken(tokenData *data.AccessTokenData) string {
 	token := jwt.New(jwt.SigningMethodHS256)
 	// signed token contains embedded type because we don't actually know type of User, therefore we do it like jwt do but use RawStr
@@ -61,6 +63,7 @@ func (generator *JwtGenerator) generateJwtAccessToken(tokenData *data.AccessToke
 	return signedToken
 }
 
+// generateJwtAccessToken this is actual refresh token JWT generation with SignKey as a Token signature (HMAC-SHA-256)
 func (generator *JwtGenerator) generateJwtRefreshToken(tokenData *data.TokenRefreshData) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenData)
 	signedToken, err := token.SignedString(generator.SignKey)
@@ -71,6 +74,7 @@ func (generator *JwtGenerator) generateJwtRefreshToken(tokenData *data.TokenRefr
 	return signedToken
 }
 
+// prepareAccessToken builds data.AccessTokenData from a lot of params
 func (generator *JwtGenerator) prepareAccessToken(realmBaseUrl string, tokenType string, scope string, sessionData *data.UserSession,
 	userData *data.User) *data.AccessTokenData {
 	issuer := realmBaseUrl
@@ -81,6 +85,7 @@ func (generator *JwtGenerator) prepareAccessToken(realmBaseUrl string, tokenType
 	return accessToken
 }
 
+// prepareRefreshToken builds data.TokenRefreshData from a lot of params
 func (generator *JwtGenerator) prepareRefreshToken(realmBaseUrl string, tokenType string, scope string, sessionData *data.UserSession) *data.TokenRefreshData {
 	issuer := realmBaseUrl
 	jwtCommon := data.JwtCommonInfo{Issuer: issuer, Type: tokenType, Audience: issuer, Scope: scope, JwtId: uuid.New(),
@@ -90,6 +95,7 @@ func (generator *JwtGenerator) prepareRefreshToken(realmBaseUrl string, tokenTyp
 	return accessToken
 }
 
+// makeSignedToken this function adds signature to token
 func (generator *JwtGenerator) makeSignedToken(token *jwt.Token, tokenData *data.AccessTokenData, signKey interface{}) (string, error) {
 	var err error
 	var sig string
