@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"strconv"
+
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
 	sf "github.com/wissance/stringFormatter"
-	"strconv"
 )
 
 // This set of const of a templates to all data storing in Redis it contains prefix - a namespace {0}
@@ -71,8 +72,10 @@ func CreateRedisDataManager(dataSourceCfg *config.DataSourceConfig, logger *logg
 	if !ok || len(namespace) == 0 {
 		namespace = defaultNamespace
 	}
-	mn := &RedisDataManager{logger: logger, redisOption: opts, redisClient: rClient, ctx: context.Background(),
-		namespace: namespace}
+	mn := &RedisDataManager{
+		logger: logger, redisOption: opts, redisClient: rClient, ctx: context.Background(),
+		namespace: namespace,
+	}
 	dc := DataContext(mn)
 	return dc, nil
 }
@@ -80,6 +83,10 @@ func CreateRedisDataManager(dataSourceCfg *config.DataSourceConfig, logger *logg
 func (mn *RedisDataManager) GetRealm(realmName string) *data.Realm {
 	realmKey := sf.Format(realmKeyTemplate, mn.namespace, realmName)
 	realm := getObjectFromRedis[data.Realm](mn.redisClient, mn.ctx, mn.logger, Realm, realmKey)
+	if realm == nil {
+		return nil
+	}
+
 	// should get realms too
 	// if realms were stored without clients (we expected so), get clients related to realm and assign here
 	if len(realm.Clients) == 0 {
@@ -93,7 +100,7 @@ func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Clie
 	// realm_%name%_clients contains array with configured clients ID (data.ExtendedIdentifier) for that realm
 	realmClients := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
 	if realmClients == nil {
-		mn.logger.Error(sf.Format("There are no clients for realm: \"{0} \" in Redis, BAD data config", realm.Name))
+		mn.logger.Error(sf.Format("There are no clients for realm: \"{0}\" in Redis, BAD data config", realm.Name))
 		return nil
 	}
 	realmHasClient := false
@@ -111,6 +118,10 @@ func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Clie
 	}
 	clientKey := sf.Format(clientKeyTemplate, mn.namespace, clientId.ID)
 	client := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
+	if client == nil {
+		mn.logger.Error(sf.Format("Client with name: \"{0}\" was not found in Redis", name))
+		return nil
+	}
 	return client
 }
 
@@ -118,7 +129,7 @@ func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.Us
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realm.Name)
 	realmUsers := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if realmUsers == nil {
-		mn.logger.Error(sf.Format("There are no user with name :\"{0}\" in realm: \"{1} \" in Redis, BAD data config", userName, realm.Name))
+		mn.logger.Error(sf.Format("There are no user with name :\"{0}\" in realm: \"{1}\" in Redis, BAD data config", userName, realm.Name))
 		return nil
 	}
 
@@ -139,6 +150,10 @@ func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.Us
 
 	userKey := sf.Format(userKeyTemplate, mn.namespace, extendedUserId.Name)
 	rawUser := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
+	if rawUser == nil {
+		mn.logger.Error(sf.Format("User with name: \"{0}\" was not found in Redis", userName))
+		return nil
+	}
 	user := data.CreateUser(*rawUser)
 	return &user
 }
@@ -169,7 +184,7 @@ func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 
 	realmUsers := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if realmUsers == nil {
-		mn.logger.Error(sf.Format("There are no users in realm: \"{0} \" in Redis, BAD data config", realmName))
+		mn.logger.Error(sf.Format("There are no users in realm: \"{0}\" in Redis, BAD data config", realmName))
 		return nil
 	}
 
@@ -181,7 +196,7 @@ func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 	// userFullDataRealmsKey := sf.Format(realmUsersFullDataKeyTemplate, mn.namespace, realmName)
 	// this is wrong, we can't get rawUsers such way ...
 	realmUsersData := getMultipleObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRedisKeys)
-	//getObjectsListFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
+	// getObjectsListFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
 
 	if realmUsersData != nil {
 		userData := make([]data.User, len(*realmUsersData))
@@ -197,7 +212,7 @@ func (mn *RedisDataManager) GetRealmClients(realmName string) []data.Client {
 	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realmName)
 	realmClients := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
 	if realmClients == nil {
-		mn.logger.Error(sf.Format("There are no clients for realm: \"{0} \" in Redis, BAD data config", realmName))
+		mn.logger.Error(sf.Format("There are no clients for realm: \"{0}\" in Redis, BAD data config", realmName))
 		return nil
 	}
 	clients := make([]data.Client, len(*realmClients))
@@ -205,6 +220,10 @@ func (mn *RedisDataManager) GetRealmClients(realmName string) []data.Client {
 		// todo(UMV) get all them at once
 		clientKey := sf.Format(clientKeyTemplate, mn.namespace, rc.Name)
 		client := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
+		if client == nil {
+			mn.logger.Error(sf.Format("Client with name: \"{0}\" was not found in Redis", rc.Name))
+			return nil
+		}
 		clients[i] = *client
 	}
 
@@ -213,7 +232,8 @@ func (mn *RedisDataManager) GetRealmClients(realmName string) []data.Client {
 
 // getObjectFromRedis is a method that DOESN'T work with List type object, only a String object type
 func getObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
-	objName objectType, objKey string) *T {
+	objName objectType, objKey string,
+) *T {
 	redisCmd := redisClient.Get(ctx, objKey)
 	if redisCmd.Err() != nil {
 		logger.Warn(sf.Format("An error occurred during fetching {0}: \"{1}\" from Redis server", objName, objKey))
@@ -225,13 +245,15 @@ func getObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, l
 	err := json.Unmarshal(jsonBin, &obj)
 	if err != nil {
 		logger.Error(sf.Format("An error occurred during {0} : \"{1}\" unmarshall", objName, objKey))
+		return nil
 	}
 	return &obj
 }
 
 // getObjectFromRedis is a method that DOESN'T work with List type object, only a String object type
 func getMultipleObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
-	objName objectType, objKey []string) *[]T {
+	objName objectType, objKey []string,
+) *[]T {
 	redisCmd := redisClient.MGet(ctx, objKey...)
 	if redisCmd.Err() != nil {
 		// todo(UMV): print when this will be done https://github.com/Wissance/stringFormatter/issues/14
@@ -240,12 +262,16 @@ func getMultipleObjectFromRedis[T any](redisClient *redis.Client, ctx context.Co
 	}
 
 	raw := redisCmd.Val()
+	if len(raw) == 0 {
+		return nil
+	}
 	result := make([]T, len(raw))
 	var unMarshalledRaw interface{}
 
 	for i, v := range raw {
 		err := json.Unmarshal([]byte(v.(string)), &unMarshalledRaw)
 		if err != nil {
+			logger.Error(sf.Format("An error occurred during {0} : \"{1}\" unmarshall", objName, objKey))
 			return nil
 		}
 		result[i] = unMarshalledRaw.(T)
@@ -255,15 +281,15 @@ func getMultipleObjectFromRedis[T any](redisClient *redis.Client, ctx context.Co
 
 // this functions gets object that stored as a LIST Object type
 func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
-	objName objectType, objKey string) *[]T {
-
+	objName objectType, objKey string,
+) *[]T {
 	redisCmd := redisClient.LRange(ctx, objKey, 0, -1)
 	if redisCmd.Err() != nil {
 		logger.Warn(sf.Format("An error occurred during fetching {0}: \"{1}\" from Redis server", objName, objKey))
 		return nil
 	}
 
-	//var obj T
+	// var obj T
 	items := redisCmd.Val()
 	var result []T
 	var portion []T
@@ -272,10 +298,14 @@ func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Conte
 		err := json.Unmarshal(jsonBin, &portion) // already contains all SLICE in one object
 		if err != nil {
 			logger.Error(sf.Format("An error occurred during {0} : \"{1}\" unmarshall", objName, objKey))
+			return nil
 		}
 		result = append(result, portion...)
 	}
 
+	if len(result) == 0 {
+		return nil
+	}
 	return &result
 }
 
