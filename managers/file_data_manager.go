@@ -2,11 +2,12 @@ package managers
 
 import (
 	"encoding/json"
+	"io/ioutil"
+
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/stringFormatter"
-	"io/ioutil"
 )
 
 // FileDataManager is the simplest Data Storage without any dependencies, it uses single JSON file (it is users and clients RO auth server)
@@ -94,13 +95,14 @@ func (mn *FileDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *dat
 	return nil
 }
 
+
 // GetRealmUsers function for getting all Realm User
 /* This function get realm by name ant extract all its users
  * Parameters:
  *     - realmName - name of a realm
- * Returns: slice of users or nil
+ * Returns: slice of users
  */
-func (mn *FileDataManager) GetRealmUsers(realmName string) *[]data.User {
+func (mn *FileDataManager) GetRealmUsers(realmName string) []data.User {
 	realm := mn.GetRealm(realmName)
 	if realm == nil {
 		return nil
@@ -109,7 +111,7 @@ func (mn *FileDataManager) GetRealmUsers(realmName string) *[]data.User {
 	for i, u := range realm.Users {
 		users[i] = data.CreateUser(u)
 	}
-	return &users
+	return users
 }
 
 // loadData this function loads data from JSON file (dataFile) to serverData

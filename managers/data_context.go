@@ -2,12 +2,13 @@ package managers
 
 import (
 	"errors"
+	"path/filepath"
+
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/stringFormatter"
-	"path/filepath"
 )
 
 // DataContext is a common interface to implement operations with authorization server entities (data.Realm, data.Client, data.User)
@@ -21,9 +22,9 @@ type DataContext interface {
 	GetUser(realm *data.Realm, userName string) *data.User
 	// GetUserById return realm user by id
 	GetUserById(realm *data.Realm, userId uuid.UUID) *data.User
-	// GetRealmUsers return all realm Users
+  // GetRealmUsers return all realm Users
 	// TODO(UMV): when we deal with a lot of Users we should query portion of Users instead of all
-	GetRealmUsers(realmName string) *[]data.User
+	GetRealmUsers(realmName string) []data.User
 }
 
 // PrepareContext is a factory function that creates instance of DataContext
@@ -40,7 +41,8 @@ type DataContext interface {
 func PrepareContext(dataSourceCfg *config.DataSourceConfig, dataFile *string, logger *logging.AppLogger) (DataContext, error) {
 	var dc DataContext
 	var err error
-	if dataSourceCfg.Type == config.FILE {
+	switch dataSourceCfg.Type {
+	case config.FILE:
 		if dataFile == nil {
 			err = errors.New("data file is nil")
 		}
@@ -61,11 +63,12 @@ func PrepareContext(dataSourceCfg *config.DataSourceConfig, dataFile *string, lo
 		}
 		dc = DataContext(mn)
 
-	} else {
+	case config.REDIS:
 		if dataSourceCfg.Type == config.REDIS {
 			dc, err = CreateRedisDataManager(dataSourceCfg, logger)
 		}
 		// todo implement other data sources
 	}
+
 	return dc, err
 }
