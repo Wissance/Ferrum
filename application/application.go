@@ -37,6 +37,12 @@ type Application struct {
 	httpHandler    *http.Handler
 }
 
+// CreateAppWithConfigs creates but not Init new Application as AppRunner
+/* This function creates new Application and pass configFile to newly created object
+ * Parameters:
+ *     - configFile - path to config
+ * Returns: new Application as AppRunner
+ */
 func CreateAppWithConfigs(configFile string) AppRunner {
 	app := &Application{}
 	app.appConfigFile = &configFile
@@ -44,12 +50,25 @@ func CreateAppWithConfigs(configFile string) AppRunner {
 	return appRunner
 }
 
+// CreateAppWithData creates but not Init new Application as AppRunner
+/* This function creates new Application and pass already decoded json of appConfig and serverData plus secretKey
+ * Parameters:
+ *     - appConfig  - decoded config
+ *     - serverData - decoded server config
+ *     - secretKey  - secret key that is using for signing JWT
+ * Returns: new Application as AppRunner
+ */
 func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte) AppRunner {
 	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData}
 	appRunner := AppRunner(app)
 	return appRunner
 }
 
+// Start function that starts application
+/* This function must be called after Init it starts application web server either on HTTP or HTTPS 9depends on config Schema value)
+ * Parameters: no
+ * Return start result (true if Start was successful) and error (nil if start was successful)
+ */
 func (app *Application) Start() (bool, error) {
 	var err error
 	go func() {
@@ -61,6 +80,17 @@ func (app *Application) Start() (bool, error) {
 	return err == nil, err
 }
 
+// Init initializes application
+/* This function implements application subsystem init:
+ *    1. Read config if Application was not Created via CreateAppWithData
+ *    2. After config was decoded this function implements following initialization
+ *       2.1 Read secret file for signing JWT
+ *       2.2 Initializes logger
+ *       2.3 Initializes Data Provider
+ *       2.4 Initializes REST API
+ * Parameters: no
+ * Return result of init (true if init was successful) and error (nil if init was successful)
+ */
 func (app *Application) Init() (bool, error) {
 	// part that initializes app from configs
 	if app.appConfigFile != nil {
@@ -69,7 +99,7 @@ func (app *Application) Init() (bool, error) {
 			fmt.Println(stringFormatter.Format("An error occurred during reading app config file: {0}", err.Error()))
 			return false, err
 		}
-		// after config read init secretKey file and data file (if provider.type == FLE)
+		// after config read init secretKey file and data file (if provider.type == FILE)
 		app.secretKeyFile = &app.appConfig.ServerCfg.SecretFile
 		if app.appConfig.DataSource.Type == config.FILE {
 			app.dataConfigFile = &app.appConfig.DataSource.Source
@@ -102,10 +132,20 @@ func (app *Application) Init() (bool, error) {
 	return true, nil
 }
 
+// Stop function that stops application
+/* Now doesn't do anything, just a stub
+ * Parameters : no
+ * Returns result of app stop and error
+ */
 func (app *Application) Stop() (bool, error) {
 	return true, nil
 }
 
+// GetLogger function that returns logger from initialized application
+/* Returns logger from application (app.Logger), must be called after Init
+ * Parameters : no
+ * Returns: logger
+ */
 func (app *Application) GetLogger() *logging.AppLogger {
 	return app.logger
 }
