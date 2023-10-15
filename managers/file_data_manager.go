@@ -2,11 +2,12 @@ package managers
 
 import (
 	"encoding/json"
+	"io/ioutil"
+
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/stringFormatter"
-	"io/ioutil"
 )
 
 type FileDataManager struct {
@@ -63,7 +64,7 @@ func (mn *FileDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *dat
 	return nil
 }
 
-func (mn *FileDataManager) GetRealmUsers(realmName string) *[]data.User {
+func (mn *FileDataManager) GetRealmUsers(realmName string) []data.User {
 	realm := mn.GetRealm(realmName)
 	if realm == nil {
 		return nil
@@ -72,7 +73,7 @@ func (mn *FileDataManager) GetRealmUsers(realmName string) *[]data.User {
 	for i, u := range realm.Users {
 		users[i] = data.CreateUser(u)
 	}
-	return &users
+	return users
 }
 
 func (mn *FileDataManager) loadData() error {

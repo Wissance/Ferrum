@@ -100,7 +100,7 @@ func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Clie
 	// realm_%name%_clients contains array with configured clients ID (data.ExtendedIdentifier) for that realm
 	realmClients := getObjectFromRedis[[]data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
 	if realmClients == nil {
-		mn.logger.Error(sf.Format("There are no clients for realm: \"{0}\" in Redis, BAD data config", realm.Name))
+		mn.logger.Error(sf.Format("There are no clients for realm: \"{0}\" in Redis", realm.Name))
 		return nil
 	}
 	realmHasClient := false
@@ -119,7 +119,7 @@ func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Clie
 	clientKey := sf.Format(clientKeyTemplate, mn.namespace, clientId.ID)
 	client := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
 	if client == nil {
-		mn.logger.Error(sf.Format("Client with name: \"{0}\" was not found in Redis", name))
+		mn.logger.Error(sf.Format("Realm: \"{0}\" has client: \"{1}\", that Redis does not have", realm.Name, name))
 		return nil
 	}
 	return client
@@ -128,14 +128,14 @@ func (mn *RedisDataManager) GetClient(realm *data.Realm, name string) *data.Clie
 func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.User {
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realm.Name)
 	realmUsers := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
-	if realmUsers == nil {
-		mn.logger.Error(sf.Format("There are no user with name :\"{0}\" in realm: \"{1}\" in Redis, BAD data config", userName, realm.Name))
+	if len(realmUsers) == 0 {
+		mn.logger.Error(sf.Format("There are no users in realm: \"{0}\" in Redis", realm.Name))
 		return nil
 	}
 
 	var extendedUserId data.ExtendedIdentifier
 	userFound := false
-	for _, rc := range *realmUsers {
+	for _, rc := range realmUsers {
 		if rc.Name == userName {
 			userFound = true
 			extendedUserId = rc
@@ -151,7 +151,7 @@ func (mn *RedisDataManager) GetUser(realm *data.Realm, userName string) *data.Us
 	userKey := sf.Format(userKeyTemplate, mn.namespace, extendedUserId.Name)
 	rawUser := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
 	if rawUser == nil {
-		mn.logger.Error(sf.Format("User with name: \"{0}\" was not found in Redis", userName))
+		mn.logger.Error(sf.Format("Realm: \"{0}\" has user: \"{1}\", that Redis does not have", realm.Name, userName))
 		return nil
 	}
 	user := data.CreateUser(*rawUser)
@@ -163,7 +163,7 @@ func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *da
 	var rawUser data.User
 	userFound := false
 	users := mn.GetRealmUsers(realm.Name)
-	for _, u := range *users {
+	for _, u := range users {
 		checkingUserId := u.GetId()
 		if checkingUserId == userId {
 			rawUser = u
@@ -178,18 +178,18 @@ func (mn *RedisDataManager) GetUserById(realm *data.Realm, userId uuid.UUID) *da
 	return &rawUser
 }
 
-func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
+func (mn *RedisDataManager) GetRealmUsers(realmName string) []data.User {
 	// TODO(UMV): possibly we should not use this method ??? what if we have 1M+ users .... ? think maybe it should be somehow optimized ...
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realmName)
 
 	realmUsers := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
-	if realmUsers == nil {
-		mn.logger.Error(sf.Format("There are no users in realm: \"{0}\" in Redis, BAD data config", realmName))
+	if len(realmUsers) == 0 {
+		mn.logger.Error(sf.Format("There are no users in realm: \"{0}\" in Redis", realmName))
 		return nil
 	}
 
-	userRedisKeys := make([]string, len(*realmUsers))
-	for i, ru := range *realmUsers {
+	userRedisKeys := make([]string, len(realmUsers))
+	for i, ru := range realmUsers {
 		userRedisKeys[i] = sf.Format(userKeyTemplate, mn.namespace, ru.Name)
 	}
 
@@ -197,31 +197,35 @@ func (mn *RedisDataManager) GetRealmUsers(realmName string) *[]data.User {
 	// this is wrong, we can't get rawUsers such way ...
 	realmUsersData := getMultipleObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRedisKeys)
 	// getObjectsListFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
-
-	if realmUsersData != nil {
-		userData := make([]data.User, len(*realmUsersData))
-		for i, u := range *realmUsersData {
-			userData[i] = data.CreateUser(u)
-		}
-		return &userData
+	if len(realmUsers) != len(realmUsersData) {
+		mn.logger.Error(sf.Format("Realm: \"{0}\" has users, that Redis does not have part of it", realmName))
 	}
-	return nil
+
+	if len(realmUsersData) == 0 {
+		mn.logger.Error(sf.Format("Redis does not have all users that belong to Realm: \"{0}\"", realmName))
+		return nil
+	}
+	userData := make([]data.User, len(realmUsersData))
+	for i, u := range realmUsersData {
+		userData[i] = data.CreateUser(u)
+	}
+	return userData
 }
 
 func (mn *RedisDataManager) GetRealmClients(realmName string) []data.Client {
 	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realmName)
 	realmClients := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
-	if realmClients == nil {
+	if len(realmClients) == 0 {
 		mn.logger.Error(sf.Format("There are no clients for realm: \"{0}\" in Redis, BAD data config", realmName))
 		return nil
 	}
-	clients := make([]data.Client, len(*realmClients))
-	for i, rc := range *realmClients {
+	clients := make([]data.Client, len(realmClients))
+	for i, rc := range realmClients {
 		// todo(UMV) get all them at once
 		clientKey := sf.Format(clientKeyTemplate, mn.namespace, rc.Name)
 		client := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
 		if client == nil {
-			mn.logger.Error(sf.Format("Client with name: \"{0}\" was not found in Redis", rc.Name))
+			mn.logger.Error(sf.Format("Realm: \"{0}\" has client: \"{1}\", that Redis does not have", realmName, rc.Name))
 			return nil
 		}
 		clients[i] = *client
@@ -253,7 +257,7 @@ func getObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, l
 // getObjectFromRedis is a method that DOESN'T work with List type object, only a String object type
 func getMultipleObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
 	objName objectType, objKey []string,
-) *[]T {
+) []T {
 	redisCmd := redisClient.MGet(ctx, objKey...)
 	if redisCmd.Err() != nil {
 		// todo(UMV): print when this will be done https://github.com/Wissance/stringFormatter/issues/14
@@ -267,7 +271,6 @@ func getMultipleObjectFromRedis[T any](redisClient *redis.Client, ctx context.Co
 	}
 	result := make([]T, len(raw))
 	var unMarshalledRaw interface{}
-
 	for i, v := range raw {
 		err := json.Unmarshal([]byte(v.(string)), &unMarshalledRaw)
 		if err != nil {
@@ -276,13 +279,13 @@ func getMultipleObjectFromRedis[T any](redisClient *redis.Client, ctx context.Co
 		}
 		result[i] = unMarshalledRaw.(T)
 	}
-	return &result
+	return result
 }
 
 // this functions gets object that stored as a LIST Object type
 func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
 	objName objectType, objKey string,
-) *[]T {
+) []T {
 	redisCmd := redisClient.LRange(ctx, objKey, 0, -1)
 	if redisCmd.Err() != nil {
 		logger.Warn(sf.Format("An error occurred during fetching {0}: \"{1}\" from Redis server", objName, objKey))
@@ -291,6 +294,9 @@ func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Conte
 
 	// var obj T
 	items := redisCmd.Val()
+	if len(items) == 0 {
+		return nil
+	}
 	var result []T
 	var portion []T
 	for _, rawVal := range items {
@@ -302,11 +308,7 @@ func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Conte
 		}
 		result = append(result, portion...)
 	}
-
-	if len(result) == 0 {
-		return nil
-	}
-	return &result
+	return result
 }
 
 func buildRedisConfig(dataSourceCfd *config.DataSourceConfig, logger *logging.AppLogger) *redis.Options {

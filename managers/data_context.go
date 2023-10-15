@@ -2,12 +2,13 @@ package managers
 
 import (
 	"errors"
+	"path/filepath"
+
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/stringFormatter"
-	"path/filepath"
 )
 
 type DataContext interface {
@@ -15,13 +16,14 @@ type DataContext interface {
 	GetClient(realm *data.Realm, name string) *data.Client
 	GetUser(realm *data.Realm, userName string) *data.User
 	GetUserById(realm *data.Realm, userId uuid.UUID) *data.User
-	GetRealmUsers(realmName string) *[]data.User
+	GetRealmUsers(realmName string) []data.User
 }
 
 func PrepareContext(dataSourceCfg *config.DataSourceConfig, dataFile *string, logger *logging.AppLogger) (DataContext, error) {
 	var dc DataContext
 	var err error
-	if dataSourceCfg.Type == config.FILE {
+	switch dataSourceCfg.Type {
+	case config.FILE:
 		if dataFile == nil {
 			err = errors.New("data file is nil")
 		}
@@ -42,11 +44,12 @@ func PrepareContext(dataSourceCfg *config.DataSourceConfig, dataFile *string, lo
 		}
 		dc = DataContext(mn)
 
-	} else {
+	case config.REDIS:
 		if dataSourceCfg.Type == config.REDIS {
 			dc, err = CreateRedisDataManager(dataSourceCfg, logger)
 		}
 		// todo implement other data sources
 	}
+
 	return dc, err
 }
