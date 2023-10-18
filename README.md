@@ -37,8 +37,8 @@ Today we are having **following features**:
 
 it has `endpoints` SIMILAR to `Keycloak`, at present time we are having following:
 
-1. Issue and Refresh tokens: `POST ~/auth/realms/{realm}/protocol/openid-connect/token/`
-2. Get UserInfo `GET  ~/auth/realms/{realm}/protocol/openid-connect/userinfo/`
+1. Issue and Refresh tokens: `POST ~/auth/realms/{realm}/protocol/openid-connect/token`
+2. Get UserInfo `GET  ~/auth/realms/{realm}/protocol/openid-connect/userinfo`
 3. Introspect tokens `POST ~/auth/realms/{realm}/protocol/openid-connect/token/introspect`
 
 ## 3. How to use
