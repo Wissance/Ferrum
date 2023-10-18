@@ -1,7 +1,7 @@
 {
     "server": {
         "schema": "http",
-        "address": "localhost",
+        "address": "ferrum",
         "port": 8182,
         "secret_file": "./keyfile"
     },
@@ -31,7 +31,7 @@
     },
     "data_source": {
         "type": "redis",
-        "source": "localhost:6379",
+        "source": "redis:6379",
         "credentials": {
             "username": "test_user",
             "password": "test_password"

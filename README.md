@@ -36,8 +36,9 @@ Today we are having **following features**:
 7. Ability to ***become high performance enterprise level Authorization server***.
 
 it has `endpoints` SIMILAR to `Keycloak`, at present time we are having following:
-1. Issue and Refresh tokens: `POST ~/auth/realms/{realm}/protocol/openid-connect/token/`
-2. Get UserInfo `GET  ~/auth/realms/{realm}/protocol/openid-connect/userinfo/`
+
+1. Issue and Refresh tokens: `POST ~/auth/realms/{realm}/protocol/openid-connect/token`
+2. Get UserInfo `GET  ~/auth/realms/{realm}/protocol/openid-connect/userinfo`
 3. Introspect tokens `POST ~/auth/realms/{realm}/protocol/openid-connect/token/introspect`
 
 ## 3. How to use
@@ -45,8 +46,7 @@ it has `endpoints` SIMILAR to `Keycloak`, at present time we are having followin
 ### 3.1 Build
 
 First of all build is simple run `go build` from application root directory. Additionally it is possible
-to generate self signed certificates - run `go generate` from command line (if you are going to generate 
-new certs **remove certs and key file from ./certs directory** prior to generate new)
+to generate self signed certificates - run `go generate` from command line
 
 If you don't specify the name of executable (by passing -o {execName} to go build) than name of executable = name of project
 
@@ -65,7 +65,12 @@ To run `Ferrum` with selected config i.e. `config_w_redis.json` :
 
 ### 3.3 Run application in docker
 
-... to be described soon
+It is possible to start app in docker with already installed `REDIS` and with initial data (see python
+data insert script):
+
+```ps1
+    docker-compose up --build 
+```
 
 ### 3.4 Run with direct configuration && data pass from code (embedding Authorization server in you applications)
 
@@ -91,7 +96,7 @@ At present moment we have 2 fully integration tests, and number of them continue
 go test
 ```
 
-## 4.
+## 4. Configure
 
 ### 4.1 Server configuration
 
@@ -133,7 +138,7 @@ with keycloak and for ability to check password minimal user looks like:
 in this minimal user example you could expand `info` structure as you want, `credentials` is a service structure,
 there are NO SENSES in modifying it.
 
-## Use from code
+### 4.3 Server embedding into application (use from code)
 
 Minimal full example of how to use coud be found in `application_test.go`, here is a minimal snippet:
 
@@ -173,7 +178,7 @@ if err != nil {
 app.Stop()
 ```
 
-## Contributors
+## 5. Contributors
 
 <a href="https://github.com/Wissance/Ferrum/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=Wissance/Ferrum" />
