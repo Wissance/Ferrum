@@ -3,8 +3,22 @@ import json
 import redis
 from redis.commands.json.path import Path
 
-#client = redis.Redis(host='localhost', port=6379, db=0)
-client = redis.Redis(host='localhost', port=6379, db=0, username='test_user', password='test_password')
+redis_host = 'redis'
+redis_port = 6379
+db = 0
+username = 'test_user'
+password = 'test_password'
+client = redis.Redis(host=redis_host, port=redis_port, db=db, username=username, password=password)
+try:
+    response = client.ping()
+except redis.ConnectionError:
+    print('Bad connect to redis, host - "{}".'.format(redis_host))
+
+isExistsRealm = client.exists("ferrum_1.realm_myApp")
+if isExistsRealm:
+    print('The radis has "ferrum_1.realm_myApp". Data not inserted during initialization.')
+    exit()
+
 
 realm_myApp = {
          "name": "myApp",
@@ -130,5 +144,6 @@ realm_myApp_users = [
 realm_myApp_users = [json.dumps(realm_myApp_users)]
 client.rpush('ferrum_1.realm_myApp_users', *realm_myApp_users)
 
+print('Data is inserted into the radis during initialization.')
 
 

@@ -16,9 +16,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      WAIT_HOSTS: redis:6379
     volumes:
       - ./config_docker_w_redis.json:/app/config_docker_w_redis.json
-    restart: always
     depends_on:
       - redis
     ports:
