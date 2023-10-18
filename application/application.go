@@ -4,6 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/wissance/Ferrum/api/rest"
@@ -15,11 +21,6 @@ import (
 	r "github.com/wissance/gwuu/api/rest"
 	"github.com/wissance/stringFormatter"
 	"gopkg.in/natefinch/lumberjack.v2"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
 )
 
 type Application struct {
@@ -27,7 +28,7 @@ type Application struct {
 	dataConfigFile *string
 	secretKeyFile  *string
 	appConfig      *config.AppConfig
-	secretKey      *[]byte
+	secretKey      []byte
 	serverData     *data.ServerData
 	dataProvider   *managers.DataContext
 	webApiHandler  *r.WebApiHandler
@@ -58,7 +59,7 @@ func CreateAppWithConfigs(configFile string) AppRunner {
  * Returns: new Application as AppRunner
  */
 func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte) AppRunner {
-	app := &Application{appConfig: appConfig, secretKey: &secretKey, serverData: serverData}
+	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData}
 	appRunner := AppRunner(app)
 	return appRunner
 }
@@ -191,9 +192,11 @@ func (app *Application) initRestApi() error {
 	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
 	securityService := services.CreateSecurityService(app.dataProvider, app.logger)
 	serverAddress := stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
-	app.webApiContext = &rest.WebApiContext{Address: serverAddress, Schema: string(app.appConfig.ServerCfg.Schema),
+	app.webApiContext = &rest.WebApiContext{
+		Address: serverAddress, Schema: string(app.appConfig.ServerCfg.Schema),
 		DataProvider: app.dataProvider, Security: &securityService,
-		TokenGenerator: &services.JwtGenerator{SignKey: *app.secretKey, Logger: app.logger}, Logger: app.logger}
+		TokenGenerator: &services.JwtGenerator{SignKey: app.secretKey, Logger: app.logger}, Logger: app.logger,
+	}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
 	app.initKeyCloakSimilarRestApiRoutes(router)
@@ -240,7 +243,7 @@ func (app *Application) startWebService() error {
 	return err
 }
 
-func (app *Application) readKey() *[]byte {
+func (app *Application) readKey() []byte {
 	absPath, err := filepath.Abs(*app.appConfigFile)
 	if err != nil {
 		app.logger.Error(stringFormatter.Format("An error occurred during getting key file abs path: {0}", err.Error()))
@@ -253,7 +256,7 @@ func (app *Application) readKey() *[]byte {
 		return nil
 	}
 
-	return &fileData
+	return fileData
 }
 
 func (app *Application) createHttpLoggingHandler(index int, router *mux.Router) *http.Handler {
