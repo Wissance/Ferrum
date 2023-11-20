@@ -19,3 +19,5 @@ type AppRunner interface {
 	// GetLogger function that required after app initialized all components to log some additional information about application stop
 	GetLogger() *logging.AppLogger
 }
+
+var _ AppRunner = (*Application)(nil)

@@ -1,31 +1,40 @@
-package managers
+package application
 
 import (
 	"errors"
 	"path/filepath"
 
-	"github.com/google/uuid"
+	"github.com/wissance/Ferrum/api/rest"
 	"github.com/wissance/Ferrum/config"
-	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
+	"github.com/wissance/Ferrum/managers/file_data_manager"
+	"github.com/wissance/Ferrum/managers/redis_data_manager"
+	"github.com/wissance/Ferrum/services"
 	"github.com/wissance/stringFormatter"
 )
 
 // DataContext is a common interface to implement operations with authorization server entities (data.Realm, data.Client, data.User)
 // now contains only set of Get methods, during implementation admin CLI should be expanded to create && update entities
 type DataContext interface {
-	// GetRealm returns realm by name (unique)
-	GetRealm(realmName string) *data.Realm
-	// GetClient returns realm client by name (client name is also unique in a realm)
-	GetClient(realm *data.Realm, name string) *data.Client
-	// GetUser return realm user (consider what to do with Federated users) by name
-	GetUser(realm *data.Realm, userName string) *data.User
-	// GetUserById return realm user by id
-	GetUserById(realm *data.Realm, userId uuid.UUID) *data.User
-  // GetRealmUsers return all realm Users
-	// TODO(UMV): when we deal with a lot of Users we should query portion of Users instead of all
-	GetRealmUsers(realmName string) []data.User
+	services.ManagerForTokenBasedSecurityService
+	rest.ManagerForWebApi
 }
+
+// // DataContext is a common interface to implement operations with authorization server entities (data.Realm, data.Client, data.User)
+// // now contains only set of Get methods, during implementation admin CLI should be expanded to create && update entities
+// type DataContext interface {
+// 	// GetRealm returns realm by name (unique)
+// 	GetRealm(realmName string) *data.Realm
+// 	// GetClient returns realm client by name (client name is also unique in a realm)
+// 	GetClient(realm *data.Realm, name string) *data.Client
+// 	// GetUser return realm user (consider what to do with Federated users) by name
+// 	GetUser(realm *data.Realm, userName string) *data.User
+// 	// GetUserById return realm user by id
+// 	GetUserById(realm *data.Realm, userId uuid.UUID) *data.User
+// 	// GetRealmUsers return all realm Users
+// 	// TODO(UMV): when we deal with a lot of Users we should query portion of Users instead of all
+// 	GetRealmUsers(realmName string) []data.User
+// }
 
 // PrepareContext is a factory function that creates instance of DataContext
 /* This function creates instance of appropriate DataContext according to input arguments values, if dataSourceConfig is config.FILE function
@@ -54,8 +63,7 @@ func PrepareContext(dataSourceCfg *config.DataSourceConfig, dataFile *string, lo
 			err = pathErr
 		}
 		// init, load data in memory ...
-		mn := &FileDataManager{dataFile: absPath, logger: logger}
-		err = mn.loadData()
+		mn, err := file_data_manager.CreateFileDataManager(absPath, logger)
 		if err != nil {
 			// at least and think what to do further
 			msg := stringFormatter.Format("An error occurred during data loading: {0}", err.Error())
@@ -65,7 +73,7 @@ func PrepareContext(dataSourceCfg *config.DataSourceConfig, dataFile *string, lo
 
 	case config.REDIS:
 		if dataSourceCfg.Type == config.REDIS {
-			dc, err = CreateRedisDataManager(dataSourceCfg, logger)
+			dc, err = redis_data_manager.CreateRedisDataManager(dataSourceCfg, logger)
 		}
 		// todo implement other data sources
 	}

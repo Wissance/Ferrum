@@ -16,7 +16,7 @@ import (
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
-	"github.com/wissance/Ferrum/managers"
+	"github.com/wissance/Ferrum/managers/file_data_manager"
 	"github.com/wissance/Ferrum/services"
 	r "github.com/wissance/gwuu/api/rest"
 	"github.com/wissance/stringFormatter"
@@ -30,11 +30,11 @@ type Application struct {
 	appConfig      *config.AppConfig
 	secretKey      []byte
 	serverData     *data.ServerData
-	dataProvider   *managers.DataContext
+	dataProvider   DataContext
 	webApiHandler  *r.WebApiHandler
 	webApiContext  *rest.WebApiContext
 	logger         *logging.AppLogger
-	httpHandler    *http.Handler
+	httpHandler    http.Handler
 }
 
 // CreateAppWithConfigs creates but not Init new Application as AppRunner
@@ -43,11 +43,10 @@ type Application struct {
  *     - configFile - path to config
  * Returns: new Application as AppRunner
  */
-func CreateAppWithConfigs(configFile string) AppRunner {
+func CreateAppWithConfigs(configFile string) *Application {
 	app := &Application{}
 	app.appConfigFile = &configFile
-	appRunner := AppRunner(app)
-	return appRunner
+	return app
 }
 
 // CreateAppWithData creates but not Init new Application as AppRunner
@@ -175,17 +174,21 @@ func (app *Application) readAppConfig() error {
 }
 
 func (app *Application) initDataProviders() error {
-	var err error
-	if app.dataConfigFile != nil || app.appConfig.DataSource.Type != config.FILE {
-		dataProvider, prepareErr := managers.PrepareContext(&app.appConfig.DataSource, app.dataConfigFile, app.logger)
-		app.dataProvider = &dataProvider
-		err = prepareErr
-	} else {
-		dataProvider, prepareErr := managers.PrepareFileDataContextUsingData(app.serverData)
-		app.dataProvider = &dataProvider
-		err = prepareErr
+	if app.appConfig.DataSource.Type == config.FILE && app.dataConfigFile == nil {
+		dataProvider, err := file_data_manager.PrepareFileDataManagerUsingData(app.serverData)
+		if err != nil {
+			return fmt.Errorf("PrepareFileDataManagerUsingData failed: %w", err)
+		}
+		app.dataProvider = dataProvider
+		return nil
 	}
-	return err
+
+	dataProvider, err := PrepareContext(&app.appConfig.DataSource, app.dataConfigFile, app.logger)
+	if err != nil {
+		return fmt.Errorf("PrepareContext failed: %w", err)
+	}
+	app.dataProvider = dataProvider
+	return nil
 }
 
 func (app *Application) initRestApi() error {
@@ -194,7 +197,7 @@ func (app *Application) initRestApi() error {
 	serverAddress := stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
 	app.webApiContext = &rest.WebApiContext{
 		Address: serverAddress, Schema: string(app.appConfig.ServerCfg.Schema),
-		DataProvider: app.dataProvider, Security: &securityService,
+		DataProvider: app.dataProvider, Security: securityService,
 		TokenGenerator: &services.JwtGenerator{SignKey: app.secretKey, Logger: app.logger}, Logger: app.logger,
 	}
 	router := app.webApiHandler.Router
@@ -205,7 +208,7 @@ func (app *Application) initRestApi() error {
 	if appenderIndex == -1 {
 		app.logger.Info("The RollingFile appender was not found.")
 		var resultRouter http.Handler = router
-		app.httpHandler = &resultRouter
+		app.httpHandler = resultRouter
 		return nil
 	}
 	app.httpHandler = app.createHttpLoggingHandler(appenderIndex, router)
@@ -227,7 +230,7 @@ func (app *Application) startWebService() error {
 	switch app.appConfig.ServerCfg.Schema { //nolint:exhaustive
 	case config.HTTP:
 		app.logger.Info(stringFormatter.Format("Starting \"HTTP\" WEB API Service on address: \"{0}\"", address))
-		err = http.ListenAndServe(address, *app.httpHandler)
+		err = http.ListenAndServe(address, app.httpHandler)
 		if err != nil {
 			app.logger.Error(stringFormatter.Format("An error occurred during attempt to start \"HTTP\" WEB API Service: {0}", err.Error()))
 		}
@@ -235,7 +238,7 @@ func (app *Application) startWebService() error {
 		app.logger.Info(stringFormatter.Format("Starting \"HTTPS\" REST API Service on address: \"{0}\"", address))
 		cert := app.appConfig.ServerCfg.Security.CertificateFile
 		key := app.appConfig.ServerCfg.Security.KeyFile
-		err = http.ListenAndServeTLS(address, cert, key, *app.httpHandler)
+		err = http.ListenAndServeTLS(address, cert, key, app.httpHandler)
 		if err != nil {
 			app.logger.Error(stringFormatter.Format("An error occurred during attempt tp start \"HTTPS\" REST API Service: {0}", err.Error()))
 		}
@@ -259,7 +262,7 @@ func (app *Application) readKey() []byte {
 	return fileData
 }
 
-func (app *Application) createHttpLoggingHandler(index int, router *mux.Router) *http.Handler {
+func (app *Application) createHttpLoggingHandler(index int, router *mux.Router) http.Handler {
 	var resultRouter http.Handler = router
 
 	destination := app.appConfig.Logging.Appenders[index].Destination
@@ -280,5 +283,5 @@ func (app *Application) createHttpLoggingHandler(index int, router *mux.Router) 
 			resultRouter = handlers.LoggingHandler(&lumberjackWriter, router)
 		}
 	}
-	return &resultRouter
+	return resultRouter
 }
