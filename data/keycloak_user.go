@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/json"
+
 	"github.com/google/uuid"
 	"github.com/ohler55/ojg/jp"
 )
@@ -54,7 +55,7 @@ func (user *KeyCloakUser) GetId() uuid.UUID {
 	idStrValue := getPathStringValue[string](user.rawData, "info.sub")
 	id, err := uuid.Parse(idStrValue)
 	if err != nil {
-		//todo(UMV): think what to do here, return error!
+		// todo(UMV): think what to do here, return error!
 	}
 	return id
 }

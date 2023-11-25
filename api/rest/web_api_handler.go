@@ -36,7 +36,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
 		// todo: validate ...
-		realmPtr, _ := wCtx.DataProvider.GetRealm(realm)
+		realmPtr, _ := wCtx.DataProvider.GetRealmWithClients(realm)
 		if realmPtr == nil {
 			status = http.StatusNotFound
 			wCtx.Logger.Debug("New token issue: realm doesn't exist")
@@ -156,7 +156,7 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 		status = http.StatusBadRequest
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
-		realmPtr, _ := wCtx.DataProvider.GetRealm(realm)
+		realmPtr, _ := wCtx.DataProvider.GetRealmWithClients(realm)
 		if realmPtr == nil {
 			wCtx.Logger.Debug("Get userinfo: realm doesn't exist")
 			status = http.StatusNotFound
@@ -181,7 +181,7 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 						wCtx.Logger.Debug("Get userinfo: token expired")
 						result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
 					} else {
-						user, _ := wCtx.DataProvider.GetUserFromRealmById(realmPtr.Name, session.UserId)
+						user, _ := wCtx.DataProvider.GetUserById(realmPtr.Name, session.UserId)
 						status = http.StatusOK
 						if user != nil {
 							result = user.GetUserInfo()
@@ -212,7 +212,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 		afterHandle(&respWriter, status, &result)
 		return
 	}
-	realmPtr, _ := wCtx.DataProvider.GetRealm(realm)
+	realmPtr, _ := wCtx.DataProvider.GetRealmWithClients(realm)
 	if realmPtr == nil {
 		status := http.StatusNotFound
 		wCtx.Logger.Debug(stringFormatter.Format("Introspect: realm \"{0}\" doesn't exists", realm))

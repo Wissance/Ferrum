@@ -76,7 +76,7 @@ func (mn *FileDataManager) GetRealmWithUsers(realmName string) (*data.Realm, err
 	return nil, errors_managers.ErrNotFound
 }
 
-func (mn *FileDataManager) GetClientFromRealm(realmName string, clientName string) (*data.Client, error) {
+func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data.Client, error) {
 	realm, err := mn.GetRealmWithClients(realmName)
 	if err != nil {
 		return nil, fmt.Errorf("GetRealmWithClients failed: %w", err)
@@ -90,7 +90,7 @@ func (mn *FileDataManager) GetClientFromRealm(realmName string, clientName strin
 	return nil, errors_managers.ErrNotFound
 }
 
-func (mn *FileDataManager) GetUserFromRealm(realmName string, userName string) (data.User, error) {
+func (mn *FileDataManager) GetUser(realmName string, userName string) (data.User, error) {
 	realm, err := mn.GetRealmWithUsers(realmName)
 	if err != nil {
 		return nil, fmt.Errorf("GetRealmWithUsers failed: %w", err)
@@ -106,7 +106,7 @@ func (mn *FileDataManager) GetUserFromRealm(realmName string, userName string) (
 	return nil, errors_managers.ErrNotFound
 }
 
-func (mn *FileDataManager) GetUserFromRealmById(realmName string, userId uuid.UUID) (data.User, error) {
+func (mn *FileDataManager) GetUserById(realmName string, userId uuid.UUID) (data.User, error) {
 	realm, err := mn.GetRealmWithUsers(realmName)
 	if err != nil {
 		return nil, fmt.Errorf("GetRealmWithUsers failed: %w", err)
@@ -122,7 +122,7 @@ func (mn *FileDataManager) GetUserFromRealmById(realmName string, userId uuid.UU
 	return nil, errors_managers.ErrNotFound
 }
 
-func (mn *FileDataManager) GetUsersFromRealm(realmName string) ([]data.User, error) {
+func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {
 	realm, err := mn.GetRealmWithUsers(realmName)
 	if err != nil {
 		return nil, fmt.Errorf("GetRealmWithUsers failed: %w", err)

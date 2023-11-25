@@ -12,9 +12,9 @@ import (
 
 type ManagerForTokenBasedSecurityService interface {
 	// GetUser return realm user (consider what to do with Federated users) by name
-	GetUserFromRealm(realmName string, userName string) (data.User, error)
-	// GetUserFromRealmById return realm user by id
-	GetUserFromRealmById(realmName string, userId uuid.UUID) (data.User, error)
+	GetUser(realmName string, userName string) (data.User, error)
+	// GetUserById return realm user by id
+	GetUserById(realmName string, userId uuid.UUID) (data.User, error)
 }
 
 // TokenBasedSecurityService structure that implements SecurityService
@@ -71,7 +71,7 @@ func (service *TokenBasedSecurityService) Validate(tokenIssueData *dto.TokenGene
  * Returns: nil if credentials are valid, otherwise error (data.OperationError) with description
  */
 func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError {
-	user, err := service.DataProvider.GetUserFromRealm(realm.Name, tokenIssueData.Username)
+	user, err := service.DataProvider.GetUser(realm.Name, tokenIssueData.Username)
 	if err != nil {
 		service.logger.Trace("Credential check: username mismatch")
 		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
@@ -94,7 +94,7 @@ func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.T
  * Returns user from DataProvider or nil (user not found)
  */
 func (service *TokenBasedSecurityService) GetCurrentUserByName(realm *data.Realm, userName string) data.User {
-	user, _ := service.DataProvider.GetUserFromRealm(realm.Name, userName)
+	user, _ := service.DataProvider.GetUser(realm.Name, userName)
 	return user
 }
 
@@ -106,7 +106,7 @@ func (service *TokenBasedSecurityService) GetCurrentUserByName(realm *data.Realm
  * Returns user from DataProvider or nil (user not found)
  */
 func (service *TokenBasedSecurityService) GetCurrentUserById(realm *data.Realm, userId uuid.UUID) data.User {
-	user, _ := service.DataProvider.GetUserFromRealmById(realm.Name, userId)
+	user, _ := service.DataProvider.GetUserById(realm.Name, userId)
 	return user
 }
 

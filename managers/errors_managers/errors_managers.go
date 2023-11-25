@@ -7,4 +7,5 @@ var (
 	ErrZeroLength = errors.New("zero length")
 	ErrNotAll     = errors.New("not all values")
 	ErrExists     = errors.New("is exists")
+	ErrNotExists  = errors.New("not exists")
 )

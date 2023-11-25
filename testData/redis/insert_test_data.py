@@ -69,9 +69,9 @@ client_test = {
 client_service = json.dumps(client_service)
 client_mobile = json.dumps(client_mobile)
 client_test = json.dumps(client_test)
-client.set('ferrum_1.client_test-service-app-client', client_service)
-client.set('ferrum_1.client_test-mobile-app-client', client_mobile)
-client.set('ferrum_1.client_test-test-app-client', client_test)
+client.set('ferrum_1.myApp_client_test-service-app-client', client_service)
+client.set('ferrum_1.myApp_client_test-mobile-app-client', client_mobile)
+client.set('ferrum_1.testApp_client_test-test-app-client', client_test)
 
 realm_myApp_clients = [
     {
@@ -128,8 +128,8 @@ user_admin = {
 }
 user_vano = json.dumps(user_vano)
 user_admin = json.dumps(user_admin)
-client.set('ferrum_1.user_vano', user_vano)
-client.set('ferrum_1.user_admin', user_admin)
+client.set('ferrum_1.myApp_user_vano', user_vano)
+client.set('ferrum_1.myApp_user_admin', user_admin)
 
 realm_myApp_users = [
     {

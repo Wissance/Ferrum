@@ -10,9 +10,9 @@ import (
 
 type ManagerForWebApi interface {
 	// GetRealm returns realm by name (unique)
-	GetRealm(realmName string) (*data.Realm, error)
-	// GetUserFromRealmById return realm user by id
-	GetUserFromRealmById(realmName string, userId uuid.UUID) (data.User, error)
+	GetRealmWithClients(realmName string) (*data.Realm, error)
+	// GetUserById return realm user by id
+	GetUserById(realmName string, userId uuid.UUID) (data.User, error)
 }
 
 // SecurityService is an interface that implements all checks and manipulation with sessions data

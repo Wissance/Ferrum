@@ -10,3 +10,5 @@ type User interface {
 	GetId() uuid.UUID
 	GetUserInfo() interface{}
 }
+
+var _ User = (*KeyCloakUser)(nil)
