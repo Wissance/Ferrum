@@ -2,9 +2,14 @@ package data
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/ohler55/ojg/jp"
+)
+
+const (
+	pathToPassword = "credentials.password"
 )
 
 // KeyCloakUser this structure is for user data that looks similar to KeyCloak, Users in Keycloak have info field with preferred_username and sub
@@ -43,7 +48,19 @@ func (user *KeyCloakUser) GetUsername() string {
  * Returns: password
  */
 func (user *KeyCloakUser) GetPassword() string {
-	return getPathStringValue[string](user.rawData, "credentials.password")
+	return getPathStringValue[string](user.rawData, pathToPassword)
+}
+
+func (user *KeyCloakUser) SetPassword(password string) (User, error) {
+	mask, err := jp.ParseString(pathToPassword)
+	if err != nil {
+		return nil, fmt.Errorf("jp.ParseString failed: %w", err)
+	}
+	if err := mask.Set(user.rawData, password); err != nil {
+		return nil, fmt.Errorf("jp.Set failed: %w", err)
+	}
+	userWithNewJson := CreateUser(user.rawData)
+	return userWithNewJson, nil
 }
 
 // GetId returns unique user identifier
@@ -68,6 +85,14 @@ func (user *KeyCloakUser) GetId() uuid.UUID {
 func (user *KeyCloakUser) GetUserInfo() interface{} {
 	result := getPathStringValue[interface{}](user.rawData, "info")
 	return result
+}
+
+func (user *KeyCloakUser) GetRawData() interface{} {
+	return user.rawData
+}
+
+func (user *KeyCloakUser) GetJsonData() string {
+	return user.jsonRawData
 }
 
 // getPathStringValue is a generic function to get actually map by key, key represents as a jsonpath navigation property

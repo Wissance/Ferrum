@@ -53,7 +53,7 @@ func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.Use
 	rawUser, err := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
 	if err != nil {
 		if errors.Is(err, errors_managers.ErrNotFound) {
-			mn.logger.Error(sf.Format("Realm: \"{0}\" does not have Client: \"{1}\"", realmName, userName))
+			mn.logger.Debug(sf.Format("Realm: \"{0}\" does not have Client: \"{1}\"", realmName, userName))
 		}
 		return nil, fmt.Errorf("getObjectFromRedis failed: %w", err)
 	}
@@ -77,11 +77,10 @@ func (mn *RedisDataManager) GetUserById(realmName string, userId uuid.UUID) (dat
 }
 
 // Returns an error if the user exists in redis
-func (mn *RedisDataManager) CreateUser(realmName string, userNew any) error {
+func (mn *RedisDataManager) CreateUser(realmName string, userNew data.User) error {
 	// TODO(SIA) транзакции
 	// TODO(SIA) возможно нужно проверять, что есть какие-то поля у user
-	user := data.CreateUser(userNew)
-	userName := user.GetUsername()
+	userName := userNew.GetUsername()
 	_, err := mn.GetUser(realmName, userName) // TODO(SIA) use function isExists
 	if err == nil {
 		return errors_managers.ErrExists
@@ -94,7 +93,7 @@ func (mn *RedisDataManager) CreateUser(realmName string, userNew any) error {
 		return fmt.Errorf("GetRealm failed: %w", err)
 	}
 
-	userBytes, err := json.Marshal(userNew)
+	userBytes, err := json.Marshal(userNew.GetRawData())
 	if err != nil {
 		mn.logger.Error(sf.Format("An error occurred during Client marshal")) // TODO(SIA) ADD NAME
 		return fmt.Errorf("json.Marshal failed: %w", err)
@@ -104,7 +103,7 @@ func (mn *RedisDataManager) CreateUser(realmName string, userNew any) error {
 		return fmt.Errorf("createClientRedis failed: %w", err)
 	}
 
-	if err := mn.addUserToRealm(realmName, user); err != nil {
+	if err := mn.addUserToRealm(realmName, userNew); err != nil {
 		return fmt.Errorf("addUserToRealm failed: %w", err)
 	}
 
@@ -124,7 +123,7 @@ func (mn *RedisDataManager) DeleteUser(realmName string, userName string) error 
 	return nil
 }
 
-func (mn *RedisDataManager) UpdateUser(realmName string, userName string, userNew any) error {
+func (mn *RedisDataManager) UpdateUser(realmName string, userName string, userNew data.User) error {
 	// TODO(SIA) транзакции
 	oldUser, err := mn.GetUser(realmName, userName)
 	if err != nil {
@@ -133,20 +132,19 @@ func (mn *RedisDataManager) UpdateUser(realmName string, userName string, userNe
 	oldUserName := oldUser.GetUsername()
 	oldUserId := oldUser.GetId()
 
-	user := data.CreateUser(userNew)
-	newUserName := user.GetUsername()
-	newUserId := user.GetId()
+	newUserName := userNew.GetUsername()
+	newUserId := userNew.GetId()
 
 	if newUserId != oldUserId || newUserName != oldUserName {
 		if err := mn.DeleteUser(realmName, oldUserName); err != nil {
 			return fmt.Errorf("DeleteUser failed: %w", err)
 		}
-		if err := mn.addUserToRealm(realmName, user); err != nil {
+		if err := mn.addUserToRealm(realmName, userNew); err != nil {
 			return fmt.Errorf("addUserToRealm failed: %w", err)
 		}
 	}
 
-	userBytes, err := json.Marshal(userNew)
+	userBytes, err := json.Marshal(userNew.GetRawData())
 	if err != nil {
 		mn.logger.Error(sf.Format("An error occurred during Client marshal")) // TODO(SIA) ADD NAME
 		return fmt.Errorf("json.Marshal failed: %w", err)
@@ -156,6 +154,21 @@ func (mn *RedisDataManager) UpdateUser(realmName string, userName string, userNe
 		return fmt.Errorf("createUserRedis failed: %w", err)
 	}
 
+	return nil
+}
+
+func (mn *RedisDataManager) SetPassword(realmName string, userName string, password string) error {
+	user, err := mn.GetUser(realmName, userName)
+	if err != nil {
+		return fmt.Errorf("GetUser failed: %w", err)
+	}
+	newUser, err := user.SetPassword(password)
+	if err != nil {
+		return fmt.Errorf("user.SetPassword failed: %w", err)
+	}
+	if err := mn.createUserRedis(realmName, userName, newUser.GetJsonData()); err != nil {
+		return fmt.Errorf("createUserRedis failed: %w", err)
+	}
 	return nil
 }
 

@@ -15,4 +15,6 @@ const (
 	CreateOperation               = "create"
 	DeleteOperation               = "delete"
 	UpdateOperation               = "update"
+	ChangePassword                = "change_password"
+	ResetPassword                 = "reset_password"
 )

@@ -7,8 +7,11 @@ import "github.com/google/uuid"
 type User interface {
 	GetUsername() string
 	GetPassword() string
+	SetPassword(password string) (User, error)
 	GetId() uuid.UUID
 	GetUserInfo() interface{}
+	GetRawData() interface{}
+	GetJsonData() string
 }
 
 var _ User = (*KeyCloakUser)(nil)

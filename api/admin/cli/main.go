@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -49,6 +51,16 @@ func main() {
 	manager := redisManager
 	//}
 
+	if cfg.Operation != domain_cli.GetOperation && cfg.Operation != domain_cli.CreateOperation &&
+		cfg.Operation != domain_cli.DeleteOperation && cfg.Operation != domain_cli.UpdateOperation &&
+		cfg.Operation != domain_cli.ChangePassword && cfg.Operation != domain_cli.ResetPassword {
+		log.Fatalf("bad Operation \"%s\"", cfg.Operation)
+	}
+	if !(cfg.Operation == domain_cli.ChangePassword || cfg.Operation == domain_cli.ResetPassword) {
+		if cfg.Resource != domain_cli.RealmResource && cfg.Resource != domain_cli.ClientResource && cfg.Resource != domain_cli.UserResource {
+			log.Fatalf("bad Resource \"%s\"", cfg.Resource)
+		}
+	}
 	if (cfg.Resource_id == domain_cli.ClientResource) || (cfg.Resource_id == domain_cli.UserResource) {
 		if cfg.Params == "" {
 			log.Fatalf("Not specified Params")
@@ -105,10 +117,10 @@ func main() {
 			if err := json.Unmarshal(cfg.Value, &userNew); err != nil {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
-			if err := manager.CreateUser(cfg.Params, userNew); err != nil {
+			user := data.CreateUser(userNew)
+			if err := manager.CreateUser(cfg.Params, user); err != nil {
 				log.Fatalf("CreateUser failed: %s", err)
 			}
-			user := data.CreateUser(userNew)
 			fmt.Println(sf.Format("User: \"{0}\" successfully created", user.GetUsername()))
 
 		case domain_cli.RealmResource:
@@ -116,7 +128,6 @@ func main() {
 			if err := json.Unmarshal(cfg.Value, &newRealm); err != nil {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
-			// создает клиентов и пользователей, создает новые realmClients и realmUsers, создает realm
 			if err := manager.CreateRealm(newRealm); err != nil {
 				log.Fatalf("CreateRealm failed: %s", err)
 			}
@@ -142,7 +153,6 @@ func main() {
 			fmt.Println(sf.Format("User: \"{0}\" successfully deleted", cfg.Resource_id))
 
 		case domain_cli.RealmResource:
-			// Удаляет realmClients и realmUsers и realm. Удаление самих client и user не происходит.
 			if err := manager.DeleteRealm(cfg.Resource_id); err != nil {
 				log.Fatalf("DeleteRealm failed: %s", err)
 			}
@@ -173,10 +183,10 @@ func main() {
 			if err := json.Unmarshal(cfg.Value, &newUser); err != nil {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
-			if err := manager.UpdateUser(cfg.Params, cfg.Resource_id, newUser); err != nil {
+			user := data.CreateUser(newUser)
+			if err := manager.UpdateUser(cfg.Params, cfg.Resource_id, user); err != nil {
 				log.Fatalf("UpdateUser failed: %s", err)
 			}
-			user := data.CreateUser(newUser)
 			fmt.Println(sf.Format("User: \"{0}\" successfully updated", user.GetUsername(), cfg.Params))
 
 		case domain_cli.RealmResource:
@@ -191,13 +201,67 @@ func main() {
 		}
 
 		return
-	case "change_password":
-		fmt.Println("change_password")
+	case domain_cli.ChangePassword:
+		switch cfg.Resource {
+		case domain_cli.UserResource:
+			fallthrough
+		case "":
+			if cfg.Params == "" {
+				log.Fatalf("Not specified Params")
+			}
+			if cfg.Resource_id == "" {
+				log.Fatalf("Not specified Resource_id")
+			}
+			// TODO(SIA)  Вынести валидацию пароля в другое место
+			if len(cfg.Value) < 8 {
+				log.Fatalf("Password length must be greater than 8")
+			}
+			password := string(cfg.Value)
+			if err := manager.SetPassword(cfg.Params, cfg.Resource_id, password); err != nil {
+				log.Fatalf("SetPassword failed: %s", err)
+			}
+			fmt.Printf("Password successfully changed")
 
-	case "reset_password ":
-		fmt.Println("reset_password")
+		default:
+			log.Fatalf("Bad Resource")
+		}
 
+		return
+	case domain_cli.ResetPassword:
+		switch cfg.Resource {
+		case domain_cli.UserResource:
+			fallthrough
+		case "":
+			if cfg.Params == "" {
+				log.Fatalf("Not specified Params")
+			}
+			if cfg.Resource_id == "" {
+				log.Fatalf("Not specified Resource_id")
+			}
+			password := getRandPassword()
+			if err := manager.SetPassword(cfg.Params, cfg.Resource_id, password); err != nil {
+				log.Fatalf("SetPassword failed: %s", err)
+			}
+			fmt.Printf("New password: %s", password)
+
+		default:
+			log.Fatalf("Bad Resource")
+		}
+
+		return
 	default:
 		log.Fatalf("Bad Operation") // TODO
 	}
+}
+
+func getRandPassword() string {
+	randomBytes := make([]byte, 32)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		log.Fatalf("rand.Read failed: %s", err)
+	}
+	str := base32.StdEncoding.EncodeToString(randomBytes)
+	const length = 8
+	password := str[:length]
+	return password
 }

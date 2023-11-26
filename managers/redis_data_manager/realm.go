@@ -17,7 +17,7 @@ func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
 	realm, err := getObjectFromRedis[data.Realm](mn.redisClient, mn.ctx, mn.logger, Realm, realmKey)
 	if err != nil {
 		if errors.Is(err, errors_managers.ErrNotFound) {
-			mn.logger.Error(sf.Format("Redis does not have Realm: \"{0}\"", realmName))
+			mn.logger.Debug(sf.Format("Redis does not have Realm: \"{0}\"", realmName))
 		}
 		return nil, fmt.Errorf("getObjectFromRedis failed: %w", err)
 	}
@@ -124,10 +124,12 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
 	}
 
 	clients, err := mn.getRealmClients(realmName)
-	if err != nil && !errors.Is(err, errors_managers.ErrZeroLength) {
-		return fmt.Errorf("getRealmClients failed: %w", err)
-	}
-	if err == nil {
+	if err != nil {
+		if !errors.Is(err, errors_managers.ErrZeroLength) {
+			return fmt.Errorf("getRealmClients failed: %w", err)
+		}
+	} else {
+		// TODO(SIA) переписать на удаление сразу всех ключей
 		for _, client := range clients {
 			if err := mn.deleteClientRedis(realmName, client.Name); err != nil {
 				return fmt.Errorf("deleteClientRedis failed: %w", err)
@@ -139,14 +141,14 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
 	}
 
 	users, err := mn.getRealmUsers(realmName)
-	if err != nil && !errors.Is(err, errors_managers.ErrZeroLength) {
-		return fmt.Errorf("getRealmUsers failed: %w", err)
-	}
-	if err == nil {
-		for _, u := range users {
-			user := data.CreateUser(u)
-			userName := user.GetUsername()
-			if err := mn.deleteUserRedis(realmName, userName); err != nil {
+	if err != nil {
+		if !errors.Is(err, errors_managers.ErrZeroLength) {
+			return fmt.Errorf("getRealmClients failed: %w", err)
+		}
+	} else {
+		// TODO(SIA) переписать на удаление сразу всех ключей
+		for _, user := range users {
+			if err := mn.deleteUserRedis(realmName, user.Name); err != nil {
 				return fmt.Errorf("deleteUserRedis failed: %w", err)
 			}
 		}
@@ -166,7 +168,15 @@ func (mn *RedisDataManager) UpdateRealm(realmName string, realmNew data.Realm) e
 		return fmt.Errorf("GetRealm failed: %w", err)
 	}
 	if oldRealm.Name != realmNew.Name {
-		// TODO(SIA) каскадно обновлять информацию у всех клиентов и user у realm. И удалить сам realm
+		_, err := mn.GetRealm(realmNew.Name) // TODO(SIA) use function isExists
+		if err == nil {
+			mn.logger.Error(sf.Format("Realm with a new name \"{0}\" already exists in Redis", realmNew.Name))
+			return errors_managers.ErrExists
+		}
+		if !errors.Is(err, errors_managers.ErrNotFound) {
+			return fmt.Errorf("GetRealm failed: %w", err)
+		}
+
 		clients, err := mn.GetClientsFromRealm(oldRealm.Name)
 		if err != nil && !errors.Is(err, errors_managers.ErrZeroLength) {
 			return fmt.Errorf("GetClientsFromRealm failed: %w", err)
@@ -175,19 +185,18 @@ func (mn *RedisDataManager) UpdateRealm(realmName string, realmNew data.Realm) e
 		if err != nil && !errors.Is(err, errors_managers.ErrZeroLength) {
 			return fmt.Errorf("GetUsersFromRealm failed: %w", err)
 		}
-		// TODO(SIA) проверить, может в realm можно сразу поставить data.User заместо any
-		usersInterface := make([]any, len(users))
+		usersData := make([]any, len(users))
 		for i, u := range users {
-			usersInterface[i] = any(u)
+			usersData[i] = u.GetRawData()
 		}
 		newRealmWithOldClientsAndUsers := data.Realm{
 			Name:                   realmNew.Name,
 			Clients:                clients,
-			Users:                  usersInterface,
+			Users:                  usersData,
 			TokenExpiration:        realmNew.TokenExpiration,
 			RefreshTokenExpiration: realmNew.RefreshTokenExpiration,
 		}
-		if err := mn.DeleteRealm(realmName); err != nil {
+		if err := mn.DeleteRealm(oldRealm.Name); err != nil {
 			return fmt.Errorf("DeleteRealm failed: %w", err)
 		}
 		if err = mn.CreateRealm(newRealmWithOldClientsAndUsers); err != nil {

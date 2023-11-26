@@ -107,14 +107,5 @@ func validate(cfg *Config) error {
 		return fmt.Errorf("validate failed: %w", errors_config_cli.ErrNil)
 	}
 
-	if cfg.Resource != domain_cli.RealmResource && cfg.Resource != domain_cli.ClientResource && cfg.Resource != domain_cli.UserResource {
-		return fmt.Errorf("bad Resource \"%s\": %w", cfg.Resource, errors_config_cli.ErrBadResource)
-	}
-
-	if cfg.Operation != domain_cli.GetOperation && cfg.Operation != domain_cli.CreateOperation &&
-		cfg.Operation != domain_cli.DeleteOperation && cfg.Operation != domain_cli.UpdateOperation {
-		return fmt.Errorf("bad Operation \"%s\": %w", cfg.Operation, errors_config_cli.ErrBadOperation)
-	}
-
 	return nil
 }
