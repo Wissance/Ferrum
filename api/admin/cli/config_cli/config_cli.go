@@ -12,6 +12,10 @@ import (
 	"github.com/wissance/Ferrum/config"
 )
 
+const defaultConfig = "config.json"
+
+var globalConfigName string
+
 type (
 	Config struct {
 		Parameters
@@ -36,7 +40,7 @@ type (
 func NewConfig() (*Config, error) {
 	configParameters := parseCmdParameters()
 
-	configs, err := getConfigs()
+	configs, err := getConfigs(globalConfigName)
 	if err != nil {
 		return nil, fmt.Errorf("getConfigs failed: %w", err)
 	}
@@ -61,7 +65,11 @@ func parseCmdParameters() *Parameters {
 	Params := flag.String("params", "", "")
 	Value := flag.String("value", "", "")
 
+	configFile := flag.String("config", defaultConfig, "--config config_w_redis.json")
+
 	flag.Parse()
+
+	globalConfigName = *configFile
 
 	configParameters := &Parameters{
 		Operation:   domain_cli.OperationType(*Operation),
@@ -74,8 +82,8 @@ func parseCmdParameters() *Parameters {
 	return configParameters
 }
 
-func getConfigs() (*configs, error) {
-	pathToConfig, err := getPathToConfig()
+func getConfigs(configName string) (*configs, error) {
+	pathToConfig, err := getPathToConfig(configName)
 	if err != nil {
 		return nil, fmt.Errorf("getPathToConfig failed: %w", err)
 	}
@@ -92,13 +100,13 @@ func getConfigs() (*configs, error) {
 	return &cliConfig, nil
 }
 
-func getPathToConfig() (string, error) {
+func getPathToConfig(configName string) (string, error) {
 	pathToExecutable, err := os.Executable()
 	if err != nil {
 		return "", fmt.Errorf("an error occurred during path to executable file: %w", err)
 	}
 	pathToDirWithCurrentlyExecutable := filepath.Dir(pathToExecutable)
-	pathToConfig := fmt.Sprintf("%s/config.json", pathToDirWithCurrentlyExecutable)
+	pathToConfig := fmt.Sprintf("%s/%s", pathToDirWithCurrentlyExecutable, configName)
 	return pathToConfig, nil
 }
 

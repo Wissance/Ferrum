@@ -20,7 +20,7 @@ func (mn *RedisDataManager) GetClientsFromRealm(realmName string) ([]data.Client
 		// todo(UMV) get all them at once
 		client, err := mn.GetClient(realmName, rc.Name)
 		if err != nil {
-			if errors.Is(err, errors_managers.ErrNotFound) { // TODO(SIA) check
+			if errors.Is(err, errors_managers.ErrNotFound) {
 				mn.logger.Error(sf.Format("Realm: \"{0}\" has client: \"{1}\", that Redis does not have", realmName, rc.Name))
 			}
 			return nil, fmt.Errorf("GetClient failed: %w", err)
@@ -34,9 +34,6 @@ func (mn *RedisDataManager) GetClient(realmName string, clientName string) (*dat
 	clientKey := sf.Format(clientKeyTemplate, mn.namespace, realmName, clientName)
 	client, err := getObjectFromRedis[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
 	if err != nil {
-		if errors.Is(err, errors_managers.ErrNotFound) {
-			mn.logger.Error(sf.Format("Realm: \"{0}\" does not have Client: \"{1}\"", realmName, clientName))
-		}
 		return nil, fmt.Errorf("getObjectFromRedis failed: %w", err)
 	}
 	return client, nil
@@ -44,23 +41,24 @@ func (mn *RedisDataManager) GetClient(realmName string, clientName string) (*dat
 
 // Returns an error if the client exists in redis
 func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client) error {
-	// TODO(SIA) транзакции
-	// TODO(SIA) возможно нужно проверять, что есть какие-то поля у clients
-	_, err := mn.GetClient(realmName, clientNew.Name) // TODO(SIA) use function isExists
+	// TODO(SIA) Add transaction
+	// TODO(SIA) use function isExists
+	_, err := mn.GetRealm(realmName)
+	if err != nil {
+		return fmt.Errorf("GetRealm failed: %w", err)
+	}
+	// TODO(SIA) use function isExists
+	_, err = mn.GetClient(realmName, clientNew.Name)
 	if err == nil {
 		return errors_managers.ErrExists
 	}
 	if !errors.Is(err, errors_managers.ErrNotFound) {
 		return fmt.Errorf("GetClient failed: %w", err)
 	}
-	_, err = mn.GetRealm(realmName) // TODO(SIA) use function isExists
-	if err != nil {
-		return fmt.Errorf("GetRealm failed: %w", err)
-	}
 
 	clientBytes, err := json.Marshal(clientNew)
 	if err != nil {
-		mn.logger.Error(sf.Format("An error occurred during Client marshal")) // TODO(SIA) ADD NAME
+		mn.logger.Error(sf.Format("An error occurred during Marshal Client"))
 		return fmt.Errorf("json.Marshal failed: %w", err)
 	}
 	err = mn.createClientRedis(realmName, clientNew.Name, string(clientBytes))
@@ -89,7 +87,7 @@ func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) er
 }
 
 func (mn *RedisDataManager) UpdateClient(realmName string, clientName string, clientNew data.Client) error {
-	// TODO(SIA) транзакции
+	// TODO(SIA) Add transaction
 	oldClient, err := mn.GetClient(realmName, clientName)
 	if err != nil {
 		return fmt.Errorf("GetClient failed: %w", err)
@@ -105,7 +103,7 @@ func (mn *RedisDataManager) UpdateClient(realmName string, clientName string, cl
 
 	clientBytes, err := json.Marshal(clientNew)
 	if err != nil {
-		mn.logger.Error(sf.Format("An error occurred during Client marshal")) // TODO(SIA) ADD NAME
+		mn.logger.Error(sf.Format("An error occurred during Marshal Client"))
 		return fmt.Errorf("json.Marshal failed: %w", err)
 	}
 	err = mn.createClientRedis(realmName, clientNew.Name, string(clientBytes))
@@ -121,10 +119,6 @@ func (mn *RedisDataManager) getRealmClients(realmName string) ([]data.ExtendedId
 	realmClients, err := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
 	if err != nil {
 		return nil, fmt.Errorf("getObjectsListFromRedis failed: %w", err)
-	}
-	if len(realmClients) == 0 {
-		mn.logger.Error(sf.Format("There are no clients for realm: \"{0}\" in Redis", realmName))
-		return nil, errors_managers.ErrZeroLength
 	}
 	return realmClients, nil
 }
@@ -155,7 +149,6 @@ func (mn *RedisDataManager) getRealmClient(realmName string, clientName string) 
 func (mn *RedisDataManager) createClientRedis(realmName string, clientName string, clientJson string) error {
 	clientKey := sf.Format(clientKeyTemplate, mn.namespace, realmName, clientName)
 	if err := setString(mn.redisClient, mn.ctx, mn.logger, Client, clientKey, clientJson); err != nil {
-		// TODO(SIA) add log
 		return fmt.Errorf("setString failed: %w", err)
 	}
 	return nil
@@ -175,9 +168,10 @@ func (mn *RedisDataManager) addClientToRealm(realmName string, client data.Clien
 
 // Adds clients to the realm. If the argument isAllPreDelete = true, all other clients will be deleted before they are added
 func (mn *RedisDataManager) createRealmClients(realmName string, realmClients []data.ExtendedIdentifier, isAllPreDelete bool) error {
+	// TODO(SIA) maybe split into two functions
 	bytesRealmClients, err := json.Marshal(realmClients)
 	if err != nil {
-		mn.logger.Error(sf.Format("An error occurred during realmClients unmarshall"))
+		mn.logger.Error(sf.Format("An error occurred during Marshal realmClients"))
 		return fmt.Errorf("json.Marshal failed: %w", err)
 	}
 	if isAllPreDelete {
@@ -188,10 +182,8 @@ func (mn *RedisDataManager) createRealmClients(realmName string, realmClients []
 		}
 	}
 	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realmName)
-	redisIntCmd := mn.redisClient.RPush(mn.ctx, realmClientsKey, string(bytesRealmClients)) // TODO(SIA) переписать по аналогии с другими
-	if redisIntCmd.Err() != nil {
-		// TODO(SIA) add log
-		return redisIntCmd.Err()
+	if err := rPushString(mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey, string(bytesRealmClients)); err != nil {
+		return fmt.Errorf("rPushString failed: %w", err)
 	}
 	return nil
 }
@@ -204,10 +196,11 @@ func (mn *RedisDataManager) deleteClientRedis(realmName string, clientName strin
 	return nil
 }
 
-// Deletes client from realmClients, does not delete client. Will return an error if there is no client in realm
+// Deletes client from realmClients, does not delete client. Will return an error if there is no client in realm.
+// After deletion, all items in the list are merged into one.
 func (mn *RedisDataManager) deleteClientFromRealm(realmName string, clientName string) error {
-	// TODO(SIA) Много действий происходит, для удаления клиента: происходит получение клиентов, нахождение клиента, удаление его из массива,
-	// удаление всех клиентов из редис, добавление нового массива клиентов в редис
+	// TODO(SIA) A lot of things happen to delete a client: get clients, find the client, delete it from the array,
+	// delete all clients from the realm, add a new array of clients to the realm.
 	realmClients, err := mn.getRealmClients(realmName)
 	if err != nil {
 		return fmt.Errorf("getRealmClients failed: %w", err)
@@ -225,7 +218,6 @@ func (mn *RedisDataManager) deleteClientFromRealm(realmName string, clientName s
 		}
 	}
 	if !isHasClient {
-		// TODO(SIA) add log ("realm \"%s\" doesn't have client \"%s\" in Redis", realmName, clientName)
 		return errors_managers.ErrNotFound
 	}
 	if err := mn.createRealmClients(realmName, realmClients, true); err != nil {

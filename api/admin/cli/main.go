@@ -17,23 +17,25 @@ import (
 	sf "github.com/wissance/stringFormatter"
 )
 
-// type ManagerForCli interface {
-// 	GetRealm(realmName string) (*data.Realm, error)
-// 	GetClient(realmName string, clientName string) (*data.Client, error)
-// 	GetUser(realmName string, userName string) (data.User, error)
+type ManagerForCli interface {
+	GetRealm(realmName string) (*data.Realm, error)
+	GetClient(realmName string, clientName string) (*data.Client, error)
+	GetUser(realmName string, userName string) (data.User, error)
 
-// 	CreateRealm(newRealm data.Realm) error
-// 	CreateClient(realmName string, clientNew data.Client) error
-// 	CreateUser(realmName string, userNew data.User) error
+	CreateRealm(newRealm data.Realm) error
+	CreateClient(realmName string, clientNew data.Client) error
+	CreateUser(realmName string, userNew data.User) error
 
-// 	DeleteRealm(realmName string) error
-// 	DeleteClient(realmName string, clientName string) error
-// 	DeleteUser(realmName string, userName string) error
+	DeleteRealm(realmName string) error
+	DeleteClient(realmName string, clientName string) error
+	DeleteUser(realmName string, userName string) error
 
-// 	UpdateRealm(realmName string, realmNew data.Realm) error
-// 	UpdateClient(realmName string, clientName string, clientNew data.Client) error
-// 	UpdateUser(realmName string, userName string, userNew data.User) error
-// }
+	UpdateRealm(realmName string, realmNew data.Realm) error
+	UpdateClient(realmName string, clientName string, clientNew data.Client) error
+	UpdateUser(realmName string, userName string, userNew data.User) error
+
+	SetPassword(realmName string, userName string, password string) error
+}
 
 func main() {
 	cfg, err := config_cli.NewConfig()
@@ -41,15 +43,15 @@ func main() {
 		log.Fatalf("NewConfig failed: %s", err)
 	}
 
-	//var manager ManagerForCli
-	//{
-	logger := logging.CreateLogger(&cfg.LoggingConfig)
-	redisManager, err := redis_data_manager.CreateRedisDataManager(&cfg.DataSourceConfig, logger)
-	if err != nil {
-		log.Fatalf("CreateRedisDataManager failed: %s", err)
+	var manager ManagerForCli
+	{
+		logger := logging.CreateLogger(&cfg.LoggingConfig)
+		redisManager, err := redis_data_manager.CreateRedisDataManager(&cfg.DataSourceConfig, logger)
+		if err != nil {
+			log.Fatalf("CreateRedisDataManager failed: %s", err)
+		}
+		manager = redisManager
 	}
-	manager := redisManager
-	//}
 
 	if cfg.Operation != domain_cli.GetOperation && cfg.Operation != domain_cli.CreateOperation &&
 		cfg.Operation != domain_cli.DeleteOperation && cfg.Operation != domain_cli.UpdateOperation &&
@@ -91,7 +93,6 @@ func main() {
 			realm, err := manager.GetRealm(cfg.Resource_id)
 			if err != nil {
 				log.Fatalf("GetRealm failed: %s", err)
-				// log.Fatal(sf.Format("Realm: \"{0}\" doesn't exist", cfg.Resource_id))
 			}
 			fmt.Println(*realm)
 		}
@@ -212,7 +213,7 @@ func main() {
 			if cfg.Resource_id == "" {
 				log.Fatalf("Not specified Resource_id")
 			}
-			// TODO(SIA)  Вынести валидацию пароля в другое место
+			// TODO(SIA)  Moving password verification to another location
 			if len(cfg.Value) < 8 {
 				log.Fatalf("Password length must be greater than 8")
 			}
@@ -250,11 +251,12 @@ func main() {
 
 		return
 	default:
-		log.Fatalf("Bad Operation") // TODO
+		log.Fatalf("Bad Operation")
 	}
 }
 
 func getRandPassword() string {
+	// TODO(SIA) Move password generation to another location
 	randomBytes := make([]byte, 32)
 	_, err := rand.Read(randomBytes)
 	if err != nil {

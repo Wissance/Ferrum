@@ -52,9 +52,6 @@ func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.Use
 	userKey := sf.Format(userKeyTemplate, mn.namespace, realmName, userName)
 	rawUser, err := getObjectFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
 	if err != nil {
-		if errors.Is(err, errors_managers.ErrNotFound) {
-			mn.logger.Debug(sf.Format("Realm: \"{0}\" does not have Client: \"{1}\"", realmName, userName))
-		}
 		return nil, fmt.Errorf("getObjectFromRedis failed: %w", err)
 	}
 	user := data.CreateUser(*rawUser)
@@ -68,7 +65,7 @@ func (mn *RedisDataManager) GetUserById(realmName string, userId uuid.UUID) (dat
 	}
 	user, err := mn.GetUser(realmName, realmUser.Name)
 	if err != nil {
-		if errors.Is(err, errors_managers.ErrNotFound) { // TODO(SIA) check
+		if errors.Is(err, errors_managers.ErrNotFound) {
 			mn.logger.Error(sf.Format("Realm: \"{0}\" has client: \"{1}\", that Redis does not have", realmName, userId))
 		}
 		return nil, fmt.Errorf("GetUser failed: %w", err)
@@ -78,27 +75,23 @@ func (mn *RedisDataManager) GetUserById(realmName string, userId uuid.UUID) (dat
 
 // Returns an error if the user exists in redis
 func (mn *RedisDataManager) CreateUser(realmName string, userNew data.User) error {
-	// TODO(SIA) транзакции
-	// TODO(SIA) возможно нужно проверять, что есть какие-то поля у user
+	// TODO(SIA) Add transaction
+	// TODO(SIA) use function isExists
+	_, err := mn.GetRealm(realmName)
+	if err != nil {
+		return fmt.Errorf("GetRealm failed: %w", err)
+	}
 	userName := userNew.GetUsername()
-	_, err := mn.GetUser(realmName, userName) // TODO(SIA) use function isExists
+	// TODO(SIA) use function isExists
+	_, err = mn.GetUser(realmName, userName)
 	if err == nil {
 		return errors_managers.ErrExists
 	}
 	if !errors.Is(err, errors_managers.ErrNotFound) {
 		return fmt.Errorf("GetUser failed: %w", err)
 	}
-	_, err = mn.GetRealm(realmName) // TODO(SIA) use function isExists
-	if err != nil {
-		return fmt.Errorf("GetRealm failed: %w", err)
-	}
 
-	userBytes, err := json.Marshal(userNew.GetRawData())
-	if err != nil {
-		mn.logger.Error(sf.Format("An error occurred during Client marshal")) // TODO(SIA) ADD NAME
-		return fmt.Errorf("json.Marshal failed: %w", err)
-	}
-	err = mn.createUserRedis(realmName, userName, string(userBytes))
+	err = mn.createUserRedis(realmName, userName, userNew.GetJsonData())
 	if err != nil {
 		return fmt.Errorf("createClientRedis failed: %w", err)
 	}
@@ -124,7 +117,7 @@ func (mn *RedisDataManager) DeleteUser(realmName string, userName string) error 
 }
 
 func (mn *RedisDataManager) UpdateUser(realmName string, userName string, userNew data.User) error {
-	// TODO(SIA) транзакции
+	// TODO(SIA) Add transaction
 	oldUser, err := mn.GetUser(realmName, userName)
 	if err != nil {
 		return fmt.Errorf("GetUser failed: %w", err)
@@ -144,12 +137,7 @@ func (mn *RedisDataManager) UpdateUser(realmName string, userName string, userNe
 		}
 	}
 
-	userBytes, err := json.Marshal(userNew.GetRawData())
-	if err != nil {
-		mn.logger.Error(sf.Format("An error occurred during Client marshal")) // TODO(SIA) ADD NAME
-		return fmt.Errorf("json.Marshal failed: %w", err)
-	}
-	err = mn.createUserRedis(realmName, newUserName, string(userBytes))
+	err = mn.createUserRedis(realmName, newUserName, userNew.GetJsonData())
 	if err != nil {
 		return fmt.Errorf("createUserRedis failed: %w", err)
 	}
@@ -176,9 +164,6 @@ func (mn *RedisDataManager) getRealmUsers(realmName string) ([]data.ExtendedIden
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realmName)
 	realmUsers, err := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if err != nil {
-		if errors.Is(err, errors_managers.ErrNotFound) {
-			mn.logger.Error(sf.Format("There are no users in realm: \"{0}\" in Redis", realmName))
-		}
 		return nil, fmt.Errorf("getObjectsListFromRedis failed: %w", err)
 	}
 	return realmUsers, nil
@@ -231,7 +216,6 @@ func (mn *RedisDataManager) getRealmUserById(realmName string, userId uuid.UUID)
 func (mn *RedisDataManager) createUserRedis(realmName string, userName string, userJson string) error {
 	userKey := sf.Format(userKeyTemplate, mn.namespace, realmName, userName)
 	if err := setString(mn.redisClient, mn.ctx, mn.logger, User, userKey, userJson); err != nil {
-		// TODO(SIA) add log
 		return fmt.Errorf("setString failed: %w", err)
 	}
 	return nil
@@ -254,9 +238,10 @@ func (mn *RedisDataManager) addUserToRealm(realmName string, user data.User) err
 
 // Adds users to the realm. If the argument isAllPreDelete = true, all other users will be deleted before they are added
 func (mn *RedisDataManager) createRealmUsers(realmName string, realmUsers []data.ExtendedIdentifier, isAllPreDelete bool) error {
+	// TODO(SIA) maybe split into two functions
 	bytesRealmUsers, err := json.Marshal(realmUsers)
 	if err != nil {
-		mn.logger.Error(sf.Format("An error occurred during realmUsers unmarshall"))
+		mn.logger.Error(sf.Format("An error occurred during Marshal realmUsers"))
 		return fmt.Errorf("json.Marshal failed: %w", err)
 	}
 
@@ -268,10 +253,8 @@ func (mn *RedisDataManager) createRealmUsers(realmName string, realmUsers []data
 		}
 	}
 	realmUsersKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realmName)
-	redisIntCmd := mn.redisClient.RPush(mn.ctx, realmUsersKey, string(bytesRealmUsers)) // TODO(SIA) переписать по аналогии с другими
-	if redisIntCmd.Err() != nil {
-		// TODO(SIA) add log
-		return redisIntCmd.Err()
+	if err := rPushString(mn.redisClient, mn.ctx, mn.logger, RealmUsers, realmUsersKey, string(bytesRealmUsers)); err != nil {
+		return fmt.Errorf("rPushString failed: %w", err)
 	}
 	return nil
 }
@@ -284,10 +267,11 @@ func (mn *RedisDataManager) deleteUserRedis(realmName string, userName string) e
 	return nil
 }
 
-// Deletes user from realmUsers, does not delete user. Will return an error if there is no user in realm
+// Deletes user from realmUsers, does not delete user. Will return an error if there is no user in realm.
+// After deletion, all items in the list are merged into one.
 func (mn *RedisDataManager) deleteUserFromRealm(realmName string, userName string) error {
-	// TODO(SIA) Много действий происходит, для удаления user: происходит получение users, нахождение user, удаление его из массива,
-	// удаление всех users из редис, добавление нового массива users в редис
+	// TODO(SIA) A lot of things happen to delete a user: get users, find the user, delete it from the array,
+	// delete all users from the realm, add a new array of users to the realm.
 	realmUsers, err := mn.getRealmUsers(realmName)
 	if err != nil {
 		return fmt.Errorf("getRealmUsers failed: %w", err)
@@ -305,7 +289,6 @@ func (mn *RedisDataManager) deleteUserFromRealm(realmName string, userName strin
 		}
 	}
 	if !isHasUser {
-		// TODO(SIA) add log ("realm \"%s\" doesn't have user \"%s\" in Redis: %w", realmName, userName, errors_repo.ErrNotFound)
 		return errors_managers.ErrNotFound
 	}
 	if err := mn.createRealmUsers(realmName, realmUsers, true); err != nil {
