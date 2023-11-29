@@ -176,12 +176,13 @@ func (app *Application) readAppConfig() error {
 
 func (app *Application) initDataProviders() error {
 	var err error
-	if app.dataConfigFile != nil || app.appConfig.DataSource.Type != config.FILE {
+	if app.dataConfigFile != nil {
 		dataProvider, prepareErr := managers.PrepareContext(&app.appConfig.DataSource, app.dataConfigFile, app.logger)
 		app.dataProvider = &dataProvider
 		err = prepareErr
+
 	} else {
-		dataProvider, prepareErr := managers.PrepareFileDataContextUsingData(app.serverData)
+		dataProvider, prepareErr := managers.PrepareContextUsingData(app.appConfig.DataSource.Type, app.serverData)
 		app.dataProvider = &dataProvider
 		err = prepareErr
 	}

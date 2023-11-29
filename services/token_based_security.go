@@ -1,13 +1,14 @@
 package services
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/dto"
 	"github.com/wissance/Ferrum/errors"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/Ferrum/managers"
-	"time"
 )
 
 // TokenBasedSecurityService structure that implements SecurityService
@@ -64,15 +65,15 @@ func (service *TokenBasedSecurityService) Validate(tokenIssueData *dto.TokenGene
  *    - realm
  * Returns: nil if credentials are valid, otherwise error (data.OperationError) with description
  */
-func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.TokenGenerationData, realm *data.Realm) *data.OperationError {
-	user := (*service.DataProvider).GetUser(realm, tokenIssueData.Username)
+func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.TokenGenerationData, realmName string) *data.OperationError {
+	user, _ := (*service.DataProvider).GetUser(realmName, tokenIssueData.Username)
 	if user == nil {
 		service.logger.Trace("Credential check: username mismatch")
 		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
 	}
 
 	// todo(UMV): use hash instead raw passwords
-	password := (*user).GetPassword()
+	password := user.GetPassword()
 	if password != tokenIssueData.Password {
 		service.logger.Trace("Credential check: password mismatch")
 		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
@@ -87,8 +88,9 @@ func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.T
  *    - userName - name of user
  * Returns user from DataProvider or nil (user not found)
  */
-func (service *TokenBasedSecurityService) GetCurrentUserByName(realm *data.Realm, userName string) *data.User {
-	return (*service.DataProvider).GetUser(realm, userName)
+func (service *TokenBasedSecurityService) GetCurrentUserByName(realmName string, userName string) data.User {
+	user, _ := (*service.DataProvider).GetUser(realmName, userName)
+	return user
 }
 
 // GetCurrentUserById return public user info by username
@@ -98,8 +100,9 @@ func (service *TokenBasedSecurityService) GetCurrentUserByName(realm *data.Realm
  *    - userId - user identifier
  * Returns user from DataProvider or nil (user not found)
  */
-func (service *TokenBasedSecurityService) GetCurrentUserById(realm *data.Realm, userId uuid.UUID) *data.User {
-	return (*service.DataProvider).GetUserById(realm, userId)
+func (service *TokenBasedSecurityService) GetCurrentUserById(realmName string, userId uuid.UUID) data.User {
+	user, _ := (*service.DataProvider).GetUserById(realmName, userId)
+	return user
 }
 
 // StartOrUpdateSession this function starts new session or updates existing one
@@ -118,7 +121,8 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 	// if there are no realm sessions ...
 	if !ok {
 		started := time.Now()
-		userSession := data.UserSession{Id: sessionId, UserId: userId, Started: started,
+		userSession := data.UserSession{
+			Id: sessionId, UserId: userId, Started: started,
 			Expired:        started.Add(time.Second * time.Duration(duration)),
 			RefreshExpired: started.Add(time.Second * time.Duration(refresh)),
 		}
@@ -134,8 +138,10 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 		}
 	}
 	// such session does not exist, adding
-	userSession := data.UserSession{Id: sessionId, UserId: userId, Started: time.Now(),
-		Expired: time.Now().Add(time.Second * time.Duration(duration))}
+	userSession := data.UserSession{
+		Id: sessionId, UserId: userId, Started: time.Now(),
+		Expired: time.Now().Add(time.Second * time.Duration(duration)),
+	}
 	service.UserSessions[realm] = append(realmSessions, userSession)
 	return userSession.Id
 }
@@ -152,7 +158,7 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 func (service *TokenBasedSecurityService) AssignTokens(realm string, userId uuid.UUID, accessToken *string, refreshToken *string) {
 	realmSessions, ok := service.UserSessions[realm]
 	if ok {
-		//index := -1
+		// index := -1
 		for i, s := range realmSessions {
 			if s.UserId == userId {
 				realmSessions[i].JwtAccessToken = *accessToken

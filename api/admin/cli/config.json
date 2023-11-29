@@ -1,0 +1,38 @@
+{
+    "logging": {
+        "level": "debug",
+        "appenders": [
+            {
+                "type": "rolling_file",
+                "enabled": true,
+                "level": "debug",
+                "destination": {
+                    "file": "./logs/ferrum.log",
+                    "max_size": 100,
+                    "max_age": 5,
+                    "max_backups": 5,
+                    "local_time": true
+                }
+            },
+            {
+                "type": "console",
+                "enabled": true,
+                "level": "debug"
+            }
+        ],
+        "http_log": true,
+        "http_console_out": true
+    },
+    "data_source": {
+        "type": "redis",
+        "source": "localhost:6379",
+        "credentials": {
+            "username": "test_user",
+            "password": "test_password"
+        },
+        "options": {
+            "namespace": "ferrum_1",
+            "db_number": "0"
+        }
+    }
+}
