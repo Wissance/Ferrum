@@ -1,14 +1,14 @@
-package file_data_manager
+package files
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/wissance/Ferrum/errors"
 	"os"
 
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
-	"github.com/wissance/Ferrum/managers/errors_managers"
 	"github.com/wissance/stringFormatter"
 )
 
@@ -20,13 +20,13 @@ type FileDataManager struct {
 	logger     *logging.AppLogger
 }
 
-// PrepareFileDataContextUsingData initializes instance of FileDataManager and sets loaded data to serverData
+// CreateFileDataManagerWithInitData initializes instance of FileDataManager and sets loaded data to serverData
 /* This factory function creates initialize with data instance of  FileDataManager, error reserved for usage but always nil here
  * Parameters:
  *    serverData already loaded data.ServerData from Json file in memory
  * Returns: context and error (currently is nil)
  */
-func CreateFileDataManagerUsingData(serverData *data.ServerData) (*FileDataManager, error) {
+func CreateFileDataManagerWithInitData(serverData *data.ServerData) (*FileDataManager, error) {
 	// todo(UMV): todo provide an error handling
 	mn := &FileDataManager{serverData: *serverData}
 	return mn, nil
@@ -51,7 +51,7 @@ func (mn *FileDataManager) GetRealm(realmName string) (*data.Realm, error) {
 			return &e, nil
 		}
 	}
-	return nil, errors_managers.ErrNotFound
+	return nil, errors.ErrNotFound
 }
 
 func (mn *FileDataManager) GetRealmWithClients(realmName string) (*data.Realm, error) {
@@ -62,7 +62,7 @@ func (mn *FileDataManager) GetRealmWithClients(realmName string) (*data.Realm, e
 			return &e, nil
 		}
 	}
-	return nil, errors_managers.ErrNotFound
+	return nil, errors.ErrNotFound
 }
 
 func (mn *FileDataManager) GetRealmWithUsers(realmName string) (*data.Realm, error) {
@@ -73,7 +73,7 @@ func (mn *FileDataManager) GetRealmWithUsers(realmName string) (*data.Realm, err
 			return &e, nil
 		}
 	}
-	return nil, errors_managers.ErrNotFound
+	return nil, errors.ErrNotFound
 }
 
 func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data.Client, error) {
@@ -87,7 +87,7 @@ func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data
 			return &c, nil
 		}
 	}
-	return nil, errors_managers.ErrNotFound
+	return nil, errors.ErrNotFound
 }
 
 func (mn *FileDataManager) GetUser(realmName string, userName string) (data.User, error) {
@@ -103,7 +103,7 @@ func (mn *FileDataManager) GetUser(realmName string, userName string) (data.User
 		}
 	}
 
-	return nil, errors_managers.ErrNotFound
+	return nil, errors.ErrNotFound
 }
 
 func (mn *FileDataManager) GetUserById(realmName string, userId uuid.UUID) (data.User, error) {
@@ -119,7 +119,7 @@ func (mn *FileDataManager) GetUserById(realmName string, userId uuid.UUID) (data
 		}
 	}
 
-	return nil, errors_managers.ErrNotFound
+	return nil, errors.ErrNotFound
 }
 
 func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {

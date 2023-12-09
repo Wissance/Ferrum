@@ -1,12 +1,11 @@
-package redis_data_manager
+package redis
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
 	"github.com/wissance/Ferrum/data"
-	"github.com/wissance/Ferrum/managers/errors_managers"
+	errors2 "github.com/wissance/Ferrum/errors"
 	sf "github.com/wissance/stringFormatter"
 )
 
@@ -16,7 +15,7 @@ func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
 	realmKey := sf.Format(realmKeyTemplate, mn.namespace, realmName)
 	realm, err := getObjectFromRedis[data.Realm](mn.redisClient, mn.ctx, mn.logger, Realm, realmKey)
 	if err != nil {
-		if errors.Is(err, errors_managers.ErrNotFound) {
+		if errors.Is(err, errors2.ErrNotFound) {
 			mn.logger.Debug(sf.Format("Redis does not have Realm: \"{0}\"", realmName))
 		}
 		return nil, fmt.Errorf("getObjectFromRedis failed: %w", err)
@@ -47,9 +46,9 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 	// TODO(SIA) use function isExists
 	_, err := mn.GetRealm(newRealm.Name)
 	if err == nil {
-		return errors_managers.ErrExists
+		return errors2.ErrExists
 	}
-	if !errors.Is(err, errors_managers.ErrNotFound) {
+	if !errors.Is(err, errors2.ErrNotFound) {
 		return fmt.Errorf("GetRealm failed: %w", err)
 	}
 
@@ -119,7 +118,7 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
 
 	clients, err := mn.getRealmClients(realmName)
 	if err != nil {
-		if !errors.Is(err, errors_managers.ErrZeroLength) {
+		if !errors.Is(err, errors2.ErrZeroLength) {
 			return fmt.Errorf("getRealmClients failed: %w", err)
 		}
 	} else {
@@ -136,7 +135,7 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
 
 	users, err := mn.getRealmUsers(realmName)
 	if err != nil {
-		if !errors.Is(err, errors_managers.ErrZeroLength) {
+		if !errors.Is(err, errors2.ErrZeroLength) {
 			return fmt.Errorf("getRealmClients failed: %w", err)
 		}
 	} else {
@@ -166,18 +165,18 @@ func (mn *RedisDataManager) UpdateRealm(realmName string, realmNew data.Realm) e
 		_, err := mn.GetRealm(realmNew.Name)
 		if err == nil {
 			mn.logger.Error(sf.Format("Realm with a new name \"{0}\" already exists in Redis", realmNew.Name))
-			return errors_managers.ErrExists
+			return errors2.ErrExists
 		}
-		if !errors.Is(err, errors_managers.ErrNotFound) {
+		if !errors.Is(err, errors2.ErrNotFound) {
 			return fmt.Errorf("GetRealm failed: %w", err)
 		}
 
 		clients, err := mn.GetClientsFromRealm(oldRealm.Name)
-		if err != nil && !errors.Is(err, errors_managers.ErrZeroLength) {
+		if err != nil && !errors.Is(err, errors2.ErrZeroLength) {
 			return fmt.Errorf("GetClientsFromRealm failed: %w", err)
 		}
 		users, err := mn.GetUsersFromRealm(oldRealm.Name)
-		if err != nil && !errors.Is(err, errors_managers.ErrZeroLength) {
+		if err != nil && !errors.Is(err, errors2.ErrZeroLength) {
 			return fmt.Errorf("GetUsersFromRealm failed: %w", err)
 		}
 		usersData := make([]any, len(users))

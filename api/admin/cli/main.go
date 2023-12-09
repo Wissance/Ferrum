@@ -6,14 +6,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/wissance/Ferrum/managers/redis"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/wissance/Ferrum/api/admin/cli/operations"
 	"github.com/wissance/Ferrum/data"
-	"github.com/wissance/Ferrum/managers/redis_data_manager"
-
 	"github.com/wissance/Ferrum/logging"
 	sf "github.com/wissance/stringFormatter"
 )
@@ -63,7 +62,7 @@ func main() {
 		}
 
 		logger := logging.CreateLogger(&cfg.Logging)
-		redisManager, err := redis_data_manager.CreateRedisDataManager(&cfg.DataSource, logger)
+		redisManager, err := redis.CreateRedisDataManager(&cfg.DataSource, logger)
 		if err != nil {
 			log.Fatalf("CreateRedisDataManager failed: %s", err)
 		}

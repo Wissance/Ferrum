@@ -1,4 +1,4 @@
-package errors_managers
+package errors
 
 import "errors"
 

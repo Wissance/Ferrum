@@ -1,16 +1,16 @@
-package redis_data_manager
+package redis
 
 import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/wissance/Ferrum/errors"
 	"strconv"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/logging"
-	"github.com/wissance/Ferrum/managers/errors_managers"
 	sf "github.com/wissance/stringFormatter"
 )
 
@@ -129,7 +129,7 @@ func getObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, l
 	if redisCmd.Err() != nil {
 		logger.Warn(sf.Format("An error occurred during fetching {0}: \"{1}\" from Redis server", objName, objKey))
 		if redisCmd.Err() == redis.Nil {
-			return nil, errors_managers.ErrNotFound
+			return nil, errors.ErrNotFound
 		}
 		return nil, redisCmd.Err()
 	}
@@ -184,7 +184,7 @@ func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Conte
 	items := redisCmd.Val()
 	if len(items) == 0 {
 		logger.Warn(sf.Format("Received zero list items {0}: \"{1}\" from Redis server", objName, objKey))
-		return nil, errors_managers.ErrZeroLength
+		return nil, errors.ErrZeroLength
 	}
 	var result []T
 	var portion []T
@@ -218,7 +218,7 @@ func delKey(redisClient *redis.Client, ctx context.Context, logger *logging.AppL
 	res := redisIntCmd.Val()
 	if res == 0 {
 		logger.Warn(sf.Format("An error occurred during Del, 0 items deleted {0}: \"{1}\" from Redis server", objName, objKey))
-		return errors_managers.ErrNotExists
+		return errors.ErrNotExists
 	}
 	return nil
 }

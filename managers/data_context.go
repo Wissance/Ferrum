@@ -3,14 +3,14 @@ package managers
 import (
 	"errors"
 	"fmt"
+	"github.com/wissance/Ferrum/managers/files"
+	"github.com/wissance/Ferrum/managers/redis"
 	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
-	"github.com/wissance/Ferrum/managers/file_data_manager"
-	"github.com/wissance/Ferrum/managers/redis_data_manager"
 	"github.com/wissance/stringFormatter"
 )
 
@@ -46,7 +46,7 @@ func PrepareContext(dataSourceCfg *config.DataSourceConfig, dataFile *string, lo
 			err = pathErr
 		}
 		// init, load data in memory ...
-		mn, err := file_data_manager.CreateFileDataManager(absPath, logger)
+		mn, err := files.CreateFileDataManager(absPath, logger)
 		if err != nil {
 			// at least and think what to do further
 			msg := stringFormatter.Format("An error occurred during data loading: {0}", err.Error())
@@ -56,7 +56,7 @@ func PrepareContext(dataSourceCfg *config.DataSourceConfig, dataFile *string, lo
 
 	case config.REDIS:
 		if dataSourceCfg.Type == config.REDIS {
-			dc, err = redis_data_manager.CreateRedisDataManager(dataSourceCfg, logger)
+			dc, err = redis.CreateRedisDataManager(dataSourceCfg, logger)
 		}
 		// todo implement other data sources
 	}
@@ -69,9 +69,9 @@ func PrepareContextUsingData(dataSourceCfgType config.DataSourceType, data *data
 	var err error
 	switch dataSourceCfgType {
 	case config.FILE:
-		mn, err := file_data_manager.CreateFileDataManagerUsingData(data)
+		mn, err := files.CreateFileDataManagerWithInitData(data)
 		if err != nil {
-			return nil, fmt.Errorf("CreateFileDataManagerUsingData failed: %w", err)
+			return nil, fmt.Errorf("CreateFileDataManagerWithInitData failed: %w", err)
 		}
 		dc = DataContext(mn)
 
