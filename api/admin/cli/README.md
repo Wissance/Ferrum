@@ -40,13 +40,25 @@ value is using for providing data to operations, above example creates new `Real
 
 But we know that `Realm` also has `Clients` and `Users`, therefore we should provide Realm id = name to newly creating Clients and Users via `--params={realm_name}`:
 
-Creation of new client:
+Creation of new client looks as follows:
 ```ps1
 ./ferrum-admin.exe --resource=client --operation=create --value='{"id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e6666", "name": "WissanceWebDemo", "type": "confidential", "auth": {"type": 1, "value": "fb6Z4RsOadVycQoeQiN57xpu8w8wTEST"}}' --params=WissanceFerrumDemo
 ```
 
-And User:
+And User (like in create in `--params` realm name should be passed):
+```ps1
+./ferrum-admin.exe --resource=user --operation=create --value='{"info": {"sub": "667ff6a7-3f6b-449b-a217-6fc5d9actest", "email_verified": true, "roles": ["admin"], "name": "M.V.Ushakov", "preferred_username": "umv", "given_name": "Michael", "family_name": "Ushakov"}, "credentials": {"password": "1s2d3f4g90xs"}}' --params=WissanceFerrumDemo
+```
 
+**Update operation** requires `--resource_id` parameter = name of resource. I.e. for a client it looks as follows:
+```ps1
+./ferrum-admin.exe --resource=client --operation=update --resource_id=WissanceWebDemo --value='{"id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e6666", "name": "WissanceWebDemo", "type": "confidential", "auth": {"type": 2, "value": "fb6Z4RsOadVycQoeQiN57xpu8w8wTEST"}}' --params=WissanceFerrumDemo
+```
+
+**Update operation** over realm:
+```ps1
+./ferrum-admin.exe --resource=realm --operation=update --resource_id=WissanceFerrumDemo --value='{"name": "WissanceFerrumDemo", "token_expiration": 2400, "refresh_expiration": 1200}'
+```
 
 ##### 2.1.2 Additional operations
 
