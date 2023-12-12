@@ -27,81 +27,111 @@ where:
 `CLI` allows to perform standard CRUD operation via console (`create`, `read`, `update`, `delete`) and some additional
 operations:
 
-* reset_password - reset password to random
-* change_password - changes password to provided
+* `reset_password` - reset password to random value
+* `change_password` - changes password to provided
 
 ##### 2.1.1 Standard CRUD operations
 
-**Create operation** on realm looks as follows:
+##### 2.1.1.1 Create operations
+
+Create operation should provide `--value` with resource body, key will be constructed from body. For `client` and `user` creation realm id (name) 
+must be provided via `--params`.
+
+Create `realm` example
 ```ps1
 .ferrum-admin.exe --resource=realm --operation=create --value='{"name": "WissanceFerrumDemo", "token_expiration": 600, "refresh_expiration": 300}'
 ```
-value is using for providing data to operations, above example creates new `Realm` with name `WissanceFerrumDemo`
 
-But we know that `Realm` also has `Clients` and `Users`, therefore we should provide Realm id = name to newly creating Clients and Users via `--params={realm_name}`:
-
-Creation of new client looks as follows:
+Create `client` example:
 ```ps1
 ./ferrum-admin.exe --resource=client --operation=create --value='{"id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e6666", "name": "WissanceWebDemo", "type": "confidential", "auth": {"type": 1, "value": "fb6Z4RsOadVycQoeQiN57xpu8w8wTEST"}}' --params=WissanceFerrumDemo
 ```
 
-And User (like in create in `--params` realm name should be passed):
+Create `user` example:
 ```ps1
 ./ferrum-admin.exe --resource=user --operation=create --value='{"info": {"sub": "667ff6a7-3f6b-449b-a217-6fc5d9actest", "email_verified": true, "roles": ["admin"], "name": "M.V.Ushakov", "preferred_username": "umv", "given_name": "Michael", "family_name": "Ushakov"}, "credentials": {"password": "1s2d3f4g90xs"}}' --params=WissanceFerrumDemo
 ```
+##### 2.1.1.2 Update operations
 
-**Update operation** requires `--resource_id` parameter = name of resource. I.e. for a client it looks as follows:
-```ps1
-./ferrum-admin.exe --resource=client --operation=update --resource_id=WissanceWebDemo --value='{"id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e6666", "name": "WissanceWebDemo", "type": "confidential", "auth": {"type": 2, "value": "fb6Z4RsOadVycQoeQiN57xpu8w8wTEST"}}' --params=WissanceFerrumDemo
-```
+Update operation fully replace item by key `--resource_id` + `--param={realm_name}` (realm does not requires)
+New key content provides via `--value=`. Why we don't provide just a DB key? Answer is there are could be different storage 
+and key is often composite, therefore it is more user-friendly to provide separately key and realn
 
-**Update operation** over realm:
+Update `realm` example
 ```ps1
 ./ferrum-admin.exe --resource=realm --operation=update --resource_id=WissanceFerrumDemo --value='{"name": "WissanceFerrumDemo", "token_expiration": 2400, "refresh_expiration": 1200}'
 ```
 
+Update `client` example:
+```ps1
+./ferrum-admin.exe --resource=client --operation=update --resource_id=WissanceWebDemo --value='{"id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e6666", "name": "WissanceWebDemo", "type": "confidential", "auth": {"type": 2, "value": "fb6Z4RsOadVycQoeQiN57xpu8w8wTEST"}}' --params=WissanceFerrumDemo
+```
+
+Update `user` example:
+```ps1
+./ferrum-admin.exe --resource=user --operation=update --resource_id=umv --value='{"info": {"sub": "667ff6a7-3f6b-449b-a217-6fc5d9actest", "email_verified": true, "roles": ["admin", "managers"], "name": "M.V.Ushakov", "preferred_username": "umv", "given_name": "Michael", "family_name": "Ushakov"}, "credentials": {"password": "1s2d3f4g90xs"}}' --params=WissanceFerrumDemo
+```
+
+Question:
+1. What is using for user identification, because it has `preferred_username`, and `given_name` fields. I've not tested this yet but `preferred_username` must be used as `resource_id`. Here and in all `CRUD` operations that are requires identifier. 
+
+##### 2.1.1.3 Get operations
+
+**Get by id operation** requires resource identifier (`resource_id`) and realm name via `--params`.
+
+Get `realm` example:
+```ps1
+./ferrum-admin.exe --resource=realm --operation=get --resource_id=WissanceFerrumDemo
+```
+
+Get `client` example:
+```ps1
+./ferrum-admin.exe --resource=client --operation=get --resource_id=WissanceWebDemo --params=WissanceFerrumDemo
+```
+
+Get `user` example:
+```ps1
+./ferrum-admin.exe --resource=user --operation=get --resource_id=userFromCreate --params=WissanceFerrumDemo
+```
+Get user should hide credential section (have to test, not tested yet).
+
+##### 2.1.1.3 Delete operations
+
+Delete operation requires `--resource_id` and `--params` to be provided.
+
+Delete `realm` example:
+```ps1
+./ferrum-admin.exe --resource=realm --operation=delete --resource_id=WissanceFerrumDemo
+```
+
+Delete `client` example:
+```ps1
+./ferrum-admin.exe --resource=client --operation=delete --resource_id=WissanceWebDemo --params=WissanceFerrumDemo
+```
+
+Delete `user` example:
+```ps1
+./ferrum-admin.exe --resource=user --operation=delete --resource_id=umv --params=WissanceFerrumDemo
+```
+
+Questions (todo for work):
+1. What happened to clients and users if realm was deleted ? Should be a CASCADE removing.
+
 ##### 2.1.2 Additional operations
 
+###### 2.1.2.1 User password reset
+
+Password reset makes set `user` password value to random, new password outputs to console. As for get, update or delete
+operation it requires username to be provided via `--resourec_id` and a realm name via `--params`, example:
+```ps1
+./ferrum-admin.exe --resource=user --operation=reset_password --resource_id=umv --params=WissanceFerrumDemo
 ```
-go build -o ./api/admin/cli/ferrum-admin.exe ./api/admin/cli
 
-client:
-./api/admin/cli/ferrum-admin.exe --resource=client --operation=create --value='{"id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e6666", "name": "clientFromCreate", "type": "confidential", "auth": {"type": 1, "value": "fb6Z4RsOadVycQoeQiN57xpu8w8wTEST"}}' --params=myApp
+###### 2.1.2.1 User password change
 
-./api/admin/cli/ferrum-admin.exe --resource=client --operation=get --resource_id=clientFromCreate --params=myApp
+Password change requires username to be provided via `--resourec_id` and a realm name via `--params. New password
+is passing via `--value=`, example:
 
-./api/admin/cli/ferrum-admin.exe --resource=client --operation=update --resource_id=clientFromCreate --value='{"id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e6666", "name": "clientFromCreate", "type": "confidential", "auth": {"type": 2, "value": "fb6Z4RsOadVycQoeQiN57xpu8w8wTEST"}}' --params=myApp
-
-./api/admin/cli/ferrum-admin.exe --resource=client --operation=update --resource_id=clientFromCreate --value='{"id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e6666", "name": "RenameClientFromCreate", "type": "confidential", "auth": {"type": 1, "value": "fb6Z4RsOadVycQoeQiN57xpu8w8wTEST"}}' --params=myApp
-
-./api/admin/cli/ferrum-admin.exe --resource=client --operation=delete --resource_id=RenameClientFromCreate --params=myApp
-
-
-user:
-./api/admin/cli/ferrum-admin.exe --resource=user --operation=create --value='{"info": {"sub": "667ff6a7-3f6b-449b-a217-6fc5d9actest", "email_verified": false, "roles": ["admin"], "name": "firstTestName lastTestName", "preferred_username": "userFromCreate", "given_name": "firstTestName", "family_name": "lastTestName"}, "credentials": {"password": "1s2d3f4g90xs"}}' --params=myApp
-
-./api/admin/cli/ferrum-admin.exe --resource=user --operation=get --resource_id=userFromCreate --params=myApp
-
-./api/admin/cli/ferrum-admin.exe --resource=user --operation=update --resource_id=userFromCreate --value='{"info": {"sub": "667ff6a7-3f6b-449b-a217-6fc5d9actest", "email_verified": true, "roles": ["admin"], "name": "firstTestName lastTestName", "preferred_username": "userFromCreate", "given_name": "firstTestName", "family_name": "lastTestName"}, "credentials": {"password": "1s2d3f4g90xs"}}' --params=myApp
-
-./api/admin/cli/ferrum-admin.exe --resource=user --operation=update --resource_id=userFromCreate --value='{"info": {"sub": "667ff6a7-3f6b-449b-a217-6fc5d9actest", "email_verified": false, "roles": ["admin"], "name": "firstTestName lastTestName", "preferred_username": "RenameUserFromCreate", "given_name": "firstTestName", "family_name": "lastTestName"}, "credentials": {"password": "1s2d3f4g90xs"}}' --params=myApp
-
-./api/admin/cli/ferrum-admin.exe --resource=user --operation=reset_password --resource_id=RenameUserFromCreate --params=myApp
-
-./api/admin/cli/ferrum-admin.exe --resource=user --operation=change_password --resource_id=RenameUserFromCreate --value='newPassword' --params=myApp
-
-./api/admin/cli/ferrum-admin.exe --resource=user --operation=delete --resource_id=RenameUserFromCreate --params=myApp
-
-
-realm:
-./api/admin/cli/ferrum-admin.exe --resource=realm --operation=create --value='{"name": "testRealm", "token_expiration": 600, "refresh_expiration": 300, "clients": [{"id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e1111", "name": "clientTestOne", "type": "confidential", "auth": {"type": 1, "value": "fb6Z4RsOadVycQoeQiN57xpu8w8wTEST"}}, {"id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e2222", "name": "clientTestTwo", "type": "confidential", "auth": {"type": 1, "value": "fb6Z4RsOadVycQoeQiN57xpu8w8wTEST"}}], "users": [{"info": {"sub": "667ff6a7-3f6b-449b-a217-111111actest", "email_verified": false, "roles": ["admin"], "name": "firstTestName lastTestName", "preferred_username": "userTestOne", "given_name": "firstTestName", "family_name": "lastTestName"}, "credentials": {"password": "1s2d3f4g90xs"}}, {"info": {"sub": "667ff6a7-3f6b-449b-a217-222222actest", "email_verified": false, "roles": ["admin"], "name": "firstTestName lastTestName", "preferred_username": "userTestTwo", "given_name": "firstTestName", "family_name": "lastTestName"}, "credentials": {"password": "1s2d3f4g90xs"}}]}'
-
-./api/admin/cli/ferrum-admin.exe --resource=realm --operation=get --resource_id=testRealm
-
-./api/admin/cli/ferrum-admin.exe --resource=realm --operation=update --resource_id=testRealm --value='{"name": "testRealm", "token_expiration": 700, "refresh_expiration": 300}'
-
-./api/admin/cli/ferrum-admin.exe --resource=realm --operation=update --resource_id=testRealm --value='{"name": "RenameTestRealm", "token_expiration": 600, "refresh_expiration": 300}'
-
-./api/admin/cli/ferrum-admin.exe --resource=realm --operation=delete --resource_id=RenameTestRealm
-
+```ps1
+./ferrum-admin.exe --resource=user --operation=change_password --resource_id=umv --value='newPassword' --params=WissanceFerrumDemo
 ```
