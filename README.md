@@ -178,7 +178,11 @@ if err != nil {
 app.Stop()
 ```
 
-## 5. Contributors
+## 5. Server administer
+
+Since version `0.9.1` it is possible to use `CLI Admin` [See](api/admin/cli/README.md)
+
+## 6. Contributors
 
 <a href="https://github.com/Wissance/Ferrum/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=Wissance/Ferrum" />
