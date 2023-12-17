@@ -39,7 +39,7 @@ must be provided via `--params`.
 
 Create `realm` example
 ```ps1
-.ferrum-admin.exe --resource=realm --operation=create --value='{"name": "WissanceFerrumDemo", "token_expiration": 600, "refresh_expiration": 300}'
+./ferrum-admin.exe --resource=realm --operation=create --value='{"name": "WissanceFerrumDemo", "token_expiration": 600, "refresh_expiration": 300}'
 ```
 
 Create `client` example:
@@ -91,7 +91,7 @@ Get `client` example:
 
 Get `user` example:
 ```ps1
-./ferrum-admin.exe --resource=user --operation=get --resource_id=userFromCreate --params=WissanceFerrumDemo
+./ferrum-admin.exe --resource=user --operation=get --resource_id=umv --params=WissanceFerrumDemo
 ```
 Get user should hide credential section (have to test, not tested yet).
 
@@ -122,14 +122,14 @@ Questions (todo for work):
 ###### 2.1.2.1 User password reset
 
 Password reset makes set `user` password value to random, new password outputs to console. As for get, update or delete
-operation it requires username to be provided via `--resourec_id` and a realm name via `--params`, example:
+operation it requires username to be provided via `--resource_id` and a realm name via `--params`, example:
 ```ps1
 ./ferrum-admin.exe --resource=user --operation=reset_password --resource_id=umv --params=WissanceFerrumDemo
 ```
 
 ###### 2.1.2.1 User password change
 
-Password change requires username to be provided via `--resourec_id` and a realm name via `--params. New password
+Password change requires username to be provided via `--resource_id` and a realm name via `--params. New password
 is passing via `--value=`, example:
 
 ```ps1

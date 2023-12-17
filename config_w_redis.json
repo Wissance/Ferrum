@@ -34,7 +34,7 @@
         "source": "127.0.0.1:6379",
         "credentials": {
             "username": "test_user",
-            "password": ""
+            "password": "test_password"
         },
         "options": {
             "namespace": "ferrum_1",

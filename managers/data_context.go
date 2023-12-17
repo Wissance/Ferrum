@@ -3,9 +3,10 @@ package managers
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
+
 	"github.com/wissance/Ferrum/managers/files"
 	"github.com/wissance/Ferrum/managers/redis"
-	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/config"
@@ -17,8 +18,8 @@ import (
 // DataContext is a common interface to implement operations with authorization server entities (data.Realm, data.Client, data.User)
 // now contains only set of Get methods, during implementation admin CLI should be expanded to create && update entities
 type DataContext interface {
-	// GetRealmWithClients returns realm by name (unique) with all clients
-	GetRealmWithClients(realmName string) (*data.Realm, error)
+	// GetReal returns realm by name (unique) returns realm with clients but no users
+	GetRealm(realmName string) (*data.Realm, error)
 	// GetClient returns realm client by name (client name is also unique in a realm)
 	GetClient(realmName string, name string) (*data.Client, error)
 	// GetUser return realm user (consider what to do with Federated users) by name
@@ -30,14 +31,51 @@ type DataContext interface {
 	// GetRealmUsers(realmName string) ([]data.User, error)
 }
 
-func PrepareContext(dataSourceCfg *config.DataSourceConfig, dataFile *string, logger *logging.AppLogger) (DataContext, error) {
+// PrepareContextUsingData is a factory function that creates instance of DataContext
+/* This function creates instance of appropriate DataContext according to input arguments values, if dataSourceConfig is config.FILE function
+ * creates instance of FileDataManager.
+ * loads all data (realms, clients and users) in a memory.
+ * Parameters:
+ *     - dataSourceCfg configuration section related to DataSource
+ *     - data - ServerData
+ *     - logger - logger instance
+ * Return: new instance of DataContext and error (nil if there are no errors)
+ */
+func PrepareContextUsingData(dataSourceCfg *config.DataSourceConfig, data *data.ServerData, logger *logging.AppLogger) (DataContext, error) {
 	var dc DataContext
 	var err error
 	switch dataSourceCfg.Type {
 	case config.FILE:
-		if dataFile == nil {
-			err = errors.New("data file is nil")
-		}
+		dc, err = files.CreateFileDataManagerWithInitData(data)
+
+	case config.REDIS:
+		return nil, fmt.Errorf("not supported initialization with init data")
+
+	default:
+		return nil, fmt.Errorf("not supported")
+	}
+
+	return dc, err
+}
+
+// PrepareContextUsingFile is a factory function that creates instance of DataContext
+/* This function creates instance of appropriate DataContext according to input arguments values, if dataSourceConfig is config.FILE function
+ * creates instance of FileDataManager. For this type of context if dataFile is not nil and exists this function also provides data initialization:
+ * loads all data (realms, clients and users) in a memory.
+ * Parameters:
+ *     - dataSourceCfg configuration section related to DataSource
+ *     - dataFile - data for initialization (this is using only when dataSourceCfg is config.FILE)
+ *     - logger - logger instance
+ * Return: new instance of DataContext and error (nil if there are no errors)
+ */
+func PrepareContextUsingFile(dataSourceCfg *config.DataSourceConfig, dataFile *string, logger *logging.AppLogger) (DataContext, error) {
+	if dataFile == nil {
+		return nil, errors.New("data file is nil")
+	}
+	var dc DataContext
+	var err error
+	switch dataSourceCfg.Type {
+	case config.FILE:
 		absPath, pathErr := filepath.Abs(*dataFile)
 		if pathErr != nil {
 			// todo: umv: think what to do on error
@@ -55,31 +93,36 @@ func PrepareContext(dataSourceCfg *config.DataSourceConfig, dataFile *string, lo
 		dc = DataContext(mn)
 
 	case config.REDIS:
-		if dataSourceCfg.Type == config.REDIS {
-			dc, err = redis.CreateRedisDataManager(dataSourceCfg, logger)
-		}
-		// todo implement other data sources
+		return nil, fmt.Errorf("not supported initialization with init data")
+
+	default:
+		return nil, fmt.Errorf("not supported")
 	}
 
 	return dc, err
 }
 
-func PrepareContextUsingData(dataSourceCfgType config.DataSourceType, data *data.ServerData) (DataContext, error) {
+// PrepareContext is a factory function that creates instance of DataContext
+/* If dataSourceCfg is config.REDIS this function creates instance of RedisDataManager by calling CreateRedisDataManager function
+ * Parameters:
+ *     - dataSourceCfg configuration section related to DataSource
+ *     - logger - logger instance
+ * Return: new instance of DataContext and error (nil if there are no errors)
+ */
+func PrepareContext(dataSourceCfg *config.DataSourceConfig, logger *logging.AppLogger) (DataContext, error) {
 	var dc DataContext
 	var err error
-	switch dataSourceCfgType {
+	switch dataSourceCfg.Type {
 	case config.FILE:
-		mn, err := files.CreateFileDataManagerWithInitData(data)
-		if err != nil {
-			return nil, fmt.Errorf("CreateFileDataManagerWithInitData failed: %w", err)
-		}
-		dc = DataContext(mn)
+		return nil, fmt.Errorf("not supported initialization without init data")
 
 	case config.REDIS:
-		return nil, fmt.Errorf("Not supported")
+		dc, err = redis.CreateRedisDataManager(dataSourceCfg, logger)
+
 	default:
-		return nil, fmt.Errorf("Not supported")
+		return nil, fmt.Errorf("not supported")
 	}
+	// todo implement other data sources
 
 	return dc, err
 }

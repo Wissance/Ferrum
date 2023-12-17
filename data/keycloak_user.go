@@ -51,16 +51,17 @@ func (user *KeyCloakUser) GetPassword() string {
 	return getPathStringValue[string](user.rawData, pathToPassword)
 }
 
-func (user *KeyCloakUser) SetPassword(password string) (User, error) {
+func (user *KeyCloakUser) SetPassword(password string) error {
 	mask, err := jp.ParseString(pathToPassword)
 	if err != nil {
-		return nil, fmt.Errorf("jp.ParseString failed: %w", err)
+		return fmt.Errorf("jp.ParseString failed: %w", err)
 	}
 	if err := mask.Set(user.rawData, password); err != nil {
-		return nil, fmt.Errorf("jp.Set failed: %w", err)
+		return fmt.Errorf("jp.Set failed: %w", err)
 	}
-	userWithNewJson := CreateUser(user.rawData)
-	return userWithNewJson, nil
+	jsonData, _ := json.Marshal(user.rawData)
+	user.jsonRawData = string(jsonData)
+	return nil
 }
 
 // GetId returns unique user identifier
@@ -91,7 +92,7 @@ func (user *KeyCloakUser) GetRawData() interface{} {
 	return user.rawData
 }
 
-func (user *KeyCloakUser) GetJsonData() string {
+func (user *KeyCloakUser) GetJsonString() string {
 	return user.jsonRawData
 }
 

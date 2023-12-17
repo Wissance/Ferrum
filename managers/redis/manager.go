@@ -5,8 +5,9 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/wissance/Ferrum/errors"
 	"strconv"
+
+	"github.com/wissance/Ferrum/errors"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/wissance/Ferrum/config"
@@ -41,14 +42,14 @@ const defaultNamespace = "fe"
  * Redis Data Manager is a service class for managing authorization server data in Redis
  * There are following store Rules:
  * 1. Realms (data.Realm) in Redis storing separately from Clients && Users, every Realm stores in Redis by key forming from template && Realm name
- *    i.e. if we have Realm with name "wissance" it could be accessed by key fe_realm_wissance (realmKeyTemplate)
+ *    i.e. if we have Realm with name "wissance" it could be accessed by key fe.realm_wissance (realmKeyTemplate)
  * 2. Realm Clients ([]data.ExtendedIdentifier) storing in Redis by key forming from template, Realm with name wissance has array of clients id by key
- *    fe_realm_wissance_clients (realmClientsKeyTemplate)
- * 3. Every Client (data.Client) stores separately by key forming from client id (different realms could have clients with same name but in different realm,
+ *    fe.realm_wissance_clients (realmClientsKeyTemplate)
+ * 3. Every Client (data.Client) stores separately by key forming from client name (different realms could have clients with same name but in different realm,
  *    Client Name is unique only in Realm) and template clientKeyTemplate, therefore realm with pair (ID: 6e09faca-1004-11ee-be56-0242ac120002 Name: homeApp)
- *    could be received by key - fe_client_6e09faca-1004-11ee-be56-0242ac120002
- * 4. Every User in Redis storing by it own key forming by userId + template (userKeyTemplate) -> i.e. user with id 6dee45ee-1056-11ee-be56-0242ac120002 stored
- *    by key fe_user_6dee45ee-1056-11ee-be56-0242ac120002
+ *    could be received by key - fe.wissance_client_homeApp
+ * 4. Every User in Redis storing by it own key forming by userName + template (userKeyTemplate) -> i.e. user with (ID: 6e09faca-1004-11ee-be56-0242ac120002 Name: homeApp) stored
+ *    by key fe.wissance_user_homeApp
  * 5. Client to Realm and User to Realm relation stored by separate keys forming using template and realm name, these relations stores array of data.ExtendedIdentifier
  *    that wires together Realm Name with User.ID and User.Name.
  *    IMPORTANT NOTES:
@@ -64,7 +65,7 @@ type RedisDataManager struct {
 	ctx         context.Context
 }
 
-// CreateRedisDataManager is factory function for instance of RedisDataManager creation and return as interface DataContext
+// CreateRedisDataManager is factory function for instance of RedisDataManager creation
 /* Simply creates instance of RedisDataManager and initializes redis client, this function requires config.Namespace to be set up in configs, otherwise
  * defaultNamespace is using
  * Parameters:
@@ -121,8 +122,63 @@ func buildRedisConfig(dataSourceCfd *config.DataSourceConfig, logger *logging.Ap
 	return &opts
 }
 
-// getObjectFromRedis is a method that DOESN'T work with List type object, only a String object type.
-func getObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
+// upsertRedisString - inserting or updating a value by key
+/* If there is no key, a key-value will be created. If the key is present, the value will be updated
+ * Arguments:
+ *    - objName - for logger
+ *    - objKey - key object in redis
+ *	  - objValue - new string value
+ * Returns: error
+ */
+func (mn *RedisDataManager) upsertRedisString(objName objectType, objKey string, objValue string) error {
+	statusCmd := mn.redisClient.Set(mn.ctx, objKey, objValue, 0)
+	if statusCmd.Err() != nil {
+		mn.logger.Warn(sf.Format("An error occurred during Set {0}: \"{1}\" from Redis server", objName, objKey))
+		return statusCmd.Err()
+	}
+	return nil
+}
+
+// deleteRedisObject - delete key
+/* Returns an error, if 0 items are deleted
+ * Arguments:
+ *    - objName - for logger
+ *    - objKey - key object in redis
+ * Returns: error
+ */
+func (mn *RedisDataManager) deleteRedisObject(objName objectType, objKey string) error {
+	redisIntCmd := mn.redisClient.Del(mn.ctx, objKey)
+	if redisIntCmd.Err() != nil {
+		mn.logger.Warn(sf.Format("An error occurred during Del {0}: \"{1}\" from Redis server", objName, objKey))
+		return redisIntCmd.Err()
+	}
+	res := redisIntCmd.Val()
+	if res == 0 {
+		mn.logger.Warn(sf.Format("An error occurred during Del, 0 items deleted {0}: \"{1}\" from Redis server", objName, objKey))
+		return errors.ErrNotExists
+	}
+	return nil
+}
+
+// appendStringToRedisList - inserts a string into the list
+/* Adds a row to the list. Internally, it uses RPush
+ * Arguments:
+ *    - objName - for logger
+ *    - objKey - key object in redis
+ *    - objValue - new string value
+ * Returns: error
+ */
+func (mn *RedisDataManager) appendStringToRedisList(objName objectType, objKey string, objValue string) error {
+	redisIntCmd := mn.redisClient.RPush(mn.ctx, objKey, objValue)
+	if redisIntCmd.Err() != nil {
+		mn.logger.Warn(sf.Format("An error occurred during RPush {0}: \"{1}\" from Redis server", objName, objKey))
+		return redisIntCmd.Err()
+	}
+	return nil
+}
+
+// getSingleRedisObject is a method that DOESN'T work with List type object, only a String object type.
+func getSingleRedisObject[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
 	objName objectType, objKey string,
 ) (*T, error) {
 	redisCmd := redisClient.Get(ctx, objKey)
@@ -144,9 +200,9 @@ func getObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, l
 	return &obj, nil
 }
 
-// getObjectFromRedis is a method that DOESN'T work with List type object, only a String object type
+// getMultipleRedisObjects is a method that DOESN'T work with List type object, only a String object type
 // Does not return an error if the object is not found
-func getMultipleObjectFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
+func getMultipleRedisObjects[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
 	objName objectType, objKey []string,
 ) ([]T, error) {
 	redisCmd := redisClient.MGet(ctx, objKey...)
@@ -198,39 +254,6 @@ func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Conte
 		result = append(result, portion...)
 	}
 	return result, nil
-}
-
-// If such a key exists, the value will be overwritten without error
-func setString(redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
-	objName objectType, objKey string, objValue string,
-) error {
-	statusCmd := redisClient.Set(ctx, objKey, objValue, 0)
-	if statusCmd.Err() != nil {
-		logger.Warn(sf.Format("An error occurred during Set {0}: \"{1}\" from Redis server", objName, objKey))
-		return statusCmd.Err()
-	}
-	return nil
-}
-
-// Returns an error, if 0 items are deleted
-func delKey(redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger, objName objectType, objKey string) error {
-	redisIntCmd := redisClient.Del(ctx, objKey)
-	res := redisIntCmd.Val()
-	if res == 0 {
-		logger.Warn(sf.Format("An error occurred during Del, 0 items deleted {0}: \"{1}\" from Redis server", objName, objKey))
-		return errors.ErrNotExists
-	}
-	return nil
-}
-
-// Adds a row to the list
-func rPushString(redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger, objName objectType, objKey string, objValue string) error {
-	redisIntCmd := redisClient.RPush(ctx, objKey, objValue)
-	if redisIntCmd.Err() != nil {
-		logger.Warn(sf.Format("An error occurred during RPush {0}: \"{1}\" from Redis server", objName, objKey))
-		return redisIntCmd.Err()
-	}
-	return nil
 }
 
 // TODO(SIA) add function keyExists

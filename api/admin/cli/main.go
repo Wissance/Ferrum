@@ -6,41 +6,19 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/wissance/Ferrum/managers/redis"
 	"log"
-	"os"
-	"path/filepath"
 
 	"github.com/wissance/Ferrum/api/admin/cli/operations"
+	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
 	sf "github.com/wissance/stringFormatter"
 )
 
-type Manager interface {
-	GetRealm(realmName string) (*data.Realm, error)
-	GetClient(realmName string, clientName string) (*data.Client, error)
-	GetUser(realmName string, userName string) (data.User, error)
-
-	CreateRealm(newRealm data.Realm) error
-	CreateClient(realmName string, clientNew data.Client) error
-	CreateUser(realmName string, userNew data.User) error
-
-	DeleteRealm(realmName string) error
-	DeleteClient(realmName string, clientName string) error
-	DeleteUser(realmName string, userName string) error
-
-	UpdateRealm(realmName string, realmNew data.Realm) error
-	UpdateClient(realmName string, clientName string, clientNew data.Client) error
-	UpdateUser(realmName string, userName string, userNew data.User) error
-
-	SetPassword(realmName string, userName string, password string) error
-}
-
-const defaultConfig = "./config.json"
+const defaultConfig = "./config_w_redis.json"
 
 var (
-	argConfigFile  = flag.String("config", "", "Path relative to the application binary file")
+	argConfigFile  = flag.String("config", defaultConfig, "")
 	argOperation   = flag.String("operation", "", "")
 	argResource    = flag.String("resource", "", "")
 	argResource_id = flag.String("resource_id", "", "")
@@ -50,23 +28,14 @@ var (
 
 func main() {
 	flag.Parse()
-	var manager Manager
-	{
-		pathToConfigFile, err := createPathToConfig(*argConfigFile, defaultConfig)
-		if err != nil {
-			log.Fatalf("createPathToConfig failed: %s", err)
-		}
-		cfg, err := readConfig(pathToConfigFile)
-		if err != nil {
-			log.Fatalf("readConfig failed: %s", err)
-		}
-
-		logger := logging.CreateLogger(&cfg.Logging)
-		redisManager, err := redis.CreateRedisDataManager(&cfg.DataSource, logger)
-		if err != nil {
-			log.Fatalf("CreateRedisDataManager failed: %s", err)
-		}
-		manager = redisManager
+	cfg, err := config.ReadAppConfig(*argConfigFile)
+	if err != nil {
+		log.Fatalf("readAppConfig failed: %s", err)
+	}
+	logger := logging.CreateLogger(&cfg.Logging)
+	manager, err := prepareContext(&cfg.DataSource, logger)
+	if err != nil {
+		log.Fatalf("prepareContext failed: %s", err)
 	}
 
 	operation := operations.OperationType(*argOperation)
@@ -278,23 +247,6 @@ func main() {
 	default:
 		log.Fatalf("Bad Operation")
 	}
-}
-
-// Returns the absolute path relative to the utility binary file
-func createPathToConfig(argConfigFile string, defaultPathToConfig string) (string, error) {
-	var pathToConfigFile string
-	if argConfigFile == "" {
-		pathToConfigFile = defaultPathToConfig
-	} else {
-		pathToConfigFile = argConfigFile
-	}
-	pathToExe, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("os.Executable failed: %w", err)
-	}
-	pathToDirWithExe := filepath.Dir(pathToExe)
-	pathToConfig := filepath.Join(pathToDirWithExe, pathToConfigFile)
-	return pathToConfig, nil
 }
 
 func getRandPassword() string {

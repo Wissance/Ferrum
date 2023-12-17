@@ -3,8 +3,9 @@ package files
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/wissance/Ferrum/errors"
 	"os"
+
+	"github.com/wissance/Ferrum/errors"
 
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/data"
@@ -41,12 +42,16 @@ func CreateFileDataManager(dataFile string, logger *logging.AppLogger) (*FileDat
 	return mn, nil
 }
 
-// GetRealm function for getting realm by name, returns the realm without clients and users.
+// GetRealm function for getting Realm by name
+/* Searches for a realm with name realmName in serverData adn return it. Returns realm with clients but no users
+ * Parameters:
+ *     - realmName - name of a realm
+ * Returns: Realm and error
+ */
 func (mn *FileDataManager) GetRealm(realmName string) (*data.Realm, error) {
 	for _, e := range mn.serverData.Realms {
 		// case-sensitive comparison, myapp and MyApP are different realms
 		if e.Name == realmName {
-			e.Clients = nil
 			e.Users = nil
 			return &e, nil
 		}
@@ -54,32 +59,41 @@ func (mn *FileDataManager) GetRealm(realmName string) (*data.Realm, error) {
 	return nil, errors.ErrNotFound
 }
 
-func (mn *FileDataManager) GetRealmWithClients(realmName string) (*data.Realm, error) {
+// GetUsers function for getting all Realm User
+/* This function get realm by name ant extract all its users
+ * Parameters:
+ *     - realmName - name of a realm
+ * Returns: slice of users and error
+ */
+func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {
 	for _, e := range mn.serverData.Realms {
 		// case-sensitive comparison, myapp and MyApP are different realms
 		if e.Name == realmName {
-			e.Users = nil
-			return &e, nil
+			if len(e.Users) == 0 {
+				return nil, errors.ErrZeroLength
+			}
+			users := make([]data.User, len(e.Users))
+			for i, u := range e.Users {
+				user := data.CreateUser(u)
+				users[i] = user
+			}
+			return users, nil
 		}
 	}
 	return nil, errors.ErrNotFound
 }
 
-func (mn *FileDataManager) GetRealmWithUsers(realmName string) (*data.Realm, error) {
-	for _, e := range mn.serverData.Realms {
-		// case-sensitive comparison, myapp and MyApP are different realms
-		if e.Name == realmName {
-			e.Clients = nil
-			return &e, nil
-		}
-	}
-	return nil, errors.ErrNotFound
-}
-
+// GetClient function for getting Realm Client by name
+/* Searches for a client with name realmName in a realm. This function must be used after Realm was found.
+ * Parameters:
+ *     - realmName - realm containing clients to search
+ *     - clientName - name of a client
+ * Returns: Client and error
+ */
 func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data.Client, error) {
-	realm, err := mn.GetRealmWithClients(realmName)
+	realm, err := mn.GetRealm(realmName)
 	if err != nil {
-		return nil, fmt.Errorf("GetRealmWithClients failed: %w", err)
+		return nil, fmt.Errorf("GetRealm failed: %w", err)
 	}
 
 	for _, c := range realm.Clients {
@@ -90,49 +104,40 @@ func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data
 	return nil, errors.ErrNotFound
 }
 
+// GetUser function for getting Realm User by userName
+/* Searches for a user with specified name in a realm.  This function must be used after Realm was found.
+ * Parameters:
+ *     - realmName - realm containing users to search
+ *     - userName - name of a user
+ * Returns: User and error
+ */
 func (mn *FileDataManager) GetUser(realmName string, userName string) (data.User, error) {
-	realm, err := mn.GetRealmWithUsers(realmName)
+	users, err := mn.GetUsers(realmName)
 	if err != nil {
-		return nil, fmt.Errorf("GetRealmWithUsers failed: %w", err)
+		return nil, fmt.Errorf("GetUsers failed: %w", err)
 	}
-
-	for _, u := range realm.Users {
-		user := data.CreateUser(u)
-		if user.GetUsername() == userName {
-			return user, nil
+	for _, u := range users {
+		if u.GetUsername() == userName {
+			return u, nil
 		}
 	}
-
 	return nil, errors.ErrNotFound
 }
 
+// GetUserById function for getting Realm User by Id
+/* same functions as GetUser but uses userId to search instead of username
+ */
 func (mn *FileDataManager) GetUserById(realmName string, userId uuid.UUID) (data.User, error) {
-	realm, err := mn.GetRealmWithUsers(realmName)
+	users, err := mn.GetUsers(realmName)
 	if err != nil {
-		return nil, fmt.Errorf("GetRealmWithUsers failed: %w", err)
+		return nil, fmt.Errorf("GetUsers failed: %w", err)
 	}
-
-	for _, u := range realm.Users {
-		user := data.CreateUser(u)
-		if user.GetId() == userId {
-			return user, nil
+	for _, u := range users {
+		if u.GetId() == userId {
+			return u, nil
 		}
 	}
-
 	return nil, errors.ErrNotFound
-}
-
-func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {
-	realm, err := mn.GetRealmWithUsers(realmName)
-	if err != nil {
-		return nil, fmt.Errorf("GetRealmWithUsers failed: %w", err)
-	}
-
-	users := make([]data.User, len(realm.Users))
-	for i, u := range realm.Users {
-		users[i] = data.CreateUser(u)
-	}
-	return users, nil
 }
 
 // loadData this function loads data from JSON file (dataFile) to serverData

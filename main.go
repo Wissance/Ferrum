@@ -6,11 +6,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/wissance/Ferrum/application"
-	"github.com/wissance/stringFormatter"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/wissance/Ferrum/application"
+	"github.com/wissance/stringFormatter"
 )
 
 const defaultConfig = "./config.json"
@@ -51,7 +52,7 @@ func main() {
 	// this goroutine handles OS signals and generate signal to stop the app
 	go func() {
 		sig := <-osSignal
-		//logging.InfoLog(stringFormatter.Format("Got signal from OS: {0}", sig))
+		// logging.InfoLog(stringFormatter.Format("Got signal from OS: {0}", sig))
 		logger.Info(stringFormatter.Format("Got signal from OS: \"{0}\", stopping", sig))
 		done <- true
 	}()
@@ -65,5 +66,4 @@ func main() {
 	} else {
 		logger.Info("Application was successfully stopped")
 	}
-
 }
