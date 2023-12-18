@@ -2,7 +2,6 @@ package managers
 
 import (
 	"errors"
-	"fmt"
 	"path/filepath"
 
 	"github.com/wissance/Ferrum/managers/files"
@@ -18,7 +17,7 @@ import (
 // DataContext is a common interface to implement operations with authorization server entities (data.Realm, data.Client, data.User)
 // now contains only set of Get methods, during implementation admin CLI should be expanded to create && update entities
 type DataContext interface {
-	// GetReal returns realm by name (unique) returns realm with clients but no users
+	// GetRealm returns realm by name (unique) returns realm with clients but no users
 	GetRealm(realmName string) (*data.Realm, error)
 	// GetClient returns realm client by name (client name is also unique in a realm)
 	GetClient(realmName string, name string) (*data.Client, error)
@@ -49,10 +48,10 @@ func PrepareContextUsingData(dataSourceCfg *config.DataSourceConfig, data *data.
 		dc, err = files.CreateFileDataManagerWithInitData(data)
 
 	case config.REDIS:
-		return nil, fmt.Errorf("not supported initialization with init data")
+		return nil, errors.New("not supported initialization with init data")
 
 	default:
-		return nil, fmt.Errorf("not supported")
+		return nil, errors.New("not supported")
 	}
 
 	return dc, err
@@ -84,19 +83,19 @@ func PrepareContextUsingFile(dataSourceCfg *config.DataSourceConfig, dataFile *s
 			err = pathErr
 		}
 		// init, load data in memory ...
-		mn, err := files.CreateFileDataManager(absPath, logger)
-		if err != nil {
+		mn, mnErr := files.CreateFileDataManager(absPath, logger)
+		if mnErr != nil {
 			// at least and think what to do further
-			msg := stringFormatter.Format("An error occurred during data loading: {0}", err.Error())
+			msg := stringFormatter.Format("An error occurred during data loading: {0}", mnErr.Error())
 			logger.Error(msg)
 		}
 		dc = DataContext(mn)
 
 	case config.REDIS:
-		return nil, fmt.Errorf("not supported initialization with init data")
+		return nil, errors.New("not supported initialization with init data")
 
 	default:
-		return nil, fmt.Errorf("not supported")
+		return nil, errors.New("not supported")
 	}
 
 	return dc, err
@@ -114,13 +113,13 @@ func PrepareContext(dataSourceCfg *config.DataSourceConfig, logger *logging.AppL
 	var err error
 	switch dataSourceCfg.Type {
 	case config.FILE:
-		return nil, fmt.Errorf("not supported initialization without init data")
+		return nil, errors.New("not supported initialization without init data")
 
 	case config.REDIS:
 		dc, err = redis.CreateRedisDataManager(dataSourceCfg, logger)
 
 	default:
-		return nil, fmt.Errorf("not supported")
+		return nil, errors.New("not supported")
 	}
 	// todo implement other data sources
 
