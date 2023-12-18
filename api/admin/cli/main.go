@@ -18,12 +18,12 @@ import (
 const defaultConfig = "./config_w_redis.json"
 
 var (
-	argConfigFile  = flag.String("config", defaultConfig, "")
-	argOperation   = flag.String("operation", "", "")
-	argResource    = flag.String("resource", "", "")
-	argResource_id = flag.String("resource_id", "", "")
-	argParams      = flag.String("params", "", "This is the name of the realm for operations on client or user resources")
-	argValue       = flag.String("value", "", "Json object")
+	argConfigFile = flag.String("config", defaultConfig, "")
+	argOperation  = flag.String("operation", "", "")
+	argResource   = flag.String("resource", "", "")
+	argResourceId = flag.String("resource_id", "", "")
+	argParams     = flag.String("params", "", "This is the name of the realm for operations on client or user resources")
+	argValue      = flag.String("value", "", "Json object")
 )
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 
 	operation := operations.OperationType(*argOperation)
 	resource := operations.ResourceType(*argResource)
-	resource_id := *argResource_id
+	resourceId := *argResourceId
 	params := *argParams
 	value := []byte(*argValue)
 
@@ -65,26 +65,26 @@ func main() {
 
 	switch operation {
 	case operations.GetOperation:
-		if resource_id == "" {
+		if resourceId == "" {
 			log.Fatalf("Not specified Resource_id")
 		}
 		switch resource {
 		case operations.ClientResource:
-			client, err := manager.GetClient(params, resource_id)
+			client, err := manager.GetClient(params, resourceId)
 			if err != nil {
 				log.Fatalf("GetClient failed: %s", err)
 			}
 			fmt.Println(*client)
 
 		case operations.UserResource:
-			user, err := manager.GetUser(params, resource_id)
+			user, err := manager.GetUser(params, resourceId)
 			if err != nil {
 				log.Fatalf("GetUser failed: %s", err)
 			}
 			fmt.Println(user.GetUserInfo())
 
 		case operations.RealmResource:
-			realm, err := manager.GetRealm(resource_id)
+			realm, err := manager.GetRealm(resourceId)
 			if err != nil {
 				log.Fatalf("GetRealm failed: %s", err)
 			}
@@ -131,32 +131,32 @@ func main() {
 
 		return
 	case operations.DeleteOperation:
-		if resource_id == "" {
+		if resourceId == "" {
 			log.Fatalf("Not specified Resource_id")
 		}
 		switch resource {
 		case operations.ClientResource:
-			if err := manager.DeleteClient(params, resource_id); err != nil {
+			if err := manager.DeleteClient(params, resourceId); err != nil {
 				log.Fatalf("DeleteClient failed: %s", err)
 			}
-			fmt.Println(sf.Format("Client: \"{0}\" successfully deleted", resource_id))
+			fmt.Println(sf.Format("Client: \"{0}\" successfully deleted", resourceId))
 
 		case operations.UserResource:
-			if err := manager.DeleteUser(params, resource_id); err != nil {
+			if err := manager.DeleteUser(params, resourceId); err != nil {
 				log.Fatalf("DeleteUser failed: %s", err)
 			}
-			fmt.Println(sf.Format("User: \"{0}\" successfully deleted", resource_id))
+			fmt.Println(sf.Format("User: \"{0}\" successfully deleted", resourceId))
 
 		case operations.RealmResource:
-			if err := manager.DeleteRealm(resource_id); err != nil {
+			if err := manager.DeleteRealm(resourceId); err != nil {
 				log.Fatalf("DeleteRealm failed: %s", err)
 			}
-			fmt.Println(sf.Format("Realm: \"{0}\" successfully deleted", resource_id))
+			fmt.Println(sf.Format("Realm: \"{0}\" successfully deleted", resourceId))
 		}
 
 		return
 	case operations.UpdateOperation:
-		if resource_id == "" {
+		if resourceId == "" {
 			log.Fatalf("Not specified Resource_id")
 		}
 		if len(value) == 0 {
@@ -168,7 +168,7 @@ func main() {
 			if err := json.Unmarshal(value, &newClient); err != nil {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
-			if err := manager.UpdateClient(params, resource_id, newClient); err != nil {
+			if err := manager.UpdateClient(params, resourceId, newClient); err != nil {
 				log.Fatalf("UpdateClient failed: %s", err)
 			}
 			fmt.Println(sf.Format("Client: \"{0}\" successfully updated", newClient.Name))
@@ -179,7 +179,7 @@ func main() {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
 			user := data.CreateUser(newUser)
-			if err := manager.UpdateUser(params, resource_id, user); err != nil {
+			if err := manager.UpdateUser(params, resourceId, user); err != nil {
 				log.Fatalf("UpdateUser failed: %s", err)
 			}
 			fmt.Println(sf.Format("User: \"{0}\" successfully updated", user.GetUsername(), params))
@@ -189,7 +189,7 @@ func main() {
 			if err := json.Unmarshal(value, &newRealm); err != nil {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
-			if err := manager.UpdateRealm(resource_id, newRealm); err != nil {
+			if err := manager.UpdateRealm(resourceId, newRealm); err != nil {
 				log.Fatalf("UpdateRealm failed: %s", err)
 			}
 			fmt.Println(sf.Format("Realm: \"{0}\" successfully updated", newRealm.Name))
@@ -204,7 +204,7 @@ func main() {
 			if params == "" {
 				log.Fatalf("Not specified Params")
 			}
-			if resource_id == "" {
+			if resourceId == "" {
 				log.Fatalf("Not specified Resource_id")
 			}
 			// TODO(SIA)  Moving password verification to another location
@@ -212,7 +212,7 @@ func main() {
 				log.Fatalf("Password length must be greater than 8")
 			}
 			password := string(value)
-			if err := manager.SetPassword(params, resource_id, password); err != nil {
+			if err := manager.SetPassword(params, resourceId, password); err != nil {
 				log.Fatalf("SetPassword failed: %s", err)
 			}
 			fmt.Printf("Password successfully changed")
@@ -230,11 +230,11 @@ func main() {
 			if params == "" {
 				log.Fatalf("Not specified Params")
 			}
-			if resource_id == "" {
+			if resourceId == "" {
 				log.Fatalf("Not specified Resource_id")
 			}
 			password := getRandPassword()
-			if err := manager.SetPassword(params, resource_id, password); err != nil {
+			if err := manager.SetPassword(params, resourceId, password); err != nil {
 				log.Fatalf("SetPassword failed: %s", err)
 			}
 			fmt.Printf("New password: %s", password)
