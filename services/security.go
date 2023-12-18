@@ -29,5 +29,3 @@ type SecurityService interface {
 	// CheckSessionAndRefreshExpired checks is user tokens expired or not (could user use them or should get new ones)
 	CheckSessionAndRefreshExpired(realm string, userId uuid.UUID) (bool, bool)
 }
-
-var _ SecurityService = (*TokenBasedSecurityService)(nil)

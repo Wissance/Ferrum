@@ -59,10 +59,10 @@ func (service *TokenBasedSecurityService) Validate(tokenIssueData *dto.TokenGene
 }
 
 // CheckCredentials function that checks provided credentials (username and password)
-/*
+/* This function extracts data.User from DataProvider and also this function checks password from user credentials
  * Parameters:
- *    - tokenIssueData
- *    - realm
+ *    - tokenIssueData - issues token
+ *    - realm - name of a data.Realm
  * Returns: nil if credentials are valid, otherwise error (data.OperationError) with description
  */
 func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.TokenGenerationData, realmName string) *data.OperationError {
