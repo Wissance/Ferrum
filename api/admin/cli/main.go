@@ -67,7 +67,7 @@ func main() {
 	switch operation {
 	case operations.GetOperation:
 		if resourceId == "" {
-			log.Fatalf("Not specified Resource_id")
+			log.Fatalf("Not specified ResourceId")
 		}
 		switch resource {
 		case operations.ClientResource:
@@ -233,7 +233,7 @@ func main() {
 				log.Fatalf("Not specified Params")
 			}
 			if resourceId == "" {
-				log.Fatalf("Not specified Resource_id")
+				log.Fatalf("Not specified ResourceId")
 			}
 			password := getRandPassword()
 			passwordManager := manager.(PasswordManager)
