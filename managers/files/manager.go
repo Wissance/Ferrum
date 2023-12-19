@@ -140,6 +140,54 @@ func (mn *FileDataManager) GetUserById(realmName string, userId uuid.UUID) (data
 	return nil, errors.ErrNotFound
 }
 
+// CreateRealm creates new data.Realm in a data store, receive realmData unmarshalled json in a data.Realm
+/*
+ *
+ */
+func (mn *FileDataManager) CreateRealm(realmData data.Realm) error {
+	return errors.ErrOperationNotSupported
+}
+
+// CreateClient creates new data.Client in a data store, requires to pass realmName (because client name is not unique), clientData is an unmarshalled json of type data.Client
+func (mn *FileDataManager) CreateClient(realmName string, clientData data.Client) error {
+	return errors.ErrOperationNotSupported
+}
+
+// CreateUser creates new data.User in a data store within a realm with name = realmName
+func (mn *FileDataManager) CreateUser(realmName string, userData data.User) error {
+	return errors.ErrOperationNotSupported
+}
+
+// UpdateRealm updates existing data.Realm in a data store within name = realmData, and new data = realmData
+func (mn *FileDataManager) UpdateRealm(realmName string, realmData data.Realm) error {
+	return errors.ErrOperationNotSupported
+}
+
+// UpdateClient updates existing data.Client in a data store with name = clientName and new data = clientData
+func (mn *FileDataManager) UpdateClient(realmName string, clientName string, clientData data.Client) error {
+	return errors.ErrOperationNotSupported
+}
+
+// UpdateUser updates existing data.User in a data store with realm name = realName, username = userName and data=userData
+func (mn *FileDataManager) UpdateUser(realmName string, userName string, userData data.User) error {
+	return errors.ErrOperationNotSupported
+}
+
+// DeleteRealm removes realm from data storage (Should be a CASCADE remove of all related Users and Clients)
+func (mn *FileDataManager) DeleteRealm(realmName string) error {
+	return errors.ErrOperationNotSupported
+}
+
+// DeleteClient removes client with name = clientName from realm with name = clientName
+func (mn *FileDataManager) DeleteClient(realmName string, clientName string) error {
+	return errors.ErrOperationNotSupported
+}
+
+// DeleteUser removes data.User from data store by user (userName) and realm (realmName) name respectively
+func (mn *FileDataManager) DeleteUser(realmName string, userName string) error {
+	return errors.ErrOperationNotSupported
+}
+
 // loadData this function loads data from JSON file (dataFile) to serverData
 func (mn *FileDataManager) loadData() error {
 	rawData, err := os.ReadFile(mn.dataFile)

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/wissance/Ferrum/managers"
 	"log"
 
 	"github.com/wissance/Ferrum/api/admin/cli/operations"
@@ -33,7 +34,7 @@ func main() {
 		log.Fatalf("readAppConfig failed: %s", err)
 	}
 	logger := logging.CreateLogger(&cfg.Logging)
-	manager, err := prepareContext(&cfg.DataSource, logger)
+	manager, err := managers.PrepareContext(&cfg.DataSource, logger)
 	if err != nil {
 		log.Fatalf("prepareContext failed: %s", err)
 	}
@@ -212,7 +213,8 @@ func main() {
 				log.Fatalf("Password length must be greater than 8")
 			}
 			password := string(value)
-			if err := manager.SetPassword(params, resourceId, password); err != nil {
+			passwordManager := manager.(PasswordManager)
+			if err := passwordManager.SetPassword(params, resourceId, password); err != nil {
 				log.Fatalf("SetPassword failed: %s", err)
 			}
 			fmt.Printf("Password successfully changed")
@@ -234,7 +236,8 @@ func main() {
 				log.Fatalf("Not specified Resource_id")
 			}
 			password := getRandPassword()
-			if err := manager.SetPassword(params, resourceId, password); err != nil {
+			passwordManager := manager.(PasswordManager)
+			if err := passwordManager.SetPassword(params, resourceId, password); err != nil {
 				log.Fatalf("SetPassword failed: %s", err)
 			}
 			fmt.Printf("New password: %s", password)

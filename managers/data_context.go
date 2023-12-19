@@ -16,6 +16,7 @@ import (
 
 // DataContext is a common interface to implement operations with authorization server entities (data.Realm, data.Client, data.User)
 // now contains only set of Get methods, during implementation admin CLI should be expanded to create && update entities
+// DataContext is a CRUD operations interface over a business objects (data.Realm, data.Client, data.User)
 type DataContext interface {
 	// GetRealm returns realm by name (unique) returns realm with clients but no users
 	GetRealm(realmName string) (*data.Realm, error)
@@ -25,9 +26,26 @@ type DataContext interface {
 	GetUser(realmName string, userName string) (data.User, error)
 	// GetUserById return realm user by id
 	GetUserById(realmName string, userId uuid.UUID) (data.User, error)
-	// GetRealmUsers return all realm Users
-	// TODO(UMV): when we deal with a lot of Users we should query portion of Users instead of all
-	// GetRealmUsers(realmName string) ([]data.User, error)
+	// CreateRealm creates new data.Realm in a data store, receive realmData unmarshalled json in a data.Realm
+	CreateRealm(realmData data.Realm) error
+	// CreateClient creates new data.Client in a data store, requires to pass realmName (because client name is not unique), clientData is an unmarshalled json of type data.Client
+	CreateClient(realmName string, clientData data.Client) error
+	// CreateUser creates new data.User in a data store within a realm with name = realmName
+	CreateUser(realmName string, userData data.User) error
+	// UpdateRealm updates existing data.Realm in a data store within name = realmData, and new data = realmData
+	UpdateRealm(realmName string, realmData data.Realm) error
+	// UpdateClient updates existing data.Client in a data store with name = clientName and new data = clientData
+	UpdateClient(realmName string, clientName string, clientData data.Client) error
+	// UpdateUser updates existing data.User in a data store with realm name = realName, username = userName and data=userData
+	UpdateUser(realmName string, userName string, userData data.User) error
+	// DeleteRealm removes realm from data storage (Should be a CASCADE remove of all related Users and Clients)
+	DeleteRealm(realmName string) error
+	// DeleteClient removes client with name = clientName from realm with name = clientName
+	DeleteClient(realmName string, clientName string) error
+	// DeleteUser removes data.User from data store by user (userName) and realm (realmName) name respectively
+	DeleteUser(realmName string, userName string) error
+
+	// SetPassword(realmName string, userName string, password string) error
 }
 
 // PrepareContextUsingData is a factory function that creates instance of DataContext
