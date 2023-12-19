@@ -106,6 +106,7 @@ func PrepareContextUsingFile(dataSourceCfg *config.DataSourceConfig, dataFile *s
 			// at least and think what to do further
 			msg := stringFormatter.Format("An error occurred during data loading: {0}", mnErr.Error())
 			logger.Error(msg)
+			return nil, mnErr
 		}
 		dc = DataContext(mn)
 
