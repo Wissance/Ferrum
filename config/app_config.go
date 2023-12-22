@@ -1,15 +1,41 @@
 package config
 
-import "os"
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
 
-const serverValidationErrExitCode = 567
-const dataSourceValidationErrExitCode = 568
-const loggingSystemValidationErrExitCode = 569
+	"github.com/wissance/stringFormatter"
+)
+
+const (
+	serverValidationErrExitCode        = 567
+	dataSourceValidationErrExitCode    = 568
+	loggingSystemValidationErrExitCode = 569
+)
 
 type AppConfig struct {
 	ServerCfg  ServerConfig     `json:"server"`
 	DataSource DataSourceConfig `json:"data_source"`
 	Logging    LoggingConfig    `json:"logging"`
+}
+
+func ReadAppConfig(pathToConfig string) (*AppConfig, error) {
+	absPath, err := filepath.Abs(pathToConfig)
+	if err != nil {
+		return nil, fmt.Errorf(stringFormatter.Format("An error occurred during getting config file abs path: {0}", err.Error()))
+	}
+	fileData, err := os.ReadFile(absPath)
+	if err != nil {
+		return nil, fmt.Errorf(stringFormatter.Format("An error occurred during config file reading: {0}", err.Error()))
+	}
+	var cfg AppConfig
+	if err = json.Unmarshal(fileData, &cfg); err != nil {
+		return nil, fmt.Errorf(stringFormatter.Format("An error occurred during config file unmarshal: {0}", err.Error()))
+	}
+	cfg.Validate()
+	return &cfg, nil
 }
 
 func (cfg *AppConfig) Validate() {
@@ -30,5 +56,4 @@ func (cfg *AppConfig) Validate() {
 		println(loggingSystemCfgValidationErr.Error())
 		os.Exit(loggingSystemValidationErrExitCode)
 	}
-
 }

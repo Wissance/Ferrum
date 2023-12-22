@@ -1,9 +1,10 @@
 package data
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/utils/jsontools"
-	"time"
 )
 
 // RawUserInfo is a type that is using for place all public user data (in Keycloak - "info":{...} struct) into JWT encoded token
@@ -38,8 +39,8 @@ type AccessTokenData struct {
 }
 
 // CreateAccessToken creates new AccessToken from common token data and public user info
-func CreateAccessToken(commonData *JwtCommonInfo, userData *User) *AccessTokenData {
-	token := AccessTokenData{jwtCommonInfo: *commonData, rawUserInfo: (*userData).GetUserInfo()}
+func CreateAccessToken(commonData *JwtCommonInfo, userData User) *AccessTokenData {
+	token := AccessTokenData{jwtCommonInfo: *commonData, rawUserInfo: userData.GetUserInfo()}
 	token.Init()
 	return &token
 }

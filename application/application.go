@@ -1,7 +1,6 @@
 package application
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -94,11 +93,12 @@ func (app *Application) Start() (bool, error) {
 func (app *Application) Init() (bool, error) {
 	// part that initializes app from configs
 	if app.appConfigFile != nil {
-		err := app.readAppConfig()
+		cfg, err := config.ReadAppConfig(*app.appConfigFile)
 		if err != nil {
 			fmt.Println(stringFormatter.Format("An error occurred during reading app config file: {0}", err.Error()))
 			return false, err
 		}
+		app.appConfig = cfg
 		// after config read init secretKey file and data file (if provider.type == FILE)
 		app.secretKeyFile = &app.appConfig.ServerCfg.SecretFile
 		if app.appConfig.DataSource.Type == config.FILE {
@@ -150,38 +150,20 @@ func (app *Application) GetLogger() *logging.AppLogger {
 	return app.logger
 }
 
-func (app *Application) readAppConfig() error {
-	absPath, err := filepath.Abs(*app.appConfigFile)
-	if err != nil {
-		app.logger.Error(stringFormatter.Format("An error occurred during getting config file abs path: {0}", err.Error()))
-		return err
-	}
-
-	fileData, err := ioutil.ReadFile(absPath)
-	if err != nil {
-		app.logger.Error(stringFormatter.Format("An error occurred during config file reading: {0}", err.Error()))
-		return err
-	}
-
-	app.appConfig = &config.AppConfig{}
-	if err = json.Unmarshal(fileData, app.appConfig); err != nil {
-		app.logger.Error(stringFormatter.Format("An error occurred during config file unmarshal: {0}", err.Error()))
-		return err
-	}
-
-	app.appConfig.Validate()
-
-	return nil
-}
-
 func (app *Application) initDataProviders() error {
 	var err error
-	if app.dataConfigFile != nil || app.appConfig.DataSource.Type != config.FILE {
-		dataProvider, prepareErr := managers.PrepareContext(&app.appConfig.DataSource, app.dataConfigFile, app.logger)
+	if app.serverData != nil {
+		dataProvider, prepareErr := managers.PrepareContextUsingData(&app.appConfig.DataSource, app.serverData, app.logger)
+		app.dataProvider = &dataProvider
+		return prepareErr
+	}
+
+	if app.dataConfigFile != nil {
+		dataProvider, prepareErr := managers.PrepareContextUsingFile(&app.appConfig.DataSource, app.dataConfigFile, app.logger)
 		app.dataProvider = &dataProvider
 		err = prepareErr
 	} else {
-		dataProvider, prepareErr := managers.PrepareFileDataContextUsingData(app.serverData)
+		dataProvider, prepareErr := managers.PrepareContext(&app.appConfig.DataSource, app.logger)
 		app.dataProvider = &dataProvider
 		err = prepareErr
 	}

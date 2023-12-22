@@ -2,6 +2,10 @@ package rest
 
 import (
 	"encoding/base64"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
@@ -10,9 +14,6 @@ import (
 	"github.com/wissance/Ferrum/errors"
 	"github.com/wissance/Ferrum/globals"
 	"github.com/wissance/stringFormatter"
-	"net/http"
-	"strings"
-	"time"
 )
 
 // IssueNewToken this function is a Http Request Handler that is responsible for issue New or Refresh existing tokens
@@ -35,7 +36,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
 		// todo: validate ...
-		realmPtr := (*wCtx.DataProvider).GetRealm(realm)
+		realmPtr, _ := (*wCtx.DataProvider).GetRealm(realm)
 		if realmPtr == nil {
 			status = http.StatusNotFound
 			wCtx.Logger.Debug("New token issue: realm doesn't exist")
@@ -48,7 +49,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 				wCtx.Logger.Debug("New token issue: body is bad (unable to unmarshal to dto.TokenGenerationData)")
 				result = dto.ErrorDetails{Msg: errors.BadBodyForTokenGenerationMsg}
 			} else {
-				var decoder = schema.NewDecoder()
+				decoder := schema.NewDecoder()
 				err = decoder.Decode(&tokenGenerationData, request.PostForm)
 				if err != nil {
 					// todo (UMV): log events
@@ -56,7 +57,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 					wCtx.Logger.Debug("New token issue: body is bad (unable to unmarshal to dto.TokenGenerationData)")
 					result = dto.ErrorDetails{Msg: errors.BadBodyForTokenGenerationMsg}
 				} else {
-					var currentUser *data.User
+					var currentUser data.User
 					var userId uuid.UUID
 					issueTokens := false
 					// 0. Check whether we deal with issuing a new token or refresh previous one
@@ -79,7 +80,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 									status = http.StatusBadRequest
 									result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.TokenIsNotActive}
 								} else {
-									currentUser = (*wCtx.Security).GetCurrentUserById(realmPtr, userId)
+									currentUser = (*wCtx.Security).GetCurrentUserById(realmPtr.Name, userId)
 									if currentUser != nil {
 										issueTokens = true
 									} else {
@@ -99,14 +100,14 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 						} else {
 							// 2. User credentials validation
-							check = (*wCtx.Security).CheckCredentials(&tokenGenerationData, realmPtr)
+							check = (*wCtx.Security).CheckCredentials(&tokenGenerationData, realmPtr.Name)
 							if check != nil {
 								wCtx.Logger.Debug("New token issue: invalid user credentials (username or password)")
 								status = http.StatusUnauthorized
 								result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
 							} else {
-								currentUser = (*wCtx.Security).GetCurrentUserByName(realmPtr, tokenGenerationData.Username)
-								userId = (*currentUser).GetId()
+								currentUser = (*wCtx.Security).GetCurrentUserByName(realmPtr.Name, tokenGenerationData.Username)
+								userId = currentUser.GetId()
 								issueTokens = true
 							}
 						}
@@ -126,8 +127,10 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 							globals.ProfileEmailScope, session)
 						(*wCtx.Security).AssignTokens(realm, userId, &accessToken, &refreshToken)
 						// 6. Assign token to result
-						result = dto.Token{AccessToken: accessToken, Expires: duration, RefreshToken: refreshToken,
-							RefreshExpires: refreshDuration, TokenType: string(BearerToken), NotBeforePolicy: 0, Session: sessionId.String()}
+						result = dto.Token{
+							AccessToken: accessToken, Expires: duration, RefreshToken: refreshToken,
+							RefreshExpires: refreshDuration, TokenType: string(BearerToken), NotBeforePolicy: 0, Session: sessionId.String(),
+						}
 
 					}
 				}
@@ -153,7 +156,7 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 		status = http.StatusBadRequest
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
-		realmPtr := (*wCtx.DataProvider).GetRealm(realm)
+		realmPtr, _ := (*wCtx.DataProvider).GetRealm(realm)
 		if realmPtr == nil {
 			wCtx.Logger.Debug("Get userinfo: realm doesn't exist")
 			status = http.StatusNotFound
@@ -178,10 +181,10 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 						wCtx.Logger.Debug("Get userinfo: token expired")
 						result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
 					} else {
-						user := (*wCtx.DataProvider).GetUserById(realmPtr, session.UserId)
+						user, _ := (*wCtx.DataProvider).GetUserById(realmPtr.Name, session.UserId)
 						status = http.StatusOK
 						if user != nil {
-							result = (*user).GetUserInfo()
+							result = user.GetUserInfo()
 						}
 					}
 				}
@@ -209,7 +212,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 		afterHandle(&respWriter, status, &result)
 		return
 	}
-	realmPtr := (*wCtx.DataProvider).GetRealm(realm)
+	realmPtr, _ := (*wCtx.DataProvider).GetRealm(realm)
 	if realmPtr == nil {
 		status := http.StatusNotFound
 		wCtx.Logger.Debug(stringFormatter.Format("Introspect: realm \"{0}\" doesn't exists", realm))

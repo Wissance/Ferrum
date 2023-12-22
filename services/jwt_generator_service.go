@@ -3,12 +3,13 @@ package services
 import (
 	"encoding/base64"
 	"encoding/json"
+	"strings"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/stringFormatter"
-	"strings"
 )
 
 // JwtGenerator is useful struct that has methods to generate JWT tokens using golang-jwt utility
@@ -29,7 +30,7 @@ type JwtGenerator struct {
  * Returns: JWT-encoded string with access token
  */
 func (generator *JwtGenerator) GenerateJwtAccessToken(realmBaseUrl string, tokenType string, scope string, sessionData *data.UserSession,
-	userData *data.User) string {
+	userData data.User) string {
 	accessToken := generator.prepareAccessToken(realmBaseUrl, tokenType, scope, sessionData, userData)
 	return generator.generateJwtAccessToken(accessToken)
 }
@@ -76,7 +77,7 @@ func (generator *JwtGenerator) generateJwtRefreshToken(tokenData *data.TokenRefr
 
 // prepareAccessToken builds data.AccessTokenData from a lot of params
 func (generator *JwtGenerator) prepareAccessToken(realmBaseUrl string, tokenType string, scope string, sessionData *data.UserSession,
-	userData *data.User) *data.AccessTokenData {
+	userData data.User) *data.AccessTokenData {
 	issuer := realmBaseUrl
 	jwtCommon := data.JwtCommonInfo{Issuer: issuer, Type: tokenType, Audience: "account", Scope: scope, JwtId: uuid.New(),
 		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
