@@ -4,19 +4,34 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"github.com/wissance/Ferrum/application"
-	"github.com/wissance/stringFormatter"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/wissance/Ferrum/application"
+	"github.com/wissance/stringFormatter"
 )
 
+const defaultConfig = "./config.json"
+
+var configFile = flag.String("config", defaultConfig, "--config ./config_w_redis.json")
+
+// main is an authorization server entry point is starts and stops by signal Application
+/* Ferrum requires config to run via cmd line, if no config was provided defaultConfig is using
+ * to start Ferrum with custom config (i.e. config_w_redis.json) execute following cmd ./ferrum --config ./config_w_redis.json
+ * Ferrum stops by following signals:
+ * 1. Interrupt = CTRL+C
+ * 2. Terminate = signal from kill utility
+ * 3. Hangup = also kill but with -9 arg - kill -9
+ */
 func main() {
+	flag.Parse()
 	osSignal := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	app := application.CreateAppWithConfigs("./config.json", "./data.json", "./keyfile")
+	app := application.CreateAppWithConfigs(*configFile)
 	res, initErr := app.Init()
 	logger := app.GetLogger()
 	if initErr != nil {
@@ -34,12 +49,14 @@ func main() {
 		logger.Info("Application was successfully started")
 	}
 
+	// this goroutine handles OS signals and generate signal to stop the app
 	go func() {
 		sig := <-osSignal
-		//logging.InfoLog(stringFormatter.Format("Got signal from OS: {0}", sig))
+		// logging.InfoLog(stringFormatter.Format("Got signal from OS: {0}", sig))
 		logger.Info(stringFormatter.Format("Got signal from OS: \"{0}\", stopping", sig))
 		done <- true
 	}()
+	// server was started in separate goroutine, main thread is waiting for signal to stop
 	<-done
 
 	res, err = app.Stop()
@@ -49,5 +66,4 @@ func main() {
 	} else {
 		logger.Info("Application was successfully stopped")
 	}
-
 }

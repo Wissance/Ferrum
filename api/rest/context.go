@@ -6,6 +6,7 @@ import (
 	"github.com/wissance/Ferrum/services"
 )
 
+// WebApiContext is a central Application logic processor manages from Web via HTTP/HTTPS
 type WebApiContext struct {
 	Address        string
 	Schema         string

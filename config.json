@@ -2,7 +2,8 @@
     "server": {
         "schema": "http",
         "address": "localhost",
-        "port": 8182
+        "port": 8182,
+        "secret_file": "./keyfile"
     },
     "logging": {
         "level": "debug",
@@ -27,5 +28,9 @@
         ],
         "http_log": true,
         "http_console_out": true
+    },
+    "data_source": {
+        "type": "file",
+        "source": "./data.json"
     }
 }

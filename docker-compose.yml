@@ -1,0 +1,28 @@
+version: '3.9'
+services:
+  redis:
+    image: "redis/redis-stack:7.2.0-v2"
+    restart: always
+    environment:
+      REDIS_ARGS: "--user test_user on >test_password allkeys allchannels allcommands --user default off"
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    expose:
+      - "6379"
+      - "8001"
+
+  ferrum:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      WAIT_HOSTS: redis:6379
+    volumes:
+      - ./config_docker_w_redis.json:/app/config_docker_w_redis.json
+    depends_on:
+      - redis
+    ports:
+      - "8182:8182"
+    expose:
+      - "8182"

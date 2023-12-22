@@ -1,9 +1,14 @@
 package application
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/wissance/Ferrum/api/rest"
@@ -15,11 +20,6 @@ import (
 	r "github.com/wissance/gwuu/api/rest"
 	"github.com/wissance/stringFormatter"
 	"gopkg.in/natefinch/lumberjack.v2"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
 )
 
 type Application struct {
@@ -27,7 +27,7 @@ type Application struct {
 	dataConfigFile *string
 	secretKeyFile  *string
 	appConfig      *config.AppConfig
-	secretKey      *[]byte
+	secretKey      []byte
 	serverData     *data.ServerData
 	dataProvider   *managers.DataContext
 	webApiHandler  *r.WebApiHandler
@@ -36,21 +36,38 @@ type Application struct {
 	httpHandler    *http.Handler
 }
 
-func CreateAppWithConfigs(configFile string, dataFile string, secretKeyFile string) AppRunner {
+// CreateAppWithConfigs creates but not Init new Application as AppRunner
+/* This function creates new Application and pass configFile to newly created object
+ * Parameters:
+ *     - configFile - path to config
+ * Returns: new Application as AppRunner
+ */
+func CreateAppWithConfigs(configFile string) AppRunner {
 	app := &Application{}
 	app.appConfigFile = &configFile
-	app.dataConfigFile = &dataFile
-	app.secretKeyFile = &secretKeyFile
 	appRunner := AppRunner(app)
 	return appRunner
 }
 
+// CreateAppWithData creates but not Init new Application as AppRunner
+/* This function creates new Application and pass already decoded json of appConfig and serverData plus secretKey
+ * Parameters:
+ *     - appConfig  - decoded config
+ *     - serverData - decoded server config
+ *     - secretKey  - secret key that is using for signing JWT
+ * Returns: new Application as AppRunner
+ */
 func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte) AppRunner {
-	app := &Application{appConfig: appConfig, secretKey: &secretKey, serverData: serverData}
+	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData}
 	appRunner := AppRunner(app)
 	return appRunner
 }
 
+// Start function that starts application
+/* This function must be called after Init it starts application web server either on HTTP or HTTPS 9depends on config Schema value)
+ * Parameters: no
+ * Return start result (true if Start was successful) and error (nil if start was successful)
+ */
 func (app *Application) Start() (bool, error) {
 	var err error
 	go func() {
@@ -62,15 +79,31 @@ func (app *Application) Start() (bool, error) {
 	return err == nil, err
 }
 
+// Init initializes application
+/* This function implements application subsystem init:
+ *    1. Read config if Application was not Created via CreateAppWithData
+ *    2. After config was decoded this function implements following initialization
+ *       2.1 Read secret file for signing JWT
+ *       2.2 Initializes logger
+ *       2.3 Initializes Data Provider
+ *       2.4 Initializes REST API
+ * Parameters: no
+ * Return result of init (true if init was successful) and error (nil if init was successful)
+ */
 func (app *Application) Init() (bool, error) {
 	// part that initializes app from configs
 	if app.appConfigFile != nil {
-		err := app.readAppConfig()
+		cfg, err := config.ReadAppConfig(*app.appConfigFile)
 		if err != nil {
 			fmt.Println(stringFormatter.Format("An error occurred during reading app config file: {0}", err.Error()))
 			return false, err
 		}
-
+		app.appConfig = cfg
+		// after config read init secretKey file and data file (if provider.type == FILE)
+		app.secretKeyFile = &app.appConfig.ServerCfg.SecretFile
+		if app.appConfig.DataSource.Type == config.FILE {
+			app.dataConfigFile = &app.appConfig.DataSource.Source
+		}
 		// reading secrets key
 		key := app.readKey()
 		if key == nil {
@@ -99,54 +132,53 @@ func (app *Application) Init() (bool, error) {
 	return true, nil
 }
 
+// Stop function that stops application
+/* Now doesn't do anything, just a stub
+ * Parameters : no
+ * Returns result of app stop and error
+ */
 func (app *Application) Stop() (bool, error) {
 	return true, nil
 }
 
+// GetLogger function that returns logger from initialized application
+/* Returns logger from application (app.Logger), must be called after Init
+ * Parameters : no
+ * Returns: logger
+ */
 func (app *Application) GetLogger() *logging.AppLogger {
 	return app.logger
 }
 
-func (app *Application) readAppConfig() error {
-	absPath, err := filepath.Abs(*app.appConfigFile)
-	if err != nil {
-		app.logger.Error(stringFormatter.Format("An error occurred during getting config file abs path: {0}", err.Error()))
-		return err
-	}
-
-	fileData, err := ioutil.ReadFile(absPath)
-	if err != nil {
-		app.logger.Error(stringFormatter.Format("An error occurred during config file reading: {0}", err.Error()))
-		return err
-	}
-
-	app.appConfig = &config.AppConfig{}
-	if err = json.Unmarshal(fileData, app.appConfig); err != nil {
-		app.logger.Error(stringFormatter.Format("An error occurred during config file unmarshal: {0}", err.Error()))
-		return err
-	}
-
-	return nil
-}
-
 func (app *Application) initDataProviders() error {
-	if app.dataConfigFile != nil {
-		dataProvider := managers.CreateAndContextInitWithDataFile(*app.dataConfigFile, app.logger)
+	var err error
+	if app.serverData != nil {
+		dataProvider, prepareErr := managers.PrepareContextUsingData(&app.appConfig.DataSource, app.serverData, app.logger)
 		app.dataProvider = &dataProvider
-	} else {
-		dataProvider := managers.CreateAndContextInitUsingData(app.serverData)
-		app.dataProvider = &dataProvider
+		return prepareErr
 	}
-	return nil
+
+	if app.dataConfigFile != nil {
+		dataProvider, prepareErr := managers.PrepareContextUsingFile(&app.appConfig.DataSource, app.dataConfigFile, app.logger)
+		app.dataProvider = &dataProvider
+		err = prepareErr
+	} else {
+		dataProvider, prepareErr := managers.PrepareContext(&app.appConfig.DataSource, app.logger)
+		app.dataProvider = &dataProvider
+		err = prepareErr
+	}
+	return err
 }
 
 func (app *Application) initRestApi() error {
 	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
 	securityService := services.CreateSecurityService(app.dataProvider, app.logger)
 	serverAddress := stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
-	app.webApiContext = &rest.WebApiContext{Address: serverAddress, Schema: string(app.appConfig.ServerCfg.Schema),
+	app.webApiContext = &rest.WebApiContext{
+		Address: serverAddress, Schema: string(app.appConfig.ServerCfg.Schema),
 		DataProvider: app.dataProvider, Security: &securityService,
-		TokenGenerator: &services.JwtGenerator{SignKey: *app.secretKey, Logger: app.logger}, Logger: app.logger}
+		TokenGenerator: &services.JwtGenerator{SignKey: app.secretKey, Logger: app.logger}, Logger: app.logger,
+	}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
 	app.initKeyCloakSimilarRestApiRoutes(router)
@@ -193,7 +225,7 @@ func (app *Application) startWebService() error {
 	return err
 }
 
-func (app *Application) readKey() *[]byte {
+func (app *Application) readKey() []byte {
 	absPath, err := filepath.Abs(*app.appConfigFile)
 	if err != nil {
 		app.logger.Error(stringFormatter.Format("An error occurred during getting key file abs path: {0}", err.Error()))
@@ -206,7 +238,7 @@ func (app *Application) readKey() *[]byte {
 		return nil
 	}
 
-	return &fileData
+	return fileData
 }
 
 func (app *Application) createHttpLoggingHandler(index int, router *mux.Router) *http.Handler {
