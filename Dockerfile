@@ -39,7 +39,7 @@ RUN go generate
 # Build the Go app
 RUN go build -o /ferrum
 
-RUN go build -o ferrum-admin.exe ./api/admin/cli
+RUN go build -o ferrum-admin ./api/admin/cli
 
 COPY --from=ghcr.io/ufoscout/docker-compose-wait:latest /wait /wait
 
