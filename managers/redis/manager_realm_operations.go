@@ -27,7 +27,9 @@ func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
 	// if realms were stored without clients (we expected so), get clients related to realm and assign here
 	clients, err := mn.GetClients(realmName)
 	if err != nil {
-		return nil, fmt.Errorf("GetClients failed: %w", err)
+		if !errors.Is(err, errors2.ErrZeroLength) {
+			return nil, fmt.Errorf("GetClients failed: %w", err)
+		}
 	}
 	realm.Clients = clients
 
