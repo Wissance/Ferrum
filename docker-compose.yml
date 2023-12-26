@@ -13,6 +13,8 @@ services:
       - "8001"
 
   ferrum:
+    stdin_open: true
+    tty: true
     build:
       context: .
       dockerfile: Dockerfile

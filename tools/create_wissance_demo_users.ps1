@@ -1,3 +1,4 @@
+# Win init CMD
 ./ferrum-admin.exe --resource=realm --operation=create --value='{\"name\": \"WissanceFerrumDemo\", \"token_expiration\": 600, \"refresh_expiration\": 300}'
 ./ferrum-admin.exe --resource=client --operation=create --value='{\"id\": \"d4dc483d-7d0d-4d2e-a0a0-2d34b55e6666\", \"name\": \"WissanceWebDemo\", \"type\": \"confidential\", \"auth\": {\"type\": 1, \"value\": \"fb6Z4RsOadVycQoeQiN57xpu8w8wTEST\"}}' --params=WissanceFerrumDemo
 ./ferrum-admin.exe --resource=user --operation=create --value='{\"info\": {\"sub\": \"667ff6a7-3f6b-449b-a217-6fc5d9ac6890\", \"email_verified\": true, \"roles\": [\"admin\"], \"name\": \"M.V.Ushakov\", \"preferred_username\": \"umv\", \"given_name\": \"Michael\", \"family_name\": \"Ushakov\"}, \"credentials\": {\"password\": \"1s2d3f4g90xs\"}}' --params=WissanceFerrumDemo

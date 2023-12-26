@@ -182,6 +182,15 @@ app.Stop()
 
 Since version `0.9.1` it is possible to use `CLI Admin` [See](api/admin/cli/README.md)
 
+### 5.1 Use CLI admin in a docker
+
+1. Run docker compose - `docker compose up --build`
+2. List running containers - `docker ps -a`
+3. Attach to running container using listed hash `docker exec -it 060cfb8dd84c sh`
+4. Run admin interface providing a valid config `ferrum-admin --config=config_docker_w_redis.json ...`, see picture
+
+[Use CLI Admin from docker](/img/additional/cli_from_docker.png)
+
 ## 6. Contributors
 
 <a href="https://github.com/Wissance/Ferrum/graphs/contributors">
