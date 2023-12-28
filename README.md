@@ -1,6 +1,6 @@
 # Ferrum
 
-Ferrum is a **better** Authorization Server.
+Ferrum is a **better** Authorization Server, this is a Community version.
 
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/wissance/Ferrum?style=plastic) 
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/Ferrum?style=plastic) 
