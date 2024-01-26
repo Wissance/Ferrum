@@ -1,12 +1,12 @@
 # Ferrum
 
-Ferrum is a **better** Authorization Server.
+Ferrum is a **better** Authorization Server, this is a Community version.
 
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/wissance/Ferrum?style=plastic) 
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/Ferrum?style=plastic) 
 ![GitHub issues](https://img.shields.io/github/issues/wissance/Ferrum?style=plastic)
 ![GitHub Release Date](https://img.shields.io/github/release-date/wissance/Ferrum) 
-![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.0/total?style=plastic)
+![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.1/total?style=plastic)
 
 ![Ferrum: A better Auth Server](/img/ferrum_cover.png)
 
@@ -189,7 +189,7 @@ Since version `0.9.1` it is possible to use `CLI Admin` [See](api/admin/cli/READ
 3. Attach to running container using listed hash `docker exec -it 060cfb8dd84c sh`
 4. Run admin interface providing a valid config `ferrum-admin --config=config_docker_w_redis.json ...`, see picture
 
-[Use CLI Admin from docker](/img/additional/cli_from_docker.png)
+![Use CLI Admin from docker](/img/additional/cli_from_docker.png)
 
 ## 6. Contributors
 
