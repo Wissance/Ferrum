@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/wissance/stringFormatter"
 )
 
 const (
@@ -24,15 +22,15 @@ type AppConfig struct {
 func ReadAppConfig(pathToConfig string) (*AppConfig, error) {
 	absPath, err := filepath.Abs(pathToConfig)
 	if err != nil {
-		return nil, fmt.Errorf(stringFormatter.Format("An error occurred during getting config file abs path: {0}", err.Error()))
+		return nil, fmt.Errorf("An error occurred during getting config file abs path: %w", err)
 	}
 	fileData, err := os.ReadFile(absPath)
 	if err != nil {
-		return nil, fmt.Errorf(stringFormatter.Format("An error occurred during config file reading: {0}", err.Error()))
+		return nil, fmt.Errorf("An error occurred during config file reading: %w", err)
 	}
 	var cfg AppConfig
 	if err = json.Unmarshal(fileData, &cfg); err != nil {
-		return nil, fmt.Errorf(stringFormatter.Format("An error occurred during config file unmarshal: {0}", err.Error()))
+		return nil, fmt.Errorf("An error occurred during config file unmarshal: %w", err)
 	}
 	cfg.Validate()
 	return &cfg, nil

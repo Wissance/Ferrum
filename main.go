@@ -32,14 +32,13 @@ func main() {
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	app := application.CreateAppWithConfigs(*configFile)
-	res, initErr := app.Init()
-	logger := app.GetLogger()
+	_, initErr := app.Init()
 	if initErr != nil {
-		logger.Error("An error occurred during app init, terminating the app")
+		fmt.Printf("An error occurred during app init, terminating the app: %s\n", initErr)
 		os.Exit(-1)
-	} else {
-		logger.Info("Application was successfully initialized")
 	}
+	logger := app.GetLogger()
+	logger.Info("Application was successfully initialized")
 
 	res, err := app.Start()
 	if !res {
