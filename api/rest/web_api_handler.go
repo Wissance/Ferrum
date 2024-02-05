@@ -269,6 +269,17 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	afterHandle(&respWriter, status, &result)
 }
 
+// GetOpenIdConfiguration this function is a Http Request Handler that is responsible for getting public data.UserInfo
+/* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
+ *
+ */
+func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter, request *http.Request) {
+	beforeHandle(&respWriter)
+	//var status = http.StatusOK
+	//var result = interface{}
+	afterHandle(&respWriter, http.StatusOK, nil)
+}
+
 func (wCtx *WebApiContext) getRealmBaseUrl(realm string) string {
 	return stringFormatter.Format("/{0}/{1}/auth/realms/{2}", wCtx.Schema, wCtx.Address, realm)
 }

@@ -200,6 +200,9 @@ func (app *Application) initKeyCloakSimilarRestApiRoutes(router *mux.Router) {
 	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/token", app.webApiContext.IssueNewToken, http.MethodPost)
 	// 2. Get userinfo endpoint - /auth/realms/SOAR/protocol/openid-connect/userinfo
 	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/userinfo", app.webApiContext.GetUserInfo, http.MethodGet)
+
+	// 3. Endpoints uri
+	
 }
 
 func (app *Application) startWebService() error {
