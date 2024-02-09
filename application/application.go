@@ -195,14 +195,14 @@ func (app *Application) initRestApi() error {
 }
 
 func (app *Application) initKeyCloakSimilarRestApiRoutes(router *mux.Router) {
+	// 1. Introspect endpoint - /auth/realms/{realm}/protocol/openid-connect/introspect
 	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/token/introspect", app.webApiContext.Introspect, http.MethodPost)
-	// 1. Generate token endpoint - /auth/realms/{realm}/protocol/openid-connect/token
+	// 2. Generate token endpoint - /auth/realms/{realm}/protocol/openid-connect/token
 	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/token", app.webApiContext.IssueNewToken, http.MethodPost)
-	// 2. Get userinfo endpoint - /auth/realms/SOAR/protocol/openid-connect/userinfo
+	// 3. Get userinfo endpoint - /auth/realms/SOAR/protocol/openid-connect/userinfo
 	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/userinfo", app.webApiContext.GetUserInfo, http.MethodGet)
-
-	// 3. Endpoints uri
-	
+	// 4. OpenId Configuration endpoint
+	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/.well-known/openid-configuration", app.webApiContext.GetOpenIdConfiguration, http.MethodGet)
 }
 
 func (app *Application) startWebService() error {

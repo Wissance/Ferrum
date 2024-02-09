@@ -12,7 +12,7 @@ type OpenIdConfiguration struct {
 	DeviceAuthorizationEndpoint        string   `json:"device_authorization_endpoint"`
 	RegistrationEndpoint               string   `json:"registration_endpoint"`
 	PushedAuthorizationRequestEndpoint string   `json:"pushed_authorization_request_endpoint"`
-	BachChannelAuthorizationEndpoint   string   `json:"bach_channel_authorization_endpoint"`
+	BackChannelAuthorizationEndpoint   string   `json:"bach_channel_authorization_endpoint"`
 	GrantTypesSupported                []string `json:"grant_types_supported"`
 	ResponseTypesSupported             []string `json:"response_types_supported"`
 	// JwksUri                            string   `json:"jwks_uri"` // TODO (UMV): Uncomment if required

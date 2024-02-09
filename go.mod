@@ -15,7 +15,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/ttys3/rotatefilehook v1.0.0
 	github.com/wissance/gwuu v1.2.4
-	github.com/wissance/stringFormatter v1.1.0
+	github.com/wissance/stringFormatter v1.2.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 

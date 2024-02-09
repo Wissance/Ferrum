@@ -13,7 +13,7 @@ import (
 	"github.com/wissance/Ferrum/dto"
 	"github.com/wissance/Ferrum/errors"
 	"github.com/wissance/Ferrum/globals"
-	"github.com/wissance/stringFormatter"
+	sf "github.com/wissance/stringFormatter"
 )
 
 // IssueNewToken this function is a Http Request Handler that is responsible for issue New or Refresh existing tokens
@@ -40,7 +40,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 		if realmPtr == nil {
 			status = http.StatusNotFound
 			wCtx.Logger.Debug("New token issue: realm doesn't exist")
-			result = dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
+			result = dto.ErrorDetails{Msg: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
 		} else {
 			tokenGenerationData := dto.TokenGenerationData{}
 			err := request.ParseForm()
@@ -160,7 +160,7 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 		if realmPtr == nil {
 			wCtx.Logger.Debug("Get userinfo: realm doesn't exist")
 			status = http.StatusNotFound
-			result = dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
+			result = dto.ErrorDetails{Msg: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
 		} else {
 			// Just get access token,  find user + session
 			authorization := request.Header.Get(authorizationHeader)
@@ -215,8 +215,8 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	realmPtr, _ := (*wCtx.DataProvider).GetRealm(realm)
 	if realmPtr == nil {
 		status := http.StatusNotFound
-		wCtx.Logger.Debug(stringFormatter.Format("Introspect: realm \"{0}\" doesn't exists", realm))
-		result := dto.ErrorDetails{Msg: stringFormatter.Format(errors.RealmDoesNotExistsTemplate, realm)}
+		wCtx.Logger.Debug(sf.Format("Introspect: realm \"{0}\" doesn't exists", realm))
+		result := dto.ErrorDetails{Msg: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
 		afterHandle(&respWriter, status, &result)
 		return
 	}
@@ -224,7 +224,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	parts := strings.Split(authorization, " ")
 	if parts[0] != "Basic" {
 		status := http.StatusBadRequest
-		wCtx.Logger.Debug(stringFormatter.Format("Introspect: Basic value not provided in Authorization header value - \"{0}\"", parts[0]))
+		wCtx.Logger.Debug(sf.Format("Introspect: Basic value not provided in Authorization header value - \"{0}\"", parts[0]))
 		result := dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
 		afterHandle(&respWriter, status, &result)
 		return
@@ -232,7 +232,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	basicString, err := base64.StdEncoding.DecodeString(parts[1])
 	if err != nil {
 		status := http.StatusBadRequest
-		wCtx.Logger.Debug(stringFormatter.Format("Introspect: invalid client credentials encoding, should be base64, decoding error: {0}", err.Error()))
+		wCtx.Logger.Debug(sf.Format("Introspect: invalid client credentials encoding, should be base64, decoding error: {0}", err.Error()))
 		result := dto.ErrorDetails{Msg: errors.InvalidClientMsg, Description: errors.InvalidClientCredentialDesc}
 		afterHandle(&respWriter, status, &result)
 		return
@@ -275,13 +275,35 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
  */
 func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter, request *http.Request) {
 	beforeHandle(&respWriter)
-	//var status = http.StatusOK
-	//var result = interface{}
-	afterHandle(&respWriter, http.StatusOK, nil)
+	vars := mux.Vars(request)
+	realm := vars[globals.RealmPathVar]
+	status := http.StatusOK
+	var result interface{}
+	if len(realm) == 0 {
+		// 400
+		status = http.StatusBadRequest
+		wCtx.Logger.Debug("OpenIdConfigurator: realm is missing")
+		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
+	} else {
+		// realm
+		realmPath := sf.Format("auth/realms/{0}", realm)
+		protocolPath := "protocol/openid-connect"
+		// What is important is that server could be behind reverse proxy
+		fullAddress := sf.Format("{0}://{1}", wCtx.Schema, wCtx.Address)
+		openIdConfig := dto.OpenIdConfiguration{}
+		openIdConfig.Issuer = sf.Format("{0}/{1}", fullAddress, realmPath)
+		openIdConfig.TokenEndpoint = sf.Format("{0}/{1}/token", openIdConfig.Issuer, protocolPath)
+		openIdConfig.IntrospectionEndpoint = sf.Format("{0}/{1}/introspect", openIdConfig.Issuer, protocolPath)
+		openIdConfig.UserInfoEndpoint = sf.Format("{0}/{1}/userinfo", openIdConfig.Issuer, protocolPath)
+		openIdConfig.AuthorizationEndpoint = sf.Format("{0}/{1}/auth", openIdConfig.Issuer, protocolPath)
+		// TODO(UMV): assign other endpoint as soon
+		result = openIdConfig
+	}
+	afterHandle(&respWriter, status, &result)
 }
 
 func (wCtx *WebApiContext) getRealmBaseUrl(realm string) string {
-	return stringFormatter.Format("/{0}/{1}/auth/realms/{2}", wCtx.Schema, wCtx.Address, realm)
+	return sf.Format("/{0}/{1}/auth/realms/{2}", wCtx.Schema, wCtx.Address, realm)
 }
 
 func isTokenRefreshRequest(tokenIssueData *dto.TokenGenerationData) bool {
@@ -289,4 +311,16 @@ func isTokenRefreshRequest(tokenIssueData *dto.TokenGenerationData) bool {
 		return false
 	}
 	return true
+}
+
+// reserved for future use
+func getUserIP(r *http.Request) string {
+	IPAddress := r.Header.Get("X-Real-Ip")
+	if IPAddress == "" {
+		IPAddress = r.Header.Get("X-Forwarded-For")
+	}
+	if IPAddress == "" {
+		IPAddress = r.RemoteAddr
+	}
+	return IPAddress
 }
