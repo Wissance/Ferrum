@@ -269,7 +269,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	afterHandle(&respWriter, status, &result)
 }
 
-// GetOpenIdConfiguration this function is a Http Request Handler that is responsible for getting public data.UserInfo
+// GetOpenIdConfiguration this function is a Http Request Handler that is responsible for getting available URL and some other configs related to OpenId
 /* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
  *
  */
@@ -285,7 +285,7 @@ func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter
 		wCtx.Logger.Debug("OpenIdConfigurator: realm is missing")
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
-		// realm
+		// todo(UMV): should we check a realm here ?
 		realmPath := sf.Format("auth/realms/{0}", realm)
 		protocolPath := "protocol/openid-connect"
 		// What is important is that server could be behind reverse proxy
@@ -297,6 +297,12 @@ func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter
 		openIdConfig.UserInfoEndpoint = sf.Format("{0}/{1}/userinfo", openIdConfig.Issuer, protocolPath)
 		openIdConfig.AuthorizationEndpoint = sf.Format("{0}/{1}/auth", openIdConfig.Issuer, protocolPath)
 		// TODO(UMV): assign other endpoint as soon
+		openIdConfig.ClaimsSupported = []string{}
+		openIdConfig.ClaimTypesSupported = []string{}
+		openIdConfig.GrantTypesSupported = []string{}
+		openIdConfig.CodeChallengeMethodsSupported = []string{}
+		openIdConfig.ResponseModesSupported = []string{}
+		openIdConfig.ResponseTypesSupported = []string{}
 		result = openIdConfig
 	}
 	afterHandle(&respWriter, status, &result)

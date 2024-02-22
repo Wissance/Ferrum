@@ -3,6 +3,7 @@ package application
 import (
 	"errors"
 	"fmt"
+	"github.com/wissance/Ferrum/globals"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -23,17 +24,18 @@ import (
 )
 
 type Application struct {
-	appConfigFile  *string
-	dataConfigFile *string
-	secretKeyFile  *string
-	appConfig      *config.AppConfig
-	secretKey      []byte
-	serverData     *data.ServerData
-	dataProvider   *managers.DataContext
-	webApiHandler  *r.WebApiHandler
-	webApiContext  *rest.WebApiContext
-	logger         *logging.AppLogger
-	httpHandler    *http.Handler
+	appConfigFile      *string
+	dataConfigFile     *string
+	secretKeyFile      *string
+	appConfig          *config.AppConfig
+	authenticationDefs *data.AuthenticationDefs
+	secretKey          []byte
+	serverData         *data.ServerData
+	dataProvider       *managers.DataContext
+	webApiHandler      *r.WebApiHandler
+	webApiContext      *rest.WebApiContext
+	logger             *logging.AppLogger
+	httpHandler        *http.Handler
 }
 
 // CreateAppWithConfigs creates but not Init new Application as AppRunner
@@ -45,6 +47,7 @@ type Application struct {
 func CreateAppWithConfigs(configFile string) AppRunner {
 	app := &Application{}
 	app.appConfigFile = &configFile
+	app.authenticationDefs = &data.AuthenticationDefs{}
 	appRunner := AppRunner(app)
 	return appRunner
 }
@@ -59,6 +62,7 @@ func CreateAppWithConfigs(configFile string) AppRunner {
  */
 func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte) AppRunner {
 	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData}
+	app.authenticationDefs = &data.AuthenticationDefs{}
 	appRunner := AppRunner(app)
 	return appRunner
 }
@@ -129,6 +133,10 @@ func (app *Application) Init() (bool, error) {
 		app.logger.Error(stringFormatter.Format("An error occurred during rest api init: {0}", err.Error()))
 		return false, err
 	}
+
+	// init auth defs
+	app.initAuthServerDefs()
+
 	return true, nil
 }
 
@@ -192,6 +200,20 @@ func (app *Application) initRestApi() error {
 	}
 	app.httpHandler = app.createHttpLoggingHandler(appenderIndex, router)
 	return nil
+}
+
+func (app *Application) initAuthServerDefs() {
+	app.authenticationDefs.SupportedGrantTypes = []string{
+		globals.AuthorizationTokenGrantType,
+		globals.RefreshTokenGrantType,
+		globals.PasswordGrantType,
+	}
+
+	app.authenticationDefs.SupportedResponseTypes = []string{
+		globals.TokenResponseType,
+		globals.CodeResponseType,
+		globals.CodeTokenResponseType,
+	}
 }
 
 func (app *Application) initKeyCloakSimilarRestApiRoutes(router *mux.Router) {
