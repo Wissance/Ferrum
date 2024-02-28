@@ -127,16 +127,15 @@ func (app *Application) Init() (bool, error) {
 		return false, err
 	}
 
+	// init auth defs
+	app.initAuthServerDefs()
+
 	// init webapi
 	err = app.initRestApi()
 	if err != nil {
 		app.logger.Error(stringFormatter.Format("An error occurred during rest api init: {0}", err.Error()))
 		return false, err
 	}
-
-	// init auth defs
-	app.initAuthServerDefs()
-
 	return true, nil
 }
 
@@ -184,6 +183,7 @@ func (app *Application) initRestApi() error {
 	serverAddress := stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
 	app.webApiContext = &rest.WebApiContext{
 		Address: serverAddress, Schema: string(app.appConfig.ServerCfg.Schema),
+		AuthDefs:     app.authenticationDefs,
 		DataProvider: app.dataProvider, Security: &securityService,
 		TokenGenerator: &services.JwtGenerator{SignKey: app.secretKey, Logger: app.logger}, Logger: app.logger,
 	}
@@ -213,6 +213,27 @@ func (app *Application) initAuthServerDefs() {
 		globals.TokenResponseType,
 		globals.CodeResponseType,
 		globals.CodeTokenResponseType,
+	}
+
+	app.authenticationDefs.SupportedResponses = []string{
+		globals.JwtResponse,
+	}
+
+	app.authenticationDefs.SupportedScopes = []string{
+		globals.ProfileEmailScope,
+		globals.OpenIdScope,
+		globals.ProfileScope,
+		globals.EmailScope,
+	}
+
+	app.authenticationDefs.SupportedClaimTypes = []string{
+		"normal",
+	}
+
+	app.authenticationDefs.SupportedClaims = []string{
+		globals.SubClaimType,
+		globals.EmailClaimType,
+		globals.PreferredUsernameClaim,
 	}
 }
 

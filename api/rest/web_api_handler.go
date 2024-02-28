@@ -297,12 +297,12 @@ func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter
 		openIdConfig.UserInfoEndpoint = sf.Format("{0}/{1}/userinfo", openIdConfig.Issuer, protocolPath)
 		openIdConfig.AuthorizationEndpoint = sf.Format("{0}/{1}/auth", openIdConfig.Issuer, protocolPath)
 		// TODO(UMV): assign other endpoint as soon
-		openIdConfig.ClaimsSupported = []string{}
-		openIdConfig.ClaimTypesSupported = []string{}
-		openIdConfig.GrantTypesSupported = []string{}
+		openIdConfig.ClaimsSupported = wCtx.AuthDefs.SupportedClaims
+		openIdConfig.ClaimTypesSupported = wCtx.AuthDefs.SupportedClaimTypes
+		openIdConfig.GrantTypesSupported = wCtx.AuthDefs.SupportedGrantTypes
 		openIdConfig.CodeChallengeMethodsSupported = []string{}
-		openIdConfig.ResponseModesSupported = []string{}
-		openIdConfig.ResponseTypesSupported = []string{}
+		openIdConfig.ResponseModesSupported = wCtx.AuthDefs.SupportedResponses
+		openIdConfig.ResponseTypesSupported = wCtx.AuthDefs.SupportedResponseTypes
 		result = openIdConfig
 	}
 	afterHandle(&respWriter, status, &result)
