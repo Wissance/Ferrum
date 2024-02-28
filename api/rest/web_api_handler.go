@@ -285,25 +285,31 @@ func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter
 		wCtx.Logger.Debug("OpenIdConfigurator: realm is missing")
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
-		// todo(UMV): should we check a realm here ?
-		realmPath := sf.Format("auth/realms/{0}", realm)
-		protocolPath := "protocol/openid-connect"
-		// What is important is that server could be behind reverse proxy
-		fullAddress := sf.Format("{0}://{1}", wCtx.Schema, wCtx.Address)
-		openIdConfig := dto.OpenIdConfiguration{}
-		openIdConfig.Issuer = sf.Format("{0}/{1}", fullAddress, realmPath)
-		openIdConfig.TokenEndpoint = sf.Format("{0}/{1}/token", openIdConfig.Issuer, protocolPath)
-		openIdConfig.IntrospectionEndpoint = sf.Format("{0}/{1}/introspect", openIdConfig.Issuer, protocolPath)
-		openIdConfig.UserInfoEndpoint = sf.Format("{0}/{1}/userinfo", openIdConfig.Issuer, protocolPath)
-		openIdConfig.AuthorizationEndpoint = sf.Format("{0}/{1}/auth", openIdConfig.Issuer, protocolPath)
-		// TODO(UMV): assign other endpoint as soon
-		openIdConfig.ClaimsSupported = wCtx.AuthDefs.SupportedClaims
-		openIdConfig.ClaimTypesSupported = wCtx.AuthDefs.SupportedClaimTypes
-		openIdConfig.GrantTypesSupported = wCtx.AuthDefs.SupportedGrantTypes
-		openIdConfig.CodeChallengeMethodsSupported = []string{}
-		openIdConfig.ResponseModesSupported = wCtx.AuthDefs.SupportedResponses
-		openIdConfig.ResponseTypesSupported = wCtx.AuthDefs.SupportedResponseTypes
-		result = openIdConfig
+		_, err := (*wCtx.DataProvider).GetRealm(realm)
+		if err != nil {
+			// form answer depends on error type, Real not found or Data Provider down
+			status = http.StatusNotFound
+			result = dto.ErrorDetails{Msg: errors.InvalidRealm, Description: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
+		} else {
+			realmPath := sf.Format("auth/realms/{0}", realm)
+			protocolPath := "protocol/openid-connect"
+			// What is important is that server could be behind reverse proxy
+			fullAddress := sf.Format("{0}://{1}", wCtx.Schema, wCtx.Address)
+			openIdConfig := dto.OpenIdConfiguration{}
+			openIdConfig.Issuer = sf.Format("{0}/{1}", fullAddress, realmPath)
+			openIdConfig.TokenEndpoint = sf.Format("{0}/{1}/token", openIdConfig.Issuer, protocolPath)
+			openIdConfig.IntrospectionEndpoint = sf.Format("{0}/{1}/introspect", openIdConfig.Issuer, protocolPath)
+			openIdConfig.UserInfoEndpoint = sf.Format("{0}/{1}/userinfo", openIdConfig.Issuer, protocolPath)
+			openIdConfig.AuthorizationEndpoint = sf.Format("{0}/{1}/auth", openIdConfig.Issuer, protocolPath)
+			// TODO(UMV): assign other endpoint as soon
+			openIdConfig.ClaimsSupported = wCtx.AuthDefs.SupportedClaims
+			openIdConfig.ClaimTypesSupported = wCtx.AuthDefs.SupportedClaimTypes
+			openIdConfig.GrantTypesSupported = wCtx.AuthDefs.SupportedGrantTypes
+			openIdConfig.CodeChallengeMethodsSupported = []string{}
+			openIdConfig.ResponseModesSupported = wCtx.AuthDefs.SupportedResponses
+			openIdConfig.ResponseTypesSupported = wCtx.AuthDefs.SupportedResponseTypes
+			result = openIdConfig
+		}
 	}
 	afterHandle(&respWriter, status, &result)
 }
