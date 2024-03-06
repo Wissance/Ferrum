@@ -24,6 +24,7 @@ import (
 )
 
 type Application struct {
+	devMode            bool
 	appConfigFile      *string
 	dataConfigFile     *string
 	secretKeyFile      *string
@@ -42,10 +43,12 @@ type Application struct {
 /* This function creates new Application and pass configFile to newly created object
  * Parameters:
  *     - configFile - path to config
+ *     - devMode - developer mode (for showing some non production info = swagger, ...)
  * Returns: new Application as AppRunner
  */
-func CreateAppWithConfigs(configFile string) AppRunner {
+func CreateAppWithConfigs(configFile string, devMode bool) AppRunner {
 	app := &Application{}
+	app.devMode = devMode
 	app.appConfigFile = &configFile
 	app.authenticationDefs = &data.AuthenticationDefs{}
 	appRunner := AppRunner(app)
@@ -60,8 +63,8 @@ func CreateAppWithConfigs(configFile string) AppRunner {
  *     - secretKey  - secret key that is using for signing JWT
  * Returns: new Application as AppRunner
  */
-func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte) AppRunner {
-	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData}
+func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte, devMode bool) AppRunner {
+	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData, devMode: devMode}
 	app.authenticationDefs = &data.AuthenticationDefs{}
 	appRunner := AppRunner(app)
 	return appRunner

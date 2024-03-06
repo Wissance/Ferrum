@@ -17,6 +17,7 @@ import (
 const defaultConfig = "./config.json"
 
 var configFile = flag.String("config", defaultConfig, "--config ./config_w_redis.json")
+var devMode = flag.Bool("devmode", false, "-devmode")
 
 // main is an authorization server entry point is starts and stops by signal Application
 /* Ferrum requires config to run via cmd line, if no config was provided defaultConfig is using
@@ -31,7 +32,7 @@ func main() {
 	osSignal := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	app := application.CreateAppWithConfigs(*configFile)
+	app := application.CreateAppWithConfigs(*configFile, *devMode)
 	res, initErr := app.Init()
 	logger := app.GetLogger()
 	if initErr != nil {

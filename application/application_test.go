@@ -61,7 +61,7 @@ func TestApplicationOnHttps(t *testing.T) {
 }
 
 func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseUrl string) {
-	app := CreateAppWithData(appConfig, &testServerData, testKey)
+	app := CreateAppWithData(appConfig, &testServerData, testKey, true)
 	res, err := app.Init()
 	assert.True(t, res)
 	assert.Nil(t, err)
