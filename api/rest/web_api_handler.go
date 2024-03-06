@@ -158,12 +158,12 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer"
+// @Param Authorization header string true "Bearer TOKEN"
 // @Param realm path string true "Realm"
 // @Success 200 {object} interface{}
-// @Failure 400 {string} dto.ErrorDetails "Bad request"
-// @Failure 401 {string} dto.ErrorDetails "Unauthorized"
-// @Failure 404 {string} dto.ErrorDetails "Not found"
+// @Failure 400 {string} dto.ErrorDetails
+// @Failure 401 {string} dto.ErrorDetails
+// @Failure 404 {string} dto.ErrorDetails
 // @Router /auth/realms/{realm}/protocol/openid-connect/userinfo [get]
 func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *http.Request) {
 	/* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
@@ -217,13 +217,25 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 	afterHandle(&respWriter, status, &result)
 }
 
-// Introspect -is a function that analyzes state of a token and getting some data from it
-/* To call introspect we should form a POST HTTP Request with Authorization header, value for this header is: Basic base64({client_id}:{client_secret})
- * Consider we have client_id -> test-service-app-client and client_secret -> fb6Z4RsOadVycQoeQiN57xpu8w8wplYz, we get following base64 value for this pair:
- * dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo= (you could use -https://www.base64encode.org/)
- * In body of this request we should pass token as key, and value as x-www-urlencoded.
- */
+// Introspect - is a function that analyzes state of a token and getting some data from it
+// @Summary Analyzes state of a token and getting some data from it
+// @Description Analyzes state of a token and getting some data from it
+// @Tags token
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Basic User:Password as Base64 i.e. Basic dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo="
+// @Param realm path string true "Realm"
+// @Success 200 {object} dto.IntrospectTokenResult
+// @Failure 400 {string} dto.ErrorDetails
+// @Failure 401 {string} dto.ErrorDetails
+// @Failure 404 {string} dto.ErrorDetails
+// @Router /auth/realms/{realm}/protocol/openid-connect/token/introspect [post]
 func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *http.Request) {
+	/* To call introspect we should form a POST HTTP Request with Authorization header, value for this header is: Basic base64({client_id}:{client_secret})
+	 * Consider we have client_id -> test-service-app-client and client_secret -> fb6Z4RsOadVycQoeQiN57xpu8w8wplYz, we get following base64 value for this pair:
+	 * dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo= (you could use -https://www.base64encode.org/)
+	 * In body of this request we should pass token as key, and value as x-www-urlencoded.
+	 */
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]
@@ -293,10 +305,19 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 }
 
 // GetOpenIdConfiguration this function is a Http Request Handler that is responsible for getting available URL and some other configs related to OpenId
-/* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
- *
- */
+// @Summary Getting Info about Url and other config values
+// @Description Getting Info about Url and other config values
+// @Tags configuration
+// @Accept json
+// @Produce json
+// @Param realm path string true "Realm"
+// @Success 200 {object} dto.OpenIdConfiguration
+// @Failure 400 {string} dto.ErrorDetails
+// @Failure 404 {string} dto.ErrorDetails
+// @Router /auth/realms/{realm}/.well-known/openid-configuration [get]
 func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter, request *http.Request) {
+	/* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
+	 */
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]
