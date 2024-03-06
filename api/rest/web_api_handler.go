@@ -17,13 +17,25 @@ import (
 )
 
 // IssueNewToken this function is a Http Request Handler that is responsible for issue New or Refresh existing tokens
-/* For issue new token user should send POST request of type x-www-from-urlencoded with following pairs key=value
- * grant_type=password (password only supported), client_id (data.Client name), if client is Confidential also client_secret,
- * scope=profile email, username and password
- * For refreshing existing token user should send POST request of type x-www-from-urlencoded with following
- * pairs key=value client_id, client_secret (if data.Client is Confidential), grant_type=refresh_token and refresh_token itself
- */
+// @Summary Issues new or Refreshes existing token
+// @Description Issues new or Refreshes existing token
+// @Tags token
+// @Accept x-www-form-urlencoded
+// @Produce json
+// @Param function body dto.TokenGenerationData true "Token generation data"
+// @Param realm path string true "Realm"
+// @Success 200 {object} dto.Token
+// @Failure 400 {string} dto.ErrorDetails
+// @Failure 401 {string} dto.ErrorDetails
+// @Failure 404 {string} dto.ErrorDetails
+// @Router /auth/realms/{realm}/protocol/openid-connect/token [post]
 func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request *http.Request) {
+	/* For issue new token user should send POST request of type x-www-from-urlencoded with following pairs key=value
+	 * grant_type=password (password only supported), client_id (data.Client name), if client is Confidential also client_secret,
+	 * scope=profile email, username and password
+	 * For refreshing existing token user should send POST request of type x-www-from-urlencoded with following
+	 * pairs key=value client_id, client_secret (if data.Client is Confidential), grant_type=refresh_token and refresh_token itself
+	 */
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]
@@ -141,10 +153,21 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 }
 
 // GetUserInfo this function is a Http Request Handler that is responsible for getting public data.UserInfo
-/* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
- *
- */
+// @Summary Getting UserInfo by token
+// @Description Getting UserInfo by token
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer"
+// @Param realm path string true "Realm"
+// @Success 200 {object} interface{}
+// @Failure 400 {string} dto.ErrorDetails "Bad request"
+// @Failure 401 {string} dto.ErrorDetails "Unauthorized"
+// @Failure 404 {string} dto.ErrorDetails "Not found"
+// @Router /auth/realms/{realm}/protocol/openid-connect/userinfo [get]
 func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *http.Request) {
+	/* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
+	 */
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]

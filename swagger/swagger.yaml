@@ -1,4 +1,118 @@
+definitions:
+  dto.Token:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      not-before-policy:
+        type: integer
+      refresh_expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      scope:
+        type: string
+      session_state:
+        type: string
+      token_type:
+        type: string
+    type: object
+  dto.TokenGenerationData:
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      grant_type:
+        type: string
+      password:
+        type: string
+      refresh_token:
+        type: string
+      scope:
+        type: string
+      username:
+        type: string
+    type: object
 info:
   contact: {}
-paths: {}
+paths:
+  /auth/realms/{realm}/protocol/openid-connect/token:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Issues new or Refreshes existing token
+      parameters:
+      - description: Token generation data
+        in: body
+        name: function
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TokenGenerationData'
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Token'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Issues new or Refreshes existing token
+      tags:
+      - token
+  /auth/realms/{realm}/protocol/openid-connect/userinfo:
+    get:
+      consumes:
+      - application/json
+      description: Getting UserInfo by token
+      parameters:
+      - description: Bearer
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      summary: Getting UserInfo by token
+      tags:
+      - users
 swagger: "2.0"

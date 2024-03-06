@@ -3,5 +3,179 @@
     "info": {
         "contact": {}
     },
-    "paths": {}
+    "paths": {
+        "/auth/realms/{realm}/protocol/openid-connect/token": {
+            "post": {
+                "description": "Issues new or Refreshes existing token",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "token"
+                ],
+                "summary": "Issues new or Refreshes existing token",
+                "parameters": [
+                    {
+                        "description": "Token generation data",
+                        "name": "function",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.TokenGenerationData"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Realm",
+                        "name": "realm",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Token"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/realms/{realm}/protocol/openid-connect/userinfo": {
+            "get": {
+                "description": "Getting UserInfo by token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Getting UserInfo by token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Realm",
+                        "name": "realm",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.Token": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "not-before-policy": {
+                    "type": "integer"
+                },
+                "refresh_expires_in": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "session_state": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TokenGenerationData": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string"
+                },
+                "client_secret": {
+                    "type": "string"
+                },
+                "grant_type": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        }
+    }
 }

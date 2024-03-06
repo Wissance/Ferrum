@@ -195,6 +195,9 @@ func (app *Application) initRestApi() error {
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
 	app.initKeyCloakSimilarRestApiRoutes(router)
+	if app.devMode {
+		app.initSwaggerRoutes(router)
+	}
 	// Setting up listener for logging
 	appenderIndex := app.logger.GetAppenderIndex(config.RollingFile, app.appConfig.Logging.Appenders)
 	if appenderIndex == -1 {
