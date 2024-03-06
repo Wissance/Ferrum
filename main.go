@@ -1,3 +1,5 @@
+//go:generate go install github.com/swaggo/swag/cmd/swag@v1.7.6
+//go:generate swag init --parseDependency --parseInternal --parseDepth 6 -o ./swagger
 //go:generate openssl genrsa -out ./certs/server.key 2048
 //go:generate openssl ecparam -genkey -name secp384r1 -out ./certs/server.key
 //go:generate openssl req -new -x509 -sha256 -key ./certs/server.key -out ./certs/server.crt -days 3650 -subj "/C=RU"

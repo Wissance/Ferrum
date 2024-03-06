@@ -3,7 +3,9 @@ package application
 import (
 	"errors"
 	"fmt"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/wissance/Ferrum/globals"
+	"github.com/wissance/Ferrum/swagger"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -203,6 +205,16 @@ func (app *Application) initRestApi() error {
 	}
 	app.httpHandler = app.createHttpLoggingHandler(appenderIndex, router)
 	return nil
+}
+
+func (app *Application) initSwaggerRoutes(router *mux.Router) {
+	// Swagger docs router and config
+	swagger.SwaggerInfo.Version = "v0.9"
+	swagger.SwaggerInfo.Title = "Ferrum Authorization Server"
+	swagger.SwaggerInfo.Description = "Ferrum a better Authorization server compatible by API with a KeyCloak"
+	swagger.SwaggerInfo.Host = stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
+
+	router.PathPrefix("/swagger/").Handler(httpSwagger.Handler())
 }
 
 func (app *Application) initAuthServerDefs() {

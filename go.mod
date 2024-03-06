@@ -17,6 +17,8 @@ require (
 	github.com/wissance/gwuu v1.2.4
 	github.com/wissance/stringFormatter v1.2.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	github.com/swaggo/http-swagger v1.2.8
+    github.com/swaggo/swag v1.8.2
 )
 
 require (
