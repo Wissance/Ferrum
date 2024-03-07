@@ -3,6 +3,9 @@ package application
 import (
 	"errors"
 	"fmt"
+	httpSwagger "github.com/swaggo/http-swagger"
+	"github.com/wissance/Ferrum/globals"
+	"github.com/wissance/Ferrum/swagger"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -23,28 +26,33 @@ import (
 )
 
 type Application struct {
-	appConfigFile  *string
-	dataConfigFile *string
-	secretKeyFile  *string
-	appConfig      *config.AppConfig
-	secretKey      []byte
-	serverData     *data.ServerData
-	dataProvider   *managers.DataContext
-	webApiHandler  *r.WebApiHandler
-	webApiContext  *rest.WebApiContext
-	logger         *logging.AppLogger
-	httpHandler    *http.Handler
+	devMode            bool
+	appConfigFile      *string
+	dataConfigFile     *string
+	secretKeyFile      *string
+	appConfig          *config.AppConfig
+	authenticationDefs *data.AuthenticationDefs
+	secretKey          []byte
+	serverData         *data.ServerData
+	dataProvider       *managers.DataContext
+	webApiHandler      *r.WebApiHandler
+	webApiContext      *rest.WebApiContext
+	logger             *logging.AppLogger
+	httpHandler        *http.Handler
 }
 
 // CreateAppWithConfigs creates but not Init new Application as AppRunner
 /* This function creates new Application and pass configFile to newly created object
  * Parameters:
  *     - configFile - path to config
+ *     - devMode - developer mode (for showing some non production info = swagger, ...)
  * Returns: new Application as AppRunner
  */
-func CreateAppWithConfigs(configFile string) AppRunner {
+func CreateAppWithConfigs(configFile string, devMode bool) AppRunner {
 	app := &Application{}
+	app.devMode = devMode
 	app.appConfigFile = &configFile
+	app.authenticationDefs = &data.AuthenticationDefs{}
 	appRunner := AppRunner(app)
 	return appRunner
 }
@@ -57,8 +65,9 @@ func CreateAppWithConfigs(configFile string) AppRunner {
  *     - secretKey  - secret key that is using for signing JWT
  * Returns: new Application as AppRunner
  */
-func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte) AppRunner {
-	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData}
+func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte, devMode bool) AppRunner {
+	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData, devMode: devMode}
+	app.authenticationDefs = &data.AuthenticationDefs{}
 	appRunner := AppRunner(app)
 	return appRunner
 }
@@ -128,6 +137,9 @@ func (app *Application) Init() (bool, error) {
 		return false, err
 	}
 
+	// init auth defs
+	app.initAuthServerDefs()
+
 	// init webapi
 	err = app.initRestApi()
 	if err != nil {
@@ -181,12 +193,16 @@ func (app *Application) initRestApi() error {
 	serverAddress := stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
 	app.webApiContext = &rest.WebApiContext{
 		Address: serverAddress, Schema: string(app.appConfig.ServerCfg.Schema),
+		AuthDefs:     app.authenticationDefs,
 		DataProvider: app.dataProvider, Security: &securityService,
 		TokenGenerator: &services.JwtGenerator{SignKey: app.secretKey, Logger: app.logger}, Logger: app.logger,
 	}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
 	app.initKeyCloakSimilarRestApiRoutes(router)
+	if app.devMode {
+		app.initSwaggerRoutes(router)
+	}
 	// Setting up listener for logging
 	appenderIndex := app.logger.GetAppenderIndex(config.RollingFile, app.appConfig.Logging.Appenders)
 	if appenderIndex == -1 {
@@ -199,12 +215,60 @@ func (app *Application) initRestApi() error {
 	return nil
 }
 
+func (app *Application) initSwaggerRoutes(router *mux.Router) {
+	// Swagger docs router and config
+	swagger.SwaggerInfo.Version = "v0.9"
+	swagger.SwaggerInfo.Title = "Ferrum Authorization Server"
+	swagger.SwaggerInfo.Description = "Ferrum a better Authorization server compatible by API with a KeyCloak"
+	swagger.SwaggerInfo.Host = stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
+
+	router.PathPrefix("/swagger/").Handler(httpSwagger.Handler())
+}
+
+func (app *Application) initAuthServerDefs() {
+	app.authenticationDefs.SupportedGrantTypes = []string{
+		globals.AuthorizationTokenGrantType,
+		globals.RefreshTokenGrantType,
+		globals.PasswordGrantType,
+	}
+
+	app.authenticationDefs.SupportedResponseTypes = []string{
+		globals.TokenResponseType,
+		globals.CodeResponseType,
+		globals.CodeTokenResponseType,
+	}
+
+	app.authenticationDefs.SupportedResponses = []string{
+		globals.JwtResponse,
+	}
+
+	app.authenticationDefs.SupportedScopes = []string{
+		globals.ProfileEmailScope,
+		globals.OpenIdScope,
+		globals.ProfileScope,
+		globals.EmailScope,
+	}
+
+	app.authenticationDefs.SupportedClaimTypes = []string{
+		"normal",
+	}
+
+	app.authenticationDefs.SupportedClaims = []string{
+		globals.SubClaimType,
+		globals.EmailClaimType,
+		globals.PreferredUsernameClaim,
+	}
+}
+
 func (app *Application) initKeyCloakSimilarRestApiRoutes(router *mux.Router) {
+	// 1. Introspect endpoint - /auth/realms/{realm}/protocol/openid-connect/introspect
 	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/token/introspect", app.webApiContext.Introspect, http.MethodPost)
-	// 1. Generate token endpoint - /auth/realms/{realm}/protocol/openid-connect/token
+	// 2. Generate token endpoint - /auth/realms/{realm}/protocol/openid-connect/token
 	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/token", app.webApiContext.IssueNewToken, http.MethodPost)
-	// 2. Get userinfo endpoint - /auth/realms/SOAR/protocol/openid-connect/userinfo
+	// 3. Get userinfo endpoint - /auth/realms/SOAR/protocol/openid-connect/userinfo
 	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/userinfo", app.webApiContext.GetUserInfo, http.MethodGet)
+	// 4. OpenId Configuration endpoint
+	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/.well-known/openid-configuration", app.webApiContext.GetOpenIdConfiguration, http.MethodGet)
 }
 
 func (app *Application) startWebService() error {
