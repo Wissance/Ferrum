@@ -101,13 +101,17 @@ func (app *Application) Start() (bool, error) {
  */
 func (app *Application) Init() (bool, error) {
 	// part that initializes app from configs
-	if app.appConfigFile != nil {
+	isAppCreatedWithConfigs := app.appConfigFile != nil
+	if isAppCreatedWithConfigs {
+		// init logger
 		cfg, err := config.ReadAppConfig(*app.appConfigFile)
 		if err != nil {
-			fmt.Println(stringFormatter.Format("An error occurred during reading app config file: {0}", err.Error()))
-			return false, err
+			return false, fmt.Errorf("An error occurred during reading app config file: %w", err)
 		}
 		app.appConfig = cfg
+		app.logger = logging.CreateLogger(&app.appConfig.Logging)
+		app.logger.Init()
+
 		// after config read init secretKey file and data file (if provider.type == FILE)
 		app.secretKeyFile = &app.appConfig.ServerCfg.SecretFile
 		if app.appConfig.DataSource.Type == config.FILE {
@@ -116,15 +120,16 @@ func (app *Application) Init() (bool, error) {
 		// reading secrets key
 		key := app.readKey()
 		if key == nil {
-			fmt.Println(stringFormatter.Format("An error occurred during reading secret key, key is nil"))
+			app.logger.Error("An error occurred during reading secret key, key is nil")
 			return false, errors.New("secret key is nil")
 		}
 		app.secretKey = key
+	} else {
+		// init logger
+		app.logger = logging.CreateLogger(&app.appConfig.Logging)
+		app.logger.Init()
 	}
 	// common part: both configs and direct struct pass
-	// init logger
-	app.logger = logging.CreateLogger(&app.appConfig.Logging)
-	app.logger.Init()
 	// init users, today we are reading data file
 	err := app.initDataProviders()
 	if err != nil {
