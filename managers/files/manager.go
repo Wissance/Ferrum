@@ -42,6 +42,15 @@ func CreateFileDataManager(dataFile string, logger *logging.AppLogger) (*FileDat
 	return mn, nil
 }
 
+// IsAvailable methods that checks whether DataContext could be used or not
+/* Availability means that serverData is not empty, so simple
+ * Parameters: no
+ * Returns true if DataContext is available
+ */
+func (mn *FileDataManager) IsAvailable() bool {
+	return len(mn.serverData.Realms) > 0
+}
+
 // GetRealm function for getting Realm by name
 /* Searches for a realm with name realmName in serverData adn return it. Returns realm with clients but no users
  * Parameters:

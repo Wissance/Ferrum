@@ -65,6 +65,15 @@ type RedisDataManager struct {
 	ctx         context.Context
 }
 
+// IsAvailable methods that checks whether DataContext could be used or not
+/* Availability means that redisClient is not NULL and Ready for receive requests
+ * Parameters: no
+ * Returns true if DataContext is available
+ */
+func (mn *RedisDataManager) IsAvailable() bool {
+	return mn.redisClient != nil && mn.redisClient.Ping(mn.ctx) == nil
+}
+
 // CreateRedisDataManager is factory function for instance of RedisDataManager creation
 /* Simply creates instance of RedisDataManager and initializes redis client, this function requires config.Namespace to be set up in configs, otherwise
  * defaultNamespace is using
