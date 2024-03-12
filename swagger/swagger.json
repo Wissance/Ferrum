@@ -1,0 +1,396 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/auth/realms/{realm}/.well-known/openid-configuration": {
+            "get": {
+                "description": "Getting Info about Url and other config values",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "configuration"
+                ],
+                "summary": "Getting Info about Url and other config values",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Realm",
+                        "name": "realm",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.OpenIdConfiguration"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/realms/{realm}/protocol/openid-connect/token": {
+            "post": {
+                "description": "Issues new or Refreshes existing token",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "token"
+                ],
+                "summary": "Issues new or Refreshes existing token",
+                "parameters": [
+                    {
+                        "description": "Token generation data",
+                        "name": "function",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.TokenGenerationData"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Realm",
+                        "name": "realm",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Token"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/realms/{realm}/protocol/openid-connect/token/introspect": {
+            "post": {
+                "description": "Analyzes state of a token and getting some data from it",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "token"
+                ],
+                "summary": "Analyzes state of a token and getting some data from it",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Basic User:Password as Base64 i.e. Basic dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo=",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Realm",
+                        "name": "realm",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.IntrospectTokenResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/realms/{realm}/protocol/openid-connect/userinfo": {
+            "get": {
+                "description": "Getting UserInfo by token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Getting UserInfo by token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer TOKEN",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Realm",
+                        "name": "realm",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.IntrospectTokenResult": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "aud": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "auth_time": {
+                    "type": "integer"
+                },
+                "exp": {
+                    "type": "integer"
+                },
+                "iat": {
+                    "type": "integer"
+                },
+                "jti": {
+                    "type": "string"
+                },
+                "nbf": {
+                    "type": "integer"
+                },
+                "typ": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.OpenIdConfiguration": {
+            "type": "object",
+            "properties": {
+                "authorization_endpoint": {
+                    "type": "string"
+                },
+                "back_channel_authorization_endpoint": {
+                    "type": "string"
+                },
+                "claim_types_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "claims_parameter_supported": {
+                    "type": "boolean"
+                },
+                "claims_supported": {
+                    "description": "TokenEndpointAuthSigningAlgValuesSupported         []string `json:\"token_endpoint_auth_signing_alg_values_supported\"`\nIntrospectionEndpointAuthMethodsSupported          []string `json:\"introspection_endpoint_auth_methods_supported\"`\nIntrospectionEndpointAuthSigningAlgValuesSupported []string `json:\"introspection_endpoint_auth_signing_alg_values_supported\"`\nAuthorizationSigningAlgValuesSupported             []string `json:\"authorization_signing_alg_values_supported\"`\nAuthorizationEncryptionAlgValuesSupported          []string `json:\"authorization_encryption_alg_values_supported\"`\nAuthorizationEncryptionEncValuesSupported          []string `json:\"authorization_encryption_enc_values_supported\"`",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "code_challenge_methods_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "device_authorization_endpoint": {
+                    "type": "string"
+                },
+                "end_session_endpoint": {
+                    "type": "string"
+                },
+                "grant_types_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "introspection_endpoint": {
+                    "type": "string"
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "pushed_authorization_request_endpoint": {
+                    "type": "string"
+                },
+                "registration_endpoint": {
+                    "type": "string"
+                },
+                "request_parameter_supported": {
+                    "type": "boolean"
+                },
+                "response_modes_supported": {
+                    "description": "JwksUri                            string   `json:\"jwks_uri\"` // TODO (UMV): Uncomment if required\nFrontChannelLogoutSessionSupported bool         // TODO (UMV): Uncomment if required\nFrontChannelLogoutSupported bool                // TODO (UMV): Uncomment if required\nCheckSessionIframe string                       // TODO (UMV): Uncomment if required\nSubjectTypeSupported []string                   // TODO (UMV): Uncomment if required\nIdTokenSigningAlgValuesSupported                   []string `json:\"id_token_signing_alg_values_supported\"`\nIdTokenEncryptionEncValuesSupported                []string `json:\"id_token_encryption_enc_values_supported\"`\nUserInfoSigningAlgValuesSupported                  []string `json:\"userinfo_signing_alg_values_supported\"`\nRequestObjectSigningAlgValuesSupported             []string `json:\"request_object_signing_alg_values_supported\"`\nRequestEncryptionEncValuesSupported                []string `json:\"request_encryption_enc_values_supported\"`",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "response_types_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tls_client_certificate_bound_access_token": {
+                    "type": "boolean"
+                },
+                "token_endpoint": {
+                    "type": "string"
+                },
+                "userinfo_endpoint": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Token": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "not-before-policy": {
+                    "type": "integer"
+                },
+                "refresh_expires_in": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "session_state": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TokenGenerationData": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string"
+                },
+                "client_secret": {
+                    "type": "string"
+                },
+                "grant_type": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
