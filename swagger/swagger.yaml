@@ -274,4 +274,148 @@ paths:
       summary: Getting UserInfo by token
       tags:
       - users
+  /realms/{realm}/.well-known/openid-configuration:
+    get:
+      consumes:
+      - application/json
+      description: Getting Info about Url and other config values
+      parameters:
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OpenIdConfiguration'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Getting Info about Url and other config values
+      tags:
+      - configuration
+  /realms/{realm}/protocol/openid-connect/token:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Issues new or Refreshes existing token
+      parameters:
+      - description: Token generation data
+        in: body
+        name: function
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TokenGenerationData'
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Token'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Issues new or Refreshes existing token
+      tags:
+      - token
+  /realms/{realm}/protocol/openid-connect/token/introspect:
+    post:
+      consumes:
+      - application/json
+      description: Analyzes state of a token and getting some data from it
+      parameters:
+      - description: Basic User:Password as Base64 i.e. Basic dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo=
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.IntrospectTokenResult'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Analyzes state of a token and getting some data from it
+      tags:
+      - token
+  /realms/{realm}/protocol/openid-connect/userinfo:
+    get:
+      consumes:
+      - application/json
+      description: Getting UserInfo by token
+      parameters:
+      - description: Bearer TOKEN
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Getting UserInfo by token
+      tags:
+      - users
 swagger: "2.0"
