@@ -30,6 +30,7 @@ import (
 // @Failure 401 {string} dto.ErrorDetails
 // @Failure 404 {string} dto.ErrorDetails
 // @Router /auth/realms/{realm}/protocol/openid-connect/token [post]
+// @Router /realms/{realm}/protocol/openid-connect/token [post]
 func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request *http.Request) {
 	/* For issue new token user should send POST request of type x-www-from-urlencoded with following pairs key=value
 	 * grant_type=password (password only supported), client_id (data.Client name), if client is Confidential also client_secret,
@@ -177,6 +178,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 // @Failure 401 {string} dto.ErrorDetails
 // @Failure 404 {string} dto.ErrorDetails
 // @Router /auth/realms/{realm}/protocol/openid-connect/userinfo [get]
+// @Router /realms/{realm}/protocol/openid-connect/userinfo [get]
 func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *http.Request) {
 	/* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
 	 */
@@ -254,6 +256,7 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 // @Failure 401 {string} dto.ErrorDetails
 // @Failure 404 {string} dto.ErrorDetails
 // @Router /auth/realms/{realm}/protocol/openid-connect/token/introspect [post]
+// @Router /realms/{realm}/protocol/openid-connect/token/introspect [post]
 func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *http.Request) {
 	/* To call introspect we should form a POST HTTP Request with Authorization header, value for this header is: Basic base64({client_id}:{client_secret})
 	 * Consider we have client_id -> test-service-app-client and client_secret -> fb6Z4RsOadVycQoeQiN57xpu8w8wplYz, we get following base64 value for this pair:
@@ -353,6 +356,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 // @Failure 400 {string} dto.ErrorDetails
 // @Failure 404 {string} dto.ErrorDetails
 // @Router /auth/realms/{realm}/.well-known/openid-configuration [get]
+// @Router /realms/{realm}/.well-known/openid-configuration [get]
 func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter, request *http.Request) {
 	/* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
 	 */
