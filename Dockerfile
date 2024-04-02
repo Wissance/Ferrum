@@ -28,21 +28,20 @@ COPY "go.sum" ./"go.sum"
 COPY keyfile ./keyfile
 COPY "main.go" ./"main.go"
 
-# Download all the dependencies
-RUN go get -d -v ./...
-
-# Install the package
-RUN go install -v ./...
-
 RUN go generate
 
-# Build the Go app
-RUN go build -o /ferrum
+# Download all the dependencies
+RUN go get -d -v ./...
+RUN go install -v ./...
 
+# Build the Go apps
+RUN go build -o /ferrum
 RUN go build -o ferrum-admin ./api/admin/cli
 
+# TODO(SIA) Vulnerability
 COPY --from=ghcr.io/ufoscout/docker-compose-wait:latest /wait /wait
 
 COPY testData ./testData
+COPY tools ./tools
 
-CMD ["/bin/bash", "-c", "/wait && python ./testData/redis/insert_test_data.py && /ferrum --config ./config_docker_w_redis.json"]
+CMD ["/bin/bash", "-c", "/wait && ./tools/init_script.sh && /ferrum --config ./config_docker_w_redis.json"]
