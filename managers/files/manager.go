@@ -10,7 +10,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
-	"github.com/wissance/stringFormatter"
+	sf "github.com/wissance/stringFormatter"
+)
+
+type objectType string
+
+const (
+	Realm  objectType = "realm"
+	Client            = "client"
+	User              = "user"
 )
 
 // FileDataManager is the simplest Data Storage without any dependencies, it uses single JSON file (it is users and clients RO auth server)
@@ -65,7 +73,7 @@ func (mn *FileDataManager) GetRealm(realmName string) (*data.Realm, error) {
 			return &e, nil
 		}
 	}
-	return nil, errors.ErrNotFound
+	return nil, errors.NewObjectNotFoundError(string(Realm), realmName, "")
 }
 
 // GetUsers function for getting all Realm User
@@ -89,7 +97,7 @@ func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {
 			return users, nil
 		}
 	}
-	return nil, errors.ErrNotFound
+	return nil, errors.NewObjectNotFoundError(string(Realm), realmName, "")
 }
 
 // GetClient function for getting Realm Client by name
@@ -102,7 +110,8 @@ func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {
 func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data.Client, error) {
 	realm, err := mn.GetRealm(realmName)
 	if err != nil {
-		return nil, fmt.Errorf("GetRealm failed: %w", err)
+		mn.logger.Warn(sf.Format("GetRealm failed: {0}", err.Error()))
+		return nil, err
 	}
 
 	for _, c := range realm.Clients {
@@ -110,7 +119,7 @@ func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data
 			return &c, nil
 		}
 	}
-	return nil, errors.ErrNotFound
+	return nil, errors.NewObjectNotFoundError(string(Realm), realmName, "")
 }
 
 // GetUser function for getting Realm User by userName
@@ -130,7 +139,7 @@ func (mn *FileDataManager) GetUser(realmName string, userName string) (data.User
 			return u, nil
 		}
 	}
-	return nil, errors.ErrNotFound
+	return nil, errors.NewObjectNotFoundError(string(User), userName, sf.Format("realm: {0}", realmName))
 }
 
 // GetUserById function for getting Realm User by Id
@@ -146,7 +155,7 @@ func (mn *FileDataManager) GetUserById(realmName string, userId uuid.UUID) (data
 			return u, nil
 		}
 	}
-	return nil, errors.ErrNotFound
+	return nil, errors.NewObjectNotFoundError(string(User), userId.String(), sf.Format("realm: {0}", realmName))
 }
 
 // CreateRealm creates new data.Realm in a data store, receive realmData unmarshalled json in a data.Realm
@@ -201,12 +210,12 @@ func (mn *FileDataManager) DeleteUser(realmName string, userName string) error {
 func (mn *FileDataManager) loadData() error {
 	rawData, err := os.ReadFile(mn.dataFile)
 	if err != nil {
-		mn.logger.Error(stringFormatter.Format("An error occurred during config file reading: {0}", err.Error()))
+		mn.logger.Error(sf.Format("An error occurred during config file reading: {0}", err.Error()))
 		return fmt.Errorf("os.ReadFile failed: %w", err)
 	}
 	mn.serverData = data.ServerData{}
 	if err = json.Unmarshal(rawData, &mn.serverData); err != nil {
-		mn.logger.Error(stringFormatter.Format("An error occurred during data file unmarshal: {0}", err.Error()))
+		mn.logger.Error(sf.Format("An error occurred during data file unmarshal: {0}", err.Error()))
 		return fmt.Errorf("json.Unmarshal failed: %w", err)
 	}
 

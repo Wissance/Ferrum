@@ -24,12 +24,12 @@ func (mn *RedisDataManager) GetClients(realmName string) ([]data.Client, error) 
 	clients := make([]data.Client, len(realmClients))
 	for i, rc := range realmClients {
 		// todo(UMV) get all them at once
-		client, err := mn.GetClient(realmName, rc.Name)
-		if err != nil {
-			if errors.Is(err, errors2.ErrNotFound) {
+		client, readClientErr := mn.GetClient(realmName, rc.Name)
+		if readClientErr != nil {
+			if errors.Is(err, errors2.ObjectNotFoundError{}) {
 				mn.logger.Error(sf.Format("Realm: \"{0}\" has client: \"{1}\", that Redis does not have", realmName, rc.Name))
 			}
-			return nil, fmt.Errorf("GetClient failed: %w", err)
+			return nil, readClientErr
 		}
 		clients[i] = *client
 	}
@@ -47,7 +47,7 @@ func (mn *RedisDataManager) GetClient(realmName string, clientName string) (*dat
 	clientKey := sf.Format(clientKeyTemplate, mn.namespace, realmName, clientName)
 	client, err := getSingleRedisObject[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
 	if err != nil {
-		return nil, fmt.Errorf("getSingleRedisObject failed: %w", err)
+		return nil, err
 	}
 	return client, nil
 }
@@ -71,8 +71,8 @@ func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client
 	if err == nil {
 		return errors2.ErrExists
 	}
-	if !errors.Is(err, errors2.ErrNotFound) {
-		return fmt.Errorf("GetClient failed: %w", err)
+	if !errors.Is(err, errors2.ObjectNotFoundError{}) {
+		return err
 	}
 
 	clientBytes, err := json.Marshal(clientNew)
@@ -85,7 +85,7 @@ func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client
 		return fmt.Errorf("upsertClientObject failed: %w", err)
 	}
 
-	if err := mn.addClientToRealm(realmName, clientNew); err != nil {
+	if addClientErr := mn.addClientToRealm(realmName, clientNew); addClientErr != nil {
 		return fmt.Errorf("addClientToRealm failed: %w", err)
 	}
 
@@ -104,7 +104,7 @@ func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) er
 		return fmt.Errorf("deleteClientObject failed: %w", err)
 	}
 	if err := mn.deleteClientFromRealm(realmName, clientName); err != nil {
-		if errors.Is(err, errors2.ErrNotFound) || errors.Is(err, errors2.ErrZeroLength) {
+		if errors.Is(err, errors2.ObjectNotFoundError{}) || errors.Is(err, errors2.ErrZeroLength) {
 			return nil
 		}
 		return fmt.Errorf("deleteClientFromRealm failed: %w", err)
@@ -187,7 +187,7 @@ func (mn *RedisDataManager) getRealmClient(realmName string, clientName string) 
 	}
 	if !realmHasClient {
 		mn.logger.Debug(sf.Format("Realm: \"{0}\" doesn't have Client: \"{1}\" in Redis", realmName, clientName))
-		return nil, errors2.ErrNotFound
+		return nil, errors2.NewObjectNotFoundError(string(Realm), realmName, "")
 	}
 	return &client, nil
 }
@@ -284,7 +284,8 @@ func (mn *RedisDataManager) deleteClientObject(realmName string, clientName stri
 func (mn *RedisDataManager) deleteClientFromRealm(realmName string, clientName string) error {
 	realmClients, err := mn.getRealmClients(realmName)
 	if err != nil {
-		return fmt.Errorf("getRealmClients failed: %w", err)
+		mn.logger.Warn(sf.Format("deleteClientFromRealm failed: {0}", err.Error()))
+		return err
 	}
 
 	isHasClient := false
@@ -299,7 +300,7 @@ func (mn *RedisDataManager) deleteClientFromRealm(realmName string, clientName s
 		}
 	}
 	if !isHasClient {
-		return errors2.ErrNotFound
+		return errors2.NewObjectNotFoundError(Client, clientName, "")
 	}
 	if err := mn.createRealmClients(realmName, realmClients, true); err != nil {
 		return fmt.Errorf("createRealmClients failed: %w", err)

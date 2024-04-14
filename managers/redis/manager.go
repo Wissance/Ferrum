@@ -194,7 +194,7 @@ func getSingleRedisObject[T any](redisClient *redis.Client, ctx context.Context,
 	if redisCmd.Err() != nil {
 		logger.Warn(sf.Format("An error occurred during fetching {0}: \"{1}\" from Redis server", objName, objKey))
 		if redisCmd.Err() == redis.Nil {
-			return nil, errors.ErrNotFound
+			return nil, errors.NewObjectNotFoundError(string(objName), objKey, "")
 		}
 		return nil, redisCmd.Err()
 	}

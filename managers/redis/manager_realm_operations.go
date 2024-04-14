@@ -49,7 +49,7 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 	if err == nil {
 		return appErrs.ErrExists
 	}
-	if !errors.Is(err, appErrs.ErrNotFound) {
+	if !errors.Is(err, appErrs.EmptyNotFoundErr) {
 		return fmt.Errorf("getRealmObject failed: %w", err)
 	}
 
@@ -171,7 +171,7 @@ func (mn *RedisDataManager) UpdateRealm(realmName string, realmNew data.Realm) e
 	// TODO(SIA) Add transaction
 	oldRealm, err := mn.getRealmObject(realmName)
 	if err != nil {
-		return fmt.Errorf("getRealmObject failed: %w", err)
+		return err
 	}
 	if oldRealm.Name != realmNew.Name {
 		// TODO(SIA) use function isExists
@@ -180,7 +180,7 @@ func (mn *RedisDataManager) UpdateRealm(realmName string, realmNew data.Realm) e
 			mn.logger.Error(sf.Format("Realm with a new name \"{0}\" already exists in Redis", realmNew.Name))
 			return appErrs.ErrExists
 		}
-		if !errors.Is(err, appErrs.ErrNotFound) {
+		if !errors.Is(err, appErrs.EmptyNotFoundErr) {
 			return fmt.Errorf("getRealmObject failed: %w", err)
 		}
 
@@ -240,10 +240,10 @@ func (mn *RedisDataManager) getRealmObject(realmName string) (*data.Realm, error
 	realmKey := sf.Format(realmKeyTemplate, mn.namespace, realmName)
 	realm, err := getSingleRedisObject[data.Realm](mn.redisClient, mn.ctx, mn.logger, Realm, realmKey)
 	if err != nil {
-		if errors.Is(err, appErrs.ErrNotFound) {
+		if errors.Is(err, appErrs.EmptyNotFoundErr) {
 			mn.logger.Debug(sf.Format("Redis does not have Realm: \"{0}\"", realmName))
 		}
-		return nil, fmt.Errorf("getSingleRedisObject failed: %w", err)
+		return nil, err
 	}
 	return realm, nil
 }
