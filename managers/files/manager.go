@@ -97,7 +97,7 @@ func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {
 			return users, nil
 		}
 	}
-	return nil, errors.NewObjectNotFoundError(string(Realm), realmName, "")
+	return nil, errors.NewObjectNotFoundError(User, "", sf.Format("get realm: {0} users", realmName))
 }
 
 // GetClient function for getting Realm Client by name
@@ -119,7 +119,7 @@ func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data
 			return &c, nil
 		}
 	}
-	return nil, errors.NewObjectNotFoundError(string(Realm), realmName, "")
+	return nil, errors.NewObjectNotFoundError(Client, clientName, sf.Format("realm: {0}", realmName))
 }
 
 // GetUser function for getting Realm User by userName
@@ -132,30 +132,32 @@ func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data
 func (mn *FileDataManager) GetUser(realmName string, userName string) (data.User, error) {
 	users, err := mn.GetUsers(realmName)
 	if err != nil {
-		return nil, fmt.Errorf("GetUsers failed: %w", err)
+		mn.logger.Warn(sf.Format("GetUsers failed: {0}", err.Error()))
+		return nil, err
 	}
 	for _, u := range users {
 		if u.GetUsername() == userName {
 			return u, nil
 		}
 	}
-	return nil, errors.NewObjectNotFoundError(string(User), userName, sf.Format("realm: {0}", realmName))
+	return nil, errors.NewObjectNotFoundError(User, userName, sf.Format("realm: {0}", realmName))
 }
 
-// GetUserById function for getting Realm User by Id
-/* same functions as GetUser but uses userId to search instead of username
+// GetUserById function for getting Realm User by UserId (uuid)
+/* same functions as GetUser but uses userId to search instead of username, works by sequential iteration
  */
 func (mn *FileDataManager) GetUserById(realmName string, userId uuid.UUID) (data.User, error) {
 	users, err := mn.GetUsers(realmName)
 	if err != nil {
-		return nil, fmt.Errorf("GetUsers failed: %w", err)
+		mn.logger.Warn(sf.Format("GetUsers failed: {0}", err.Error()))
+		return nil, err
 	}
 	for _, u := range users {
 		if u.GetId() == userId {
 			return u, nil
 		}
 	}
-	return nil, errors.NewObjectNotFoundError(string(User), userId.String(), sf.Format("realm: {0}", realmName))
+	return nil, errors.NewObjectNotFoundError(User, userId.String(), sf.Format("realm: {0}", realmName))
 }
 
 // CreateRealm creates new data.Realm in a data store, receive realmData unmarshalled json in a data.Realm
