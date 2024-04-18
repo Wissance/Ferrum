@@ -164,7 +164,7 @@ func (mn *RedisDataManager) deleteRedisObject(objName objectType, objKey string)
 	res := redisIntCmd.Val()
 	if res == 0 {
 		mn.logger.Warn(sf.Format("An error occurred during Del, 0 items deleted {0}: \"{1}\" from Redis server", objName, objKey))
-		return errors.ErrNotExists
+		return errors.NewObjectExistsError(string(objName), objKey, "")
 	}
 	return nil
 }
