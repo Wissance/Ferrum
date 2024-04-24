@@ -257,8 +257,8 @@ func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Conte
 		jsonBin := []byte(rawVal)
 		err := json.Unmarshal(jsonBin, &portion) // already contains all SLICE in one object
 		if err != nil {
-			logger.Error(sf.Format("An error occurred during unmarshall {0} : \"{1}\"", objName, objKey))
-			return nil, fmt.Errorf("json.Unmarshal failed: %w", err)
+			logger.Error(sf.Format("An error occurred during unmarshall {0} : \"{1}\", err: ", objName, objKey, err.Error()))
+			return nil, err
 		}
 		result = append(result, portion...)
 	}

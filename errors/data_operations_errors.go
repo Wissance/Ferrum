@@ -27,6 +27,7 @@ type ObjectNotFoundError struct {
 }
 
 type UnknownError struct {
+	operation   string
 	method      string
 	internalErr error
 }
@@ -49,10 +50,10 @@ func (e ObjectNotFoundError) Error() string {
 		e.additionalInfo)
 }
 
-func NewUnknownError(method string, internalErr error) UnknownError {
-	return UnknownError{method: method, internalErr: internalErr}
+func NewUnknownError(operation string, method string, internalErr error) UnknownError {
+	return UnknownError{operation: operation, method: method, internalErr: internalErr}
 }
 
 func (e UnknownError) Error() string {
-	return sf.Format("An error occurred in method: \"{0}\", internal error: {1}", e.method, e.internalErr)
+	return sf.Format("An error occurred during: \"{0}\" in method: \"{1}\", internal error: {2}", e.operation, e.method, e.internalErr)
 }

@@ -64,7 +64,7 @@ func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client
 	// TODO(SIA) use function isExists
 	_, err := mn.getRealmObject(realmName)
 	if err != nil {
-		return fmt.Errorf("getRealmObject failed: %w", err)
+		return err
 	}
 	// TODO(SIA) use function isExists
 	_, err = mn.GetClient(realmName, clientNew.Name)
@@ -107,7 +107,7 @@ func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) er
 		if errors.Is(err, errors2.ObjectNotFoundError{}) || errors.Is(err, errors2.ErrZeroLength) {
 			return nil
 		}
-		return fmt.Errorf("deleteClientFromRealm failed: %w", err)
+		return err
 	}
 	return nil
 }
@@ -300,7 +300,7 @@ func (mn *RedisDataManager) deleteClientFromRealm(realmName string, clientName s
 		}
 	}
 	if !isHasClient {
-		return errors2.NewObjectNotFoundError(Client, clientName, "")
+		return errors2.NewObjectNotFoundError(Client, clientName, sf.Format("realm: {0}", realmName))
 	}
 	if err := mn.createRealmClients(realmName, realmClients, true); err != nil {
 		return fmt.Errorf("createRealmClients failed: %w", err)

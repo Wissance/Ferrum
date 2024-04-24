@@ -2,7 +2,6 @@ package files
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/wissance/Ferrum/errors"
@@ -45,7 +44,7 @@ func CreateFileDataManager(dataFile string, logger *logging.AppLogger) (*FileDat
 	// todo(UMV): todo provide an error handling
 	mn := &FileDataManager{dataFile: dataFile, logger: logger}
 	if err := mn.loadData(); err != nil {
-		return nil, fmt.Errorf("loadData failed: %w", err)
+		return nil, errors.NewUnknownError("data loading", "CreateFileDataManager", err)
 	}
 	return mn, nil
 }
@@ -213,12 +212,12 @@ func (mn *FileDataManager) loadData() error {
 	rawData, err := os.ReadFile(mn.dataFile)
 	if err != nil {
 		mn.logger.Error(sf.Format("An error occurred during config file reading: {0}", err.Error()))
-		return fmt.Errorf("os.ReadFile failed: %w", err)
+		return errors.NewUnknownError("os.ReadFile", "FileDataManager.loadData", err)
 	}
 	mn.serverData = data.ServerData{}
 	if err = json.Unmarshal(rawData, &mn.serverData); err != nil {
 		mn.logger.Error(sf.Format("An error occurred during data file unmarshal: {0}", err.Error()))
-		return fmt.Errorf("json.Unmarshal failed: %w", err)
+		return errors.NewUnknownError("json.Unmarshal", "FileDataManager.loadData", err)
 	}
 
 	return nil
