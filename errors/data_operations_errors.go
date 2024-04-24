@@ -26,6 +26,11 @@ type ObjectNotFoundError struct {
 	additionalInfo string
 }
 
+type UnknownError struct {
+	method      string
+	internalErr error
+}
+
 func NewObjectExistsError(objectType string, objectId string, additional string) ObjectAlreadyExistsError {
 	return ObjectAlreadyExistsError{objectId: objectId, objectType: objectType, additionalInfo: additional}
 }
@@ -42,4 +47,12 @@ func NewObjectNotFoundError(objectType string, objectId string, additional strin
 func (e ObjectNotFoundError) Error() string {
 	return sf.Format("object of type \"{0}\" with id: \"{1}\" was not found in data store, additional data: {2}", e.objectType, e.objectId,
 		e.additionalInfo)
+}
+
+func NewUnknownError(method string, internalErr error) UnknownError {
+	return UnknownError{method: method, internalErr: internalErr}
+}
+
+func (e UnknownError) Error() string {
+	return sf.Format("An error occurred in method: \"{0}\", internal error: {1}", e.method, e.internalErr)
 }
