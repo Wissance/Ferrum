@@ -98,10 +98,10 @@ func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client
 }
 
 // DeleteClient - deleting an existing client by pair (realmName, clientName)
-/* It also deletes the client from realmClients
+/* It also deletes the client from realmClients, clients && realmClients stored in a separate collections
  * Arguments:
- *    - realmName
- *    - clientName
+ *    - realmName - name of a realm
+ *    - clientName - name of a client
  * Returns: error
  */
 func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) error {
@@ -118,36 +118,39 @@ func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) er
 }
 
 // UpdateClient - upgrading an existing client
-/*
+/* 1. Removes Client fully from clients and realm clients collections
+ * 2. Creates client with new body (clientNew)
+ * 3. Add relations between Realm and Client
  * Arguments:
- *    - realmName
- *    - clientName
- *    - clientNew
+ *    - realmName - name of a realm
+ *    - clientName - name of a client
+ *    - clientNew - new client body
  * Returns: error
  */
 func (mn *RedisDataManager) UpdateClient(realmName string, clientName string, clientNew data.Client) error {
 	// TODO(SIA) Add transaction
 	oldClient, err := mn.GetClient(realmName, clientName)
 	if err != nil {
-		return fmt.Errorf("GetClient failed: %w", err)
+		return errors2.NewUnknownError("GetClient", "RedisDataManager.UpdateClient", err)
 	}
 	if clientNew.ID != oldClient.ID || clientNew.Name != oldClient.Name {
-		if err := mn.DeleteClient(realmName, oldClient.Name); err != nil {
-			return fmt.Errorf("DeleteClient failed: %w", err)
+		if delErr := mn.DeleteClient(realmName, oldClient.Name); delErr != nil {
+			return errors2.NewUnknownError("DeleteClient", "RedisDataManager.UpdateClient", delErr)
 		}
-		if err := mn.addClientToRealm(realmName, clientNew); err != nil {
-			return fmt.Errorf("addClientToRealm failed: %w", err)
+		if addClientRealmErr := mn.addClientToRealm(realmName, clientNew); addClientRealmErr != nil {
+			return errors2.NewUnknownError("addClientToRealm", "RedisDataManager.UpdateClient", addClientRealmErr)
 		}
 	}
 
 	clientBytes, err := json.Marshal(clientNew)
 	if err != nil {
-		mn.logger.Error(sf.Format("An error occurred during Marshal Client"))
-		return fmt.Errorf("json.Marshal failed: %w", err)
+		mn.logger.Error(sf.Format("An error occurred during Marshal Client: {0}", err.Error()))
+		return errors2.NewUnknownError("json.Marshal", "RedisDataManager.UpdateClient", err)
 	}
+
 	err = mn.upsertClientObject(realmName, clientNew.Name, string(clientBytes))
 	if err != nil {
-		return fmt.Errorf("upsertClientObject failed: %w", err)
+		return errors2.NewUnknownError("upsertClientObject", "RedisDataManager.UpdateClient", err)
 	}
 
 	return nil
@@ -208,7 +211,7 @@ func (mn *RedisDataManager) getRealmClient(realmName string, clientName string) 
 func (mn *RedisDataManager) upsertClientObject(realmName string, clientName string, clientJson string) error {
 	clientKey := sf.Format(clientKeyTemplate, mn.namespace, realmName, clientName)
 	if err := mn.upsertRedisString(Client, clientKey, clientJson); err != nil {
-		return fmt.Errorf("upsertRedisString failed: %w", err)
+		return errors2.NewUnknownError("upsertRedisString", "RedisDataManager.upsertClientObject", err)
 	}
 	return nil
 }
