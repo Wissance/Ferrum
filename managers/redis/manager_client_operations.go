@@ -11,15 +11,16 @@ import (
 )
 
 // GetClients - getting clients from the specified realm
-/*
+/* 1. Get Realm clients short info by realmName
+ * 2. Iterate over clients short info and build full Client data
  * Arguments:
  *    - realmName
- * Returns: slice of client, error
+ * Returns: Tuple = slice of client, error
  */
 func (mn *RedisDataManager) GetClients(realmName string) ([]data.Client, error) {
 	realmClients, err := mn.getRealmClients(realmName)
 	if err != nil {
-		return nil, fmt.Errorf("getRealmClients failed: %w", err)
+		return nil, errors2.NewUnknownError("getRealmClients", "RedisDataManager.GetClients", err)
 	}
 	clients := make([]data.Client, len(realmClients))
 	for i, rc := range realmClients {
@@ -39,8 +40,8 @@ func (mn *RedisDataManager) GetClients(realmName string) ([]data.Client, error) 
 // GetClient function for get realm client by name
 /* This function constructs Redis key by pattern combines namespace and realm name and client name (clientKeyTemplate)
  * Parameters:
- *     - realmName
- *     - clientName
+ *     - realmName - name of a realm
+ *     - clientName - name of a client
  * Returns: client and error
  */
 func (mn *RedisDataManager) GetClient(realmName string, clientName string) (*data.Client, error) {
@@ -53,11 +54,14 @@ func (mn *RedisDataManager) GetClient(realmName string, clientName string) (*dat
 }
 
 // CreateClient - new client creation
-/* Returns an error if the client exists in redis
+/* Returns an error if the client exists in redis. Clients with same name could exist in different realms, but pair realmName, clientName
+ * must be unique!
+ * 1. Check Realm, that is not possible to create client in non-existing Realm
+ * 2. Check Client, if we found we are rising error
  * Arguments:
- *    - realmName
- *    - clientNew
- * Returns: error
+ *    - realmName - name of a Realm that newly creating Client is associated
+ *    - clientNew - new Client data (body)
+ * Returns: error if creation failed, otherwise - nil
  */
 func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client) error {
 	// TODO(SIA) Add transaction
@@ -69,6 +73,7 @@ func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client
 	// TODO(SIA) use function isExists
 	_, err = mn.GetClient(realmName, clientNew.Name)
 	if err == nil {
+		// TODO(umv): think about making this error more detailed
 		return errors2.ErrExists
 	}
 	if !errors.Is(err, errors2.ObjectNotFoundError{}) {
@@ -77,22 +82,22 @@ func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client
 
 	clientBytes, err := json.Marshal(clientNew)
 	if err != nil {
-		mn.logger.Error(sf.Format("An error occurred during Marshal Client"))
-		return fmt.Errorf("json.Marshal failed: %w", err)
+		mn.logger.Error(sf.Format("An error occurred during Marshal Client: {0}", err.Error()))
+		return errors2.NewUnknownError("json.Marshal", "RedisDataManager.CreateClient", err)
 	}
 	err = mn.upsertClientObject(realmName, clientNew.Name, string(clientBytes))
 	if err != nil {
-		return fmt.Errorf("upsertClientObject failed: %w", err)
+		return errors2.NewUnknownError("upsertClientObject", "RedisDataManager.CreateClient", err)
 	}
 
 	if addClientErr := mn.addClientToRealm(realmName, clientNew); addClientErr != nil {
-		return fmt.Errorf("addClientToRealm failed: %w", err)
+		return errors2.NewUnknownError("addClientToRealm", "RedisDataManager.CreateClient", addClientErr)
 	}
 
 	return nil
 }
 
-// DeleteClient - deleting an existing client
+// DeleteClient - deleting an existing client by pair (realmName, clientName)
 /* It also deletes the client from realmClients
  * Arguments:
  *    - realmName
@@ -158,7 +163,7 @@ func (mn *RedisDataManager) getRealmClients(realmName string) ([]data.ExtendedId
 	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realmName)
 	realmClients, err := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
 	if err != nil {
-		return nil, fmt.Errorf("getObjectsListFromRedis failed: %w", err)
+		return nil, errors2.NewUnknownError("getObjectsListFromRedis", "RedisDataManager.getRealmClients", err)
 	}
 	return realmClients, nil
 }
@@ -173,7 +178,7 @@ func (mn *RedisDataManager) getRealmClients(realmName string) ([]data.ExtendedId
 func (mn *RedisDataManager) getRealmClient(realmName string, clientName string) (*data.ExtendedIdentifier, error) {
 	realmClients, err := mn.getRealmClients(realmName)
 	if err != nil {
-		return nil, fmt.Errorf("getRealmClients failed: %w", err)
+		return nil, errors2.NewUnknownError("getRealmClients", "RedisDataManager.getRealmClient", err)
 	}
 
 	realmHasClient := false
