@@ -25,7 +25,7 @@ func (mn *RedisDataManager) GetUsers(realmName string) ([]data.User, error) {
 	// TODO(UMV): possibly we should not use this method ??? what if we have 1M+ users .... ? think maybe it should be somehow optimized ...
 	realmUsers, err := mn.getRealmUsers(realmName)
 	if err != nil {
-		return nil, fmt.Errorf("getRealmUsers failed: %w", err)
+		return nil, errors2.NewUnknownError("getRealmUsers", "RedisDataManager.GetUsers", err)
 	}
 
 	// todo(UMV): probably we should organize batching here if we have many users i.e. 100K+
@@ -38,12 +38,12 @@ func (mn *RedisDataManager) GetUsers(realmName string) ([]data.User, error) {
 	// this is wrong, we can't get rawUsers such way ...
 	realmUsersData, err := getMultipleRedisObjects[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRedisKeys)
 	if err != nil {
-		return nil, fmt.Errorf("getMultipleRedisObjects failed: %w", err)
+		return nil, errors2.NewUnknownError("getMultipleRedisObjects", "RedisDataManager.GetUsers", err)
 	}
 	// getObjectsListFromRedis[interface{}](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userFullDataRealmsKey)
 	if len(realmUsersData) == 0 {
 		mn.logger.Error(sf.Format("Redis does not have all users that belong to Realm: \"{0}\"", realmName))
-		return nil, fmt.Errorf("getMultipleRedisObjects failed: %w", errors2.ErrZeroLength)
+		return nil, err
 	}
 	if len(realmUsers) != len(realmUsersData) {
 		mn.logger.Error(sf.Format("Realm: \"{0}\" has users, that Redis does not have part of it", realmName))
@@ -68,7 +68,7 @@ func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.Use
 	userKey := sf.Format(userKeyTemplate, mn.namespace, realmName, userName)
 	rawUser, err := getSingleRedisObject[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
 	if err != nil {
-		return nil, fmt.Errorf("getSingleRedisObject failed: %w", err)
+		return nil, errors2.NewUnknownError("getSingleRedisObject", "RedisDataManager.GetUser", err)
 	}
 	user := data.CreateUser(*rawUser)
 	return user, nil
@@ -85,7 +85,7 @@ func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.Use
 func (mn *RedisDataManager) GetUserById(realmName string, userId uuid.UUID) (data.User, error) {
 	realmUser, err := mn.getRealmUserById(realmName, userId)
 	if err != nil {
-		return nil, fmt.Errorf("getRealmUserById failed: %w", err)
+		return nil, errors2.NewUnknownError("getRealmUserById", "RedisDataManager.GetUserById", err)
 	}
 	user, err := mn.GetUser(realmName, realmUser.Name)
 	if err != nil {
@@ -146,13 +146,13 @@ func (mn *RedisDataManager) CreateUser(realmName string, userNew data.User) erro
  */
 func (mn *RedisDataManager) DeleteUser(realmName string, userName string) error {
 	if err := mn.deleteUserObject(realmName, userName); err != nil {
-		return fmt.Errorf("deleteUserObject failed: %w", err)
+		errors2.NewUnknownError("deleteUserObject", "RedisDataManager.DeleteUser", err)
 	}
 	if err := mn.deleteUserFromRealm(realmName, userName); err != nil {
 		if errors.Is(err, errors2.ObjectNotFoundError{}) || errors.Is(err, errors2.ErrZeroLength) {
 			return nil
 		}
-		return fmt.Errorf("deleteUserFromRealm failed: %w", err)
+		return errors2.NewUnknownError("deleteUserFromRealm", "RedisDataManager.DeleteUser", err)
 	}
 	return nil
 }
@@ -169,7 +169,7 @@ func (mn *RedisDataManager) UpdateUser(realmName string, userName string, userNe
 	// TODO(SIA) Add transaction
 	oldUser, err := mn.GetUser(realmName, userName)
 	if err != nil {
-		return fmt.Errorf("GetUser failed: %w", err)
+		return errors2.NewUnknownError("GetUser", "RedisDataManager.UpdateUser", err)
 	}
 	oldUserName := oldUser.GetUsername()
 	oldUserId := oldUser.GetId()
@@ -178,17 +178,17 @@ func (mn *RedisDataManager) UpdateUser(realmName string, userName string, userNe
 	newUserId := userNew.GetId()
 
 	if newUserId != oldUserId || newUserName != oldUserName {
-		if err := mn.DeleteUser(realmName, oldUserName); err != nil {
-			return fmt.Errorf("DeleteUser failed: %w", err)
+		if delUserErr := mn.DeleteUser(realmName, oldUserName); delUserErr != nil {
+			return errors2.NewUnknownError("DeleteUser", "RedisDataManager.UpdateUser", delUserErr)
 		}
-		if err := mn.addUserToRealm(realmName, userNew); err != nil {
-			return fmt.Errorf("addUserToRealm failed: %w", err)
+		if addUserRealmErr := mn.addUserToRealm(realmName, userNew); addUserRealmErr != nil {
+			return errors2.NewUnknownError("addUserToRealm", "RedisDataManager.UpdateUser", addUserRealmErr)
 		}
 	}
 
 	err = mn.upsertUserObject(realmName, newUserName, userNew.GetJsonString())
 	if err != nil {
-		return fmt.Errorf("upsertUserObject failed: %w", err)
+		return errors2.NewUnknownError("upsertUserObject", "RedisDataManager.UpdateUser", err)
 	}
 
 	return nil
