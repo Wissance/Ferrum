@@ -6,12 +6,13 @@ import (
 )
 
 var (
-	EmptyNotFoundErr         = ObjectNotFoundError{}
-	ErrZeroLength            = errors.New("zero length")
-	ErrNotAll                = errors.New("not all values")
-	ErrExists                = ObjectAlreadyExistsError{}
-	ErrNotExists             = errors.New("not exists")
-	ErrOperationNotSupported = errors.New("manager operation is not supported yet (temporarily or permanent)")
+	EmptyNotFoundErr          = ObjectNotFoundError{}
+	ErrZeroLength             = errors.New("zero length")
+	ErrNotAll                 = errors.New("not all values")
+	ErrExists                 = ObjectAlreadyExistsError{}
+	ErrNotExists              = errors.New("not exists")
+	ErrOperationNotSupported  = errors.New("manager operation is not supported yet (temporarily or permanent)")
+	ErrDataSourceNotAvailable = DataProviderNotAvailable{}
 )
 
 type ObjectAlreadyExistsError struct {

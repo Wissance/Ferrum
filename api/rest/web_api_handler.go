@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/base64"
+	e "errors"
 	"net/http"
 	"strings"
 	"time"
@@ -48,11 +49,23 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
 		// todo: validate ...
-		realmPtr, _ := (*wCtx.DataProvider).GetRealm(realm)
-		if realmPtr == nil {
-			status = http.StatusNotFound
-			wCtx.Logger.Debug("New token issue: realm doesn't exist")
-			result = dto.ErrorDetails{Msg: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
+		realmPtr, realmReadErr := (*wCtx.DataProvider).GetRealm(realm)
+		if realmReadErr != nil {
+			if e.Is(realmReadErr, errors.ErrDataSourceNotAvailable) {
+				status = http.StatusServiceUnavailable
+				wCtx.Logger.Error("Data provider not available")
+				result = dto.ErrorDetails{Msg: errors.ServiceIsUnavailable}
+			} else {
+				if e.Is(realmReadErr, errors.EmptyNotFoundErr) {
+					status = http.StatusNotFound
+					wCtx.Logger.Debug("New token issue: realm doesn't exist")
+					result = dto.ErrorDetails{Msg: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
+				} else {
+					status = http.StatusInternalServerError
+					wCtx.Logger.Error(sf.Format("Other error occurred: {0}", realmReadErr.Error()))
+					result = dto.ErrorDetails{Msg: sf.Format(errors.OtherAppError, realm)}
+				}
+			}
 		} else {
 			tokenGenerationData := dto.TokenGenerationData{}
 			err := request.ParseForm()

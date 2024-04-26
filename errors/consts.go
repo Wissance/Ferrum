@@ -14,4 +14,7 @@ const (
 	InvalidTokenMsg              = "Invalid token"
 	InvalidTokenDesc             = "Token verification failed"
 	TokenIsNotActive             = "Token is not active"
+
+	ServiceIsUnavailable = "Service is not available, please check again later"
+	OtherAppError        = "Other error"
 )
