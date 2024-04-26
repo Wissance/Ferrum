@@ -216,7 +216,7 @@ func getMultipleRedisObjects[T any](redisClient *redis.Client, ctx context.Conte
 ) ([]T, error) {
 	redisCmd := redisClient.MGet(ctx, objKey...)
 	if redisCmd.Err() != nil {
-		// todo(UMV): print when this will be done https://github.com/Wissance/stringFormatter/issues/14
+		//todo(UMV): print when this will be done https://github.com/Wissance/stringFormatter/issues/14
 		logger.Warn(sf.Format("An error occurred during fetching {0}: from Redis server", objName))
 		return nil, redisCmd.Err()
 	}

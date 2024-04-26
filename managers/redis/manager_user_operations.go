@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
+	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	errors2 "github.com/wissance/Ferrum/errors"
 	sf "github.com/wissance/stringFormatter"
@@ -20,6 +21,9 @@ import (
  * Returns slice of Users and error
  */
 func (mn *RedisDataManager) GetUsers(realmName string) ([]data.User, error) {
+	if !mn.IsAvailable() {
+		return []data.User{}, errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
 	// TODO(UMV): possibly we should not use this method ??? what if we have 1M+ users .... ? think maybe it should be somehow optimized ...
 	realmUsers, err := mn.getRealmUsers(realmName)
 	if err != nil {
@@ -63,6 +67,10 @@ func (mn *RedisDataManager) GetUsers(realmName string) ([]data.User, error) {
  * Returns: User and error
  */
 func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.User, error) {
+	if !mn.IsAvailable() {
+		// todo(UMV): is this Valid or NOT ????
+		return data.User(nil), errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
 	userKey := sf.Format(userKeyTemplate, mn.namespace, realmName, userName)
 	rawUser, err := getSingleRedisObject[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
 	if err != nil {
@@ -81,6 +89,10 @@ func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.Use
  * Returns: User and error
  */
 func (mn *RedisDataManager) GetUserById(realmName string, userId uuid.UUID) (data.User, error) {
+	if !mn.IsAvailable() {
+		// todo(UMV): is this Valid or NOT ????
+		return data.User(nil), errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
 	realmUser, err := mn.getRealmUserById(realmName, userId)
 	if err != nil {
 		return nil, errors2.NewUnknownError("getRealmUserById", "RedisDataManager.GetUserById", err)
@@ -103,6 +115,9 @@ func (mn *RedisDataManager) GetUserById(realmName string, userId uuid.UUID) (dat
  * Returns: error
  */
 func (mn *RedisDataManager) CreateUser(realmName string, userNew data.User) error {
+	if !mn.IsAvailable() {
+		return errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
 	// TODO(SIA) Add transaction
 	// TODO(SIA) use function isExists
 	_, err := mn.getRealmObject(realmName)
@@ -143,6 +158,9 @@ func (mn *RedisDataManager) CreateUser(realmName string, userNew data.User) erro
  * Returns: error
  */
 func (mn *RedisDataManager) DeleteUser(realmName string, userName string) error {
+	if !mn.IsAvailable() {
+		return errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
 	if err := mn.deleteUserObject(realmName, userName); err != nil {
 		errors2.NewUnknownError("deleteUserObject", "RedisDataManager.DeleteUser", err)
 	}
@@ -164,6 +182,9 @@ func (mn *RedisDataManager) DeleteUser(realmName string, userName string) error 
  * Returns: error
  */
 func (mn *RedisDataManager) UpdateUser(realmName string, userName string, userNew data.User) error {
+	if !mn.IsAvailable() {
+		return errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
 	// TODO(SIA) Add transaction
 	oldUser, err := mn.GetUser(realmName, userName)
 	if err != nil {

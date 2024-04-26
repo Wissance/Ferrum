@@ -32,6 +32,11 @@ type UnknownError struct {
 	internalErr error
 }
 
+type DataProviderNotAvailable struct {
+	providerType string
+	source       string
+}
+
 func NewObjectExistsError(objectType string, objectId string, additional string) ObjectAlreadyExistsError {
 	return ObjectAlreadyExistsError{objectId: objectId, objectType: objectType, additionalInfo: additional}
 }
@@ -56,4 +61,12 @@ func NewUnknownError(operation string, method string, internalErr error) Unknown
 
 func (e UnknownError) Error() string {
 	return sf.Format("An error occurred during: \"{0}\" in method: \"{1}\", internal error: {2}", e.operation, e.method, e.internalErr)
+}
+
+func NewDataProviderNotAvailable(providerType string, source string) DataProviderNotAvailable {
+	return DataProviderNotAvailable{providerType: providerType, source: source}
+}
+
+func (e DataProviderNotAvailable) Error() string {
+	return sf.Format("{0} is not ready/up/available, please try again later", e.providerType)
 }

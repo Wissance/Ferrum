@@ -3,6 +3,7 @@ package redis
 import (
 	"encoding/json"
 	"errors"
+	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	appErrs "github.com/wissance/Ferrum/errors"
 	sf "github.com/wissance/stringFormatter"
@@ -16,6 +17,10 @@ import (
  * Returns: Tuple - realm and error
  */
 func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
+	if !mn.IsAvailable() {
+		return nil, appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
+
 	realm, err := mn.getRealmObject(realmName)
 	if err != nil {
 		return nil, appErrs.NewUnknownError("getRealmObject", "RedisDataManager.GetRealm", err)
@@ -47,6 +52,9 @@ func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
  * Returns: error
  */
 func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
+	if !mn.IsAvailable() {
+		return appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
 	// TODO(SIA) Add transaction
 	// TODO(SIA) use function isExists
 	_, err := mn.getRealmObject(newRealm.Name)
@@ -127,6 +135,9 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
  * Returns: error
  */
 func (mn *RedisDataManager) DeleteRealm(realmName string) error {
+	if !mn.IsAvailable() {
+		return appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
 	// TODO(SIA) Add transaction
 	if err := mn.deleteRealmObject(realmName); err != nil {
 		return appErrs.NewUnknownError("deleteRealmObject", "RedisDataManager.DeleteRealm", err)
@@ -177,6 +188,9 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
  * Returns: error
  */
 func (mn *RedisDataManager) UpdateRealm(realmName string, realmNew data.Realm) error {
+	if !mn.IsAvailable() {
+		return appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
 	// TODO(SIA) Add transaction
 	oldRealm, err := mn.getRealmObject(realmName)
 	if err != nil {

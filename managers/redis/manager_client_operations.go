@@ -3,6 +3,7 @@ package redis
 import (
 	"encoding/json"
 	"errors"
+	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	errors2 "github.com/wissance/Ferrum/errors"
 	sf "github.com/wissance/stringFormatter"
@@ -16,6 +17,10 @@ import (
  * Returns: Tuple = slice of client, error
  */
 func (mn *RedisDataManager) GetClients(realmName string) ([]data.Client, error) {
+	if !mn.IsAvailable() {
+		return []data.Client{}, errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
+
 	realmClients, err := mn.getRealmClients(realmName)
 	if err != nil {
 		return nil, errors2.NewUnknownError("getRealmClients", "RedisDataManager.GetClients", err)
@@ -43,6 +48,10 @@ func (mn *RedisDataManager) GetClients(realmName string) ([]data.Client, error) 
  * Returns: client and error
  */
 func (mn *RedisDataManager) GetClient(realmName string, clientName string) (*data.Client, error) {
+	if !mn.IsAvailable() {
+		return nil, errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
+
 	clientKey := sf.Format(clientKeyTemplate, mn.namespace, realmName, clientName)
 	client, err := getSingleRedisObject[data.Client](mn.redisClient, mn.ctx, mn.logger, Client, clientKey)
 	if err != nil {
@@ -62,6 +71,9 @@ func (mn *RedisDataManager) GetClient(realmName string, clientName string) (*dat
  * Returns: error if creation failed, otherwise - nil
  */
 func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client) error {
+	if !mn.IsAvailable() {
+		return errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
 	// TODO(SIA) Add transaction
 	// TODO(SIA) use function isExists
 	_, err := mn.getRealmObject(realmName)
@@ -103,6 +115,10 @@ func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client
  * Returns: error
  */
 func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) error {
+	if !mn.IsAvailable() {
+		return errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
+
 	if err := mn.deleteClientObject(realmName, clientName); err != nil {
 		return errors2.NewUnknownError("deleteClientObject", "RedisDataManager.DeleteClient", err)
 	}
@@ -126,6 +142,9 @@ func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) er
  * Returns: error
  */
 func (mn *RedisDataManager) UpdateClient(realmName string, clientName string, clientNew data.Client) error {
+	if !mn.IsAvailable() {
+		return errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
 	// TODO(SIA) Add transaction
 	oldClient, err := mn.GetClient(realmName, clientName)
 	if err != nil {
