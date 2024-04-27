@@ -1,4 +1,6 @@
 FROM golang:1.18-alpine
+VOLUME /app_data
+
 RUN sed -i 's/https/http/' /etc/apk/repositories
 RUN apk update && apk add --no-cache git && apk add --no-cache bash && apk add --no-cache build-base && apk add --no-cache openssl
 
@@ -27,6 +29,9 @@ COPY "go.mod" ./"go.mod"
 COPY "go.sum" ./"go.sum"
 COPY keyfile ./keyfile
 COPY "main.go" ./"main.go"
+COPY "config_docker_w_redis.json" ./"config_docker_w_redis.json"
+
+RUN go generate
 
 # Download all the dependencies
 RUN go get -d -v ./...
@@ -34,9 +39,7 @@ RUN go get -d -v ./...
 # Install the package
 RUN go install -v ./...
 
-RUN go generate
-
-# Build the Go app
+# Build the Go apps
 RUN go build -o /ferrum
 
 RUN go build -o ferrum-admin ./api/admin/cli
@@ -45,4 +48,6 @@ COPY --from=ghcr.io/ufoscout/docker-compose-wait:latest /wait /wait
 
 COPY testData ./testData
 
-CMD ["/bin/bash", "-c", "/wait && python ./testData/redis/insert_test_data.py && /ferrum --config ./config_docker_w_redis.json"]
+# RUN cp config_docker_w_redis.json /app_data/config_docker_w_redis.json
+
+CMD ["/bin/bash", "-c", "/wait && python /app/testData/redis/insert_test_data.py && /ferrum --config /app/config_docker_w_redis.json"]

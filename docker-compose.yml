@@ -1,10 +1,21 @@
 version: '3.9'
+
+volumes:
+  redis_data: {}
+  app_data: {}
+  
 services:
   redis:
+    container_name: wissance_ferrum_db
+    hostname: redis
     image: "redis/redis-stack:7.2.0-v2"
+    env_file:
+      - settings.env
     restart: always
+    volumes:
+      - redis_data:/data
     environment:
-      REDIS_ARGS: "--user test_user on >test_password allkeys allchannels allcommands --user default off"
+      REDIS_ARGS: "--user ferrum_db on >FeRRuM000 allkeys allchannels allcommands --user default off"
     ports:
       - "6379:6379"
       - "8001:8001"
@@ -13,17 +24,22 @@ services:
       - "8001"
 
   ferrum:
+    container_name: wissance_ferrum_webapi
+    hostname: ferrum
     stdin_open: true
     tty: true
+    env_file:
+      - settings.env
     build:
       context: .
       dockerfile: Dockerfile
     environment:
       WAIT_HOSTS: redis:6379
-    volumes:
-      - ./config_docker_w_redis.json:/app/config_docker_w_redis.json
+    #volumes:
+    #  - app_data: /data
     depends_on:
-      - redis
+      redis:
+        condition: service_started
     ports:
       - "8182:8182"
     expose:

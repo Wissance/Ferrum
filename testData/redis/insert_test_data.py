@@ -1,13 +1,13 @@
+import os
 import json
-
 import redis
 from redis.commands.json.path import Path
 
 redis_host = 'redis'
 redis_port = 6379
 db = 0
-username = 'test_user'
-password = 'test_password'
+username = os.environ['REDIS_USER']
+password = os.environ['REDIS_PASSWORD']
 client = redis.Redis(host=redis_host, port=redis_port, db=db, username=username, password=password)
 try:
     response = client.ping()
