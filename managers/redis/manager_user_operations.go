@@ -99,7 +99,7 @@ func (mn *RedisDataManager) GetUserById(realmName string, userId uuid.UUID) (dat
 	}
 	user, err := mn.GetUser(realmName, realmUser.Name)
 	if err != nil {
-		if errors.Is(err, errors2.ObjectNotFoundError{}) {
+		if errors.As(err, &errors2.ObjectNotFoundError{}) {
 			mn.logger.Error(sf.Format("Realm: \"{0}\" has user: \"{1}\", that Redis does not have", realmName, userId))
 		}
 		return nil, err
@@ -131,7 +131,7 @@ func (mn *RedisDataManager) CreateUser(realmName string, userNew data.User) erro
 	if err == nil {
 		return errors2.ErrExists
 	}
-	if !errors.Is(err, errors2.ObjectNotFoundError{}) {
+	if !errors.As(err, &errors2.ObjectNotFoundError{}) {
 		mn.logger.Warn(sf.Format("CreateUser: GetUser failed, error: {0}", err.Error()))
 		return err
 	}
@@ -162,7 +162,7 @@ func (mn *RedisDataManager) DeleteUser(realmName string, userName string) error 
 		return errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
 	}
 	if err := mn.deleteUserObject(realmName, userName); err != nil {
-		errors2.NewUnknownError("deleteUserObject", "RedisDataManager.DeleteUser", err)
+		return errors2.NewUnknownError("deleteUserObject", "RedisDataManager.DeleteUser", err)
 	}
 	if err := mn.deleteUserFromRealm(realmName, userName); err != nil {
 		if errors.Is(err, errors2.ObjectNotFoundError{}) || errors.Is(err, errors2.ErrZeroLength) {
@@ -362,7 +362,7 @@ func (mn *RedisDataManager) createRealmUsers(realmName string, realmUsers []data
 
 	if isAllPreDelete {
 		if deleteRealmUserErr := mn.deleteRealmUsersObject(realmName); deleteRealmUserErr != nil {
-			if deleteRealmUserErr != nil && !errors.Is(deleteRealmUserErr, errors2.ErrNotExists) {
+			if deleteRealmUserErr != nil && !errors.As(deleteRealmUserErr, &errors2.ErrNotExists) {
 				return errors2.NewUnknownError("deleteRealmUsersObject", "RedisDataManager.createRealmUsers", deleteRealmUserErr)
 			}
 		}

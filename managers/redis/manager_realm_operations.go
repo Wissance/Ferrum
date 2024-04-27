@@ -62,7 +62,7 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 	if err == nil {
 		return appErrs.ErrExists
 	}
-	if !errors.Is(err, appErrs.EmptyNotFoundErr) {
+	if !errors.As(err, &appErrs.EmptyNotFoundErr) {
 		return err
 	}
 
@@ -146,7 +146,7 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
 
 	clients, err := mn.getRealmClients(realmName)
 	if err != nil {
-		if !errors.Is(err, appErrs.ErrZeroLength) {
+		if !errors.As(err, &appErrs.ErrZeroLength) {
 			return appErrs.NewUnknownError("getRealmClients", "RedisDataManager.DeleteRealm", err)
 		}
 	} else {
@@ -163,7 +163,7 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
 
 	users, err := mn.getRealmUsers(realmName)
 	if err != nil {
-		if !errors.Is(err, appErrs.ErrZeroLength) {
+		if !errors.As(err, &appErrs.ErrZeroLength) {
 			return appErrs.NewUnknownError("getRealmUsers", "RedisDataManager.DeleteRealm", err)
 		}
 	} else {
@@ -204,16 +204,16 @@ func (mn *RedisDataManager) UpdateRealm(realmName string, realmNew data.Realm) e
 			mn.logger.Error(sf.Format("Realm with a new name \"{0}\" already exists in Redis", realmNew.Name))
 			return appErrs.ErrExists
 		}
-		if !errors.Is(getRealmErr, appErrs.EmptyNotFoundErr) {
+		if !errors.As(getRealmErr, &appErrs.EmptyNotFoundErr) {
 			return appErrs.NewUnknownError("getRealmObject", "RedisDataManager.UpdateRealm", getRealmErr)
 		}
 
 		clients, getClientsErr := mn.GetClients(oldRealm.Name)
-		if getClientsErr != nil && !errors.Is(getClientsErr, appErrs.ErrZeroLength) {
+		if getClientsErr != nil && !errors.As(getClientsErr, &appErrs.ErrZeroLength) {
 			return appErrs.NewUnknownError("GetClients", "RedisDataManager.UpdateRealm", getClientsErr)
 		}
 		users, getUsersErr := mn.GetUsers(oldRealm.Name)
-		if getUsersErr != nil && !errors.Is(getUsersErr, appErrs.ErrZeroLength) {
+		if getUsersErr != nil && !errors.As(getUsersErr, &appErrs.ErrZeroLength) {
 			return appErrs.NewUnknownError("GetUsers", "RedisDataManager.UpdateRealm", getUsersErr)
 		}
 		usersData := make([]any, len(users))
@@ -264,7 +264,7 @@ func (mn *RedisDataManager) getRealmObject(realmName string) (*data.Realm, error
 	realmKey := sf.Format(realmKeyTemplate, mn.namespace, realmName)
 	realm, err := getSingleRedisObject[data.Realm](mn.redisClient, mn.ctx, mn.logger, Realm, realmKey)
 	if err != nil {
-		if errors.Is(err, appErrs.EmptyNotFoundErr) {
+		if errors.As(err, &appErrs.EmptyNotFoundErr) {
 			mn.logger.Debug(sf.Format("Redis does not have Realm: \"{0}\"", realmName))
 		}
 		return nil, err

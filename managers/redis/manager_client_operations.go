@@ -30,7 +30,7 @@ func (mn *RedisDataManager) GetClients(realmName string) ([]data.Client, error) 
 		// todo(UMV) get all them at once
 		client, readClientErr := mn.GetClient(realmName, rc.Name)
 		if readClientErr != nil {
-			if errors.Is(readClientErr, errors2.ObjectNotFoundError{}) {
+			if errors.As(readClientErr, &errors2.ObjectNotFoundError{}) {
 				mn.logger.Error(sf.Format("Realm: \"{0}\" has client: \"{1}\", that Redis does not have", realmName, rc.Name))
 			}
 			return nil, readClientErr
@@ -86,7 +86,7 @@ func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client
 		// TODO(umv): think about making this error more detailed
 		return errors2.ErrExists
 	}
-	if !errors.Is(err, errors2.ObjectNotFoundError{}) {
+	if !errors.As(err, &errors2.ObjectNotFoundError{}) {
 		return err
 	}
 
@@ -123,7 +123,7 @@ func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) er
 		return errors2.NewUnknownError("deleteClientObject", "RedisDataManager.DeleteClient", err)
 	}
 	if err := mn.deleteClientFromRealm(realmName, clientName); err != nil {
-		if errors.Is(err, errors2.ObjectNotFoundError{}) || errors.Is(err, errors2.ErrZeroLength) {
+		if errors.As(err, &errors2.ObjectNotFoundError{}) || errors.As(err, &errors2.ErrZeroLength) {
 			return nil
 		}
 		return err
@@ -269,7 +269,7 @@ func (mn *RedisDataManager) createRealmClients(realmName string, realmClients []
 	}
 	if isAllPreDelete {
 		if delErr := mn.deleteRealmClientsObject(realmName); delErr != nil {
-			if delErr != nil && !errors.Is(delErr, errors2.ErrNotExists) {
+			if delErr != nil && !errors.As(delErr, &errors2.ErrNotExists) {
 				return errors2.NewUnknownError("deleteRealmClientsObject", "RedisDataManager.createRealmClients", delErr)
 			}
 		}

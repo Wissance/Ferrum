@@ -30,6 +30,7 @@ COPY "go.sum" ./"go.sum"
 COPY keyfile ./keyfile
 COPY "main.go" ./"main.go"
 COPY "config_docker_w_redis.json" ./"config_docker_w_redis.json"
+COPY tools/"create_wissance_demo_users_docker.sh" ./"create_wissance_demo_users_docker.sh"
 
 RUN go generate
 
@@ -50,4 +51,4 @@ COPY testData ./testData
 
 # RUN cp config_docker_w_redis.json /app_data/config_docker_w_redis.json
 
-CMD ["/bin/bash", "-c", "/wait && python /app/testData/redis/insert_test_data.py && /ferrum --config /app/config_docker_w_redis.json"]
+CMD ["/bin/bash", "-c", "/wait && ./create_wissance_demo_users_docker.sh && /ferrum --config /app/config_docker_w_redis.json"]

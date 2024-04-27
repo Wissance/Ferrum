@@ -51,12 +51,12 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 		// todo: validate ...
 		realmPtr, realmReadErr := (*wCtx.DataProvider).GetRealm(realm)
 		if realmReadErr != nil {
-			if e.Is(realmReadErr, errors.ErrDataSourceNotAvailable) {
+			if e.As(realmReadErr, &errors.ErrDataSourceNotAvailable) {
 				status = http.StatusServiceUnavailable
 				wCtx.Logger.Error("Data provider not available")
 				result = dto.ErrorDetails{Msg: errors.ServiceIsUnavailable}
 			} else {
-				if e.Is(realmReadErr, errors.EmptyNotFoundErr) {
+				if e.As(realmReadErr, &errors.EmptyNotFoundErr) {
 					status = http.StatusNotFound
 					wCtx.Logger.Debug("New token issue: realm doesn't exist")
 					result = dto.ErrorDetails{Msg: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
