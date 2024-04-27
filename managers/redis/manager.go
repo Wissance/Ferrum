@@ -71,7 +71,16 @@ type RedisDataManager struct {
  * Returns true if DataContext is available
  */
 func (mn *RedisDataManager) IsAvailable() bool {
-	return mn.redisClient != nil && mn.redisClient.Ping(mn.ctx) == nil
+	if mn.redisClient == nil {
+		mn.logger.Debug("Redis client was not initialized")
+		return false
+	}
+	cmd := mn.redisClient.Ping(mn.ctx)
+	_, err := cmd.Result()
+	if err != nil {
+		mn.logger.Debug(sf.Format("Redis Ping executed with error: {0}", err.Error()))
+	}
+	return err == nil
 }
 
 // CreateRedisDataManager is factory function for instance of RedisDataManager creation

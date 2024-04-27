@@ -18,6 +18,7 @@ import (
  */
 func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
 	if !mn.IsAvailable() {
+
 		return nil, appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
 	}
 
