@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/wissance/Ferrum/config"
+	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
 	sf "github.com/wissance/stringFormatter"
 	"testing"
@@ -23,9 +24,18 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 	}
 	manager := createTestRedisDataManager()
 	for _, tCase := range testCases {
-		realm, err := manager.GetRealm(tCase.realm)
+		realm := data.Realm{
+			Name:                   tCase.realm,
+			TokenExpiration:        3600,
+			RefreshTokenExpiration: 1800,
+		}
+
+		err := manager.CreateRealm(realm)
 		assert.NoError(t, err)
-		assert.NotNil(t, realm)
+		r, err := manager.GetRealm(tCase.realm)
+		assert.NoError(t, err)
+		// TODO(UMV): IMPL FULL COMPARISON
+		assert.Equal(t, tCase.realm, r.Name)
 		err = manager.DeleteRealm(tCase.realm)
 		assert.NoError(t, err)
 	}

@@ -246,6 +246,10 @@ func (mn *RedisDataManager) getRealmUsers(realmName string) ([]data.ExtendedIden
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realmName)
 	realmUsers, err := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if err != nil {
+		if errors.Is(err, errors2.ErrZeroLength) {
+			return nil, err
+		}
+
 		return nil, errors2.NewUnknownError("getObjectsListFromRedis", "RedisDataManager.getRealmUsers", err)
 	}
 	return realmUsers, nil

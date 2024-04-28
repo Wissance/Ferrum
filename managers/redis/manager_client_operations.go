@@ -23,7 +23,10 @@ func (mn *RedisDataManager) GetClients(realmName string) ([]data.Client, error) 
 
 	realmClients, err := mn.getRealmClients(realmName)
 	if err != nil {
-		return nil, errors2.NewUnknownError("getRealmClients", "RedisDataManager.GetClients", err)
+		// empty clients is not an error
+		if !errors.Is(err, errors2.ErrZeroLength) {
+			return nil, errors2.NewUnknownError("getRealmClients", "RedisDataManager.GetClients", err)
+		}
 	}
 	clients := make([]data.Client, len(realmClients))
 	for i, rc := range realmClients {
@@ -184,6 +187,9 @@ func (mn *RedisDataManager) getRealmClients(realmName string) ([]data.ExtendedId
 	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realmName)
 	realmClients, err := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
 	if err != nil {
+		if errors.Is(err, errors2.ErrZeroLength) {
+			return nil, err
+		}
 		return nil, errors2.NewUnknownError("getObjectsListFromRedis", "RedisDataManager.getRealmClients", err)
 	}
 	return realmClients, nil
