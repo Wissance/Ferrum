@@ -330,7 +330,9 @@ func (mn *RedisDataManager) deleteRealmClientsObject(realmName string) error {
 func (mn *RedisDataManager) deleteRealmUsersObject(realmName string) error {
 	realmUsersKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realmName)
 	if err := mn.deleteRedisObject(RealmUsers, realmUsersKey); err != nil {
-		return appErrs.NewUnknownError("deleteRedisObject", "RedisDataManager.deleteRealmUsersObject", err)
+		if !errors.As(err, &appErrs.EmptyNotFoundErr) {
+			return appErrs.NewUnknownError("deleteRedisObject", "RedisDataManager.deleteRealmUsersObject", err)
+		}
 	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/wissance/Ferrum/config"
@@ -22,7 +23,8 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 		users             []string
 	}{
 		{name: "realm_without_clients", realmNameTemplate: "app1_test_{0}", clients: []string{}, users: []string{}},
-		{name: "realm_with_one_client", realmNameTemplate: "app2_test_{0}", clients: []string{"app_client_2"}, users: []string{"app_user2"}},
+		{name: "realm_with_one_client", realmNameTemplate: "app2_test_{0}", clients: []string{"app_client2"}, users: []string{}},
+		{name: "realm_with_one_client_and_one_user", realmNameTemplate: "app3_test_{0}", clients: []string{"app_client3"}, users: []string{"app_user3"}},
 	}
 	manager := createTestRedisDataManager()
 	for _, tCase := range testCases {
@@ -48,13 +50,24 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 				realm.Clients = append([]data.Client{client})
 			}
 
+			for _, u := range tCase.users {
+				userJson := sf.Format("{\"info\":{\"preferred_username\":\"{0}\"}}", u)
+				var rawUser interface{}
+				err := json.Unmarshal([]byte(userJson), &rawUser)
+				assert.NoError(t, err)
+				realm.Users = append([]interface{}{rawUser})
+			}
+
 			err := manager.CreateRealm(realm)
 			assert.NoError(t, err)
 			r, err := manager.GetRealm(realm.Name)
 			assert.NoError(t, err)
-			// TODO(UMV): IMPL FULL COMPARISON
+			// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
 			assert.Equal(t, realm.Name, r.Name)
 			assert.Equal(t, len(tCase.clients), len(r.Clients))
+			users, err := manager.GetUsers(realm.Name)
+			assert.NoError(t, err)
+			assert.Equal(t, len(realm.Users), len(users))
 			err = manager.DeleteRealm(realm.Name)
 			assert.NoError(t, err)
 		})
