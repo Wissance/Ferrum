@@ -74,7 +74,38 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 	}
 }
 
-// add TestUpdateRealm
+func TestUpdateRealmSuccessfully(t *testing.T) {
+
+}
+
+func TestCreateUserSuccessfully(t *testing.T) {
+	testCases := []struct {
+		name              string
+		realmNameTemplate string
+		userNameTemplate  string
+	}{
+		{name: "create_min_user", realmNameTemplate: "app_realm_{0}", userNameTemplate: "app_user_{0}"},
+	}
+
+	for _, tCase := range testCases {
+		t.Run(tCase.name, func(t *testing.T) {
+			t.Parallel()
+			// TODO(UMV) here we are going to create user separately from Realm via manager.CreateUser
+		})
+	}
+}
+
+func TestUpdateUserSuccessfully(t *testing.T) {
+
+}
+
+func TestResetUserPasswordSuccessfully(t *testing.T) {
+
+}
+
+func TestChangeUserPasswordSuccessfully(t *testing.T) {
+
+}
 
 func createTestRedisDataManager() *RedisDataManager {
 	rndNamespace := sf.Format("ferrum_test_{0}", uuid.New().String())
