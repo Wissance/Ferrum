@@ -146,7 +146,8 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
 
 	clients, err := mn.getRealmClients(realmName)
 	if err != nil {
-		if !errors.As(err, &appErrs.ErrZeroLength) {
+		// todo(UMV): errors.Is because ErrZeroLength doesn't have custom type
+		if !errors.Is(err, appErrs.ErrZeroLength) {
 			return appErrs.NewUnknownError("getRealmClients", "RedisDataManager.DeleteRealm", err)
 		}
 	} else {
@@ -163,7 +164,8 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
 
 	users, err := mn.getRealmUsers(realmName)
 	if err != nil {
-		if !errors.As(err, &appErrs.ErrZeroLength) {
+		// todo(UMV): second errors.Is because ErrZeroLength doesn't have custom type
+		if !errors.Is(err, appErrs.ErrZeroLength) {
 			return appErrs.NewUnknownError("getRealmUsers", "RedisDataManager.DeleteRealm", err)
 		}
 	} else {
@@ -204,16 +206,18 @@ func (mn *RedisDataManager) UpdateRealm(realmName string, realmNew data.Realm) e
 			mn.logger.Error(sf.Format("Realm with a new name \"{0}\" already exists in Redis", realmNew.Name))
 			return appErrs.ErrExists
 		}
-		if !errors.As(getRealmErr, &appErrs.EmptyNotFoundErr) {
+		if !errors.As(getRealmErr, &appErrs.ObjectNotFoundError{}) {
 			return appErrs.NewUnknownError("getRealmObject", "RedisDataManager.UpdateRealm", getRealmErr)
 		}
 
 		clients, getClientsErr := mn.GetClients(oldRealm.Name)
-		if getClientsErr != nil && !errors.As(getClientsErr, &appErrs.ErrZeroLength) {
+		// todo(UMV): errors.Is because ErrZeroLength doesn't have custom type
+		if getClientsErr != nil && !errors.Is(getClientsErr, appErrs.ErrZeroLength) {
 			return appErrs.NewUnknownError("GetClients", "RedisDataManager.UpdateRealm", getClientsErr)
 		}
 		users, getUsersErr := mn.GetUsers(oldRealm.Name)
-		if getUsersErr != nil && !errors.As(getUsersErr, &appErrs.ErrZeroLength) {
+		// todo(UMV): errors.Is because ErrZeroLength doesn't have custom type
+		if getUsersErr != nil && !errors.Is(getUsersErr, appErrs.ErrZeroLength) {
 			return appErrs.NewUnknownError("GetUsers", "RedisDataManager.UpdateRealm", getUsersErr)
 		}
 		usersData := make([]any, len(users))

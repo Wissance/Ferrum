@@ -123,7 +123,8 @@ func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) er
 		return errors2.NewUnknownError("deleteClientObject", "RedisDataManager.DeleteClient", err)
 	}
 	if err := mn.deleteClientFromRealm(realmName, clientName); err != nil {
-		if errors.As(err, &errors2.ObjectNotFoundError{}) || errors.As(err, &errors2.ErrZeroLength) {
+		// todo(UMV): second errors.Is because ErrZeroLength doesn't have custom type
+		if errors.As(err, &errors2.ObjectNotFoundError{}) || errors.Is(err, errors2.ErrZeroLength) {
 			return nil
 		}
 		return err
@@ -269,7 +270,8 @@ func (mn *RedisDataManager) createRealmClients(realmName string, realmClients []
 	}
 	if isAllPreDelete {
 		if delErr := mn.deleteRealmClientsObject(realmName); delErr != nil {
-			if delErr != nil && !errors.As(delErr, &errors2.ErrNotExists) {
+			// todo(UMV): errors.Is because ErrZeroLength doesn't have custom type
+			if delErr != nil && !errors.Is(delErr, errors2.ErrNotExists) {
 				return errors2.NewUnknownError("deleteRealmClientsObject", "RedisDataManager.createRealmClients", delErr)
 			}
 		}

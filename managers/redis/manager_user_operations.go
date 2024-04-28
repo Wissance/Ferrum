@@ -165,7 +165,8 @@ func (mn *RedisDataManager) DeleteUser(realmName string, userName string) error 
 		return errors2.NewUnknownError("deleteUserObject", "RedisDataManager.DeleteUser", err)
 	}
 	if err := mn.deleteUserFromRealm(realmName, userName); err != nil {
-		if errors.As(err, &errors2.EmptyNotFoundErr) || errors.As(err, &errors2.ErrZeroLength) {
+		// todo(UMV): second errors.Is because ErrZeroLength doesn't have custom type
+		if errors.As(err, &errors2.EmptyNotFoundErr) || errors.Is(err, errors2.ErrZeroLength) {
 			return nil
 		}
 		return errors2.NewUnknownError("deleteUserFromRealm", "RedisDataManager.DeleteUser", err)
@@ -362,7 +363,8 @@ func (mn *RedisDataManager) createRealmUsers(realmName string, realmUsers []data
 
 	if isAllPreDelete {
 		if deleteRealmUserErr := mn.deleteRealmUsersObject(realmName); deleteRealmUserErr != nil {
-			if deleteRealmUserErr != nil && !errors.As(deleteRealmUserErr, &errors2.ErrNotExists) {
+			// todo(UMV): errors.Is because ErrNotExists doesn't have custom type
+			if deleteRealmUserErr != nil && !errors.Is(deleteRealmUserErr, errors2.ErrNotExists) {
 				return errors2.NewUnknownError("deleteRealmUsersObject", "RedisDataManager.createRealmUsers", deleteRealmUserErr)
 			}
 		}
