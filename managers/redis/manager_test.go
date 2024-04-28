@@ -26,11 +26,11 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 		{name: "realm_with_one_client", realmNameTemplate: "app2_test_{0}", clients: []string{"app_client2"}, users: []string{}},
 		{name: "realm_with_one_client_and_one_user", realmNameTemplate: "app3_test_{0}", clients: []string{"app_client3"}, users: []string{"app_user3"}},
 	}
-	manager := createTestRedisDataManager()
+
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
-
+			manager := createTestRedisDataManager()
 			realm := data.Realm{
 				Name:                   sf.Format(tCase.realmNameTemplate, uuid.New().String()),
 				TokenExpiration:        3600,
@@ -90,7 +90,31 @@ func TestCreateUserSuccessfully(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
-			// TODO(UMV) here we are going to create user separately from Realm via manager.CreateUser
+			manager := createTestRedisDataManager()
+			// here we are going to create user separately from Realm via manager.CreateUser
+			realm := data.Realm{
+				Name:                   sf.Format(tCase.realmNameTemplate, uuid.New().String()),
+				TokenExpiration:        3600,
+				RefreshTokenExpiration: 1800,
+			}
+			err := manager.CreateRealm(realm)
+			assert.NoError(t, err)
+			r, err := manager.GetRealm(realm.Name)
+			assert.NoError(t, err)
+			// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
+			assert.Equal(t, realm.Name, r.Name)
+
+			userName := sf.Format(tCase.userNameTemplate, uuid.New().String())
+			userJson := sf.Format("{\"info\":{\"preferred_username\":\"{0}\"}}", userName)
+			var rawUser interface{}
+			err = json.Unmarshal([]byte(userJson), &rawUser)
+			assert.NoError(t, err)
+			user := data.CreateUser(&rawUser)
+			err = manager.CreateUser(realm.Name, user)
+			assert.NoError(t, err)
+
+			err = manager.DeleteRealm(realm.Name)
+			assert.NoError(t, err)
 		})
 	}
 }
