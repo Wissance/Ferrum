@@ -105,7 +105,7 @@ func TestCreateUserSuccessfully(t *testing.T) {
 			assert.Equal(t, realm.Name, r.Name)
 
 			userName := sf.Format(tCase.userNameTemplate, uuid.New().String())
-			userJson := sf.Format("{\"info\":{\"preferred_username\":\"{0}\"}}", userName)
+			userJson := sf.Format("{\"info\":{\"preferred_username\":\"{0}\", \"name\":\"{0}\"}}", userName)
 			var rawUser interface{}
 			err = json.Unmarshal([]byte(userJson), &rawUser)
 			assert.NoError(t, err)

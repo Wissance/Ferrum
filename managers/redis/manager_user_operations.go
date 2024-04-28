@@ -74,6 +74,9 @@ func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.Use
 	userKey := sf.Format(userKeyTemplate, mn.namespace, realmName, userName)
 	rawUser, err := getSingleRedisObject[interface{}](mn.redisClient, mn.ctx, mn.logger, User, userKey)
 	if err != nil {
+		if errors.As(err, &errors2.EmptyNotFoundErr) {
+			return nil, err
+		}
 		return nil, errors2.NewUnknownError("getSingleRedisObject", "RedisDataManager.GetUser", err)
 	}
 	user := data.CreateUser(*rawUser)
