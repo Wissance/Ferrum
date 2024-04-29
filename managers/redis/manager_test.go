@@ -111,6 +111,13 @@ func TestUpdateRealmSuccessfully(t *testing.T) {
 
 	err = manager.UpdateRealm(prevRealmName, realm)
 	assert.NoError(t, err)
+	r, err = manager.GetRealm(realm.Name)
+	assert.NoError(t, err)
+	// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
+	assert.Equal(t, realm.Name, r.Name)
+	assert.Equal(t, realm.TokenExpiration, r.TokenExpiration)
+	assert.Equal(t, len(realm.Clients), len(realm.Clients))
+	assert.Equal(t, len(realm.Users), len(realm.Users))
 
 	// 3. Delete Realm
 	err = manager.DeleteRealm(realm.Name)
