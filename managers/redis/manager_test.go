@@ -51,7 +51,7 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 			}
 
 			for _, u := range tCase.users {
-				userJson := sf.Format("{\"info\":{\"preferred_username\":\"{0}\"}}", u)
+				userJson := sf.Format(`{"info":{"preferred_username":"{0}"}}`, u)
 				var rawUser interface{}
 				err := json.Unmarshal([]byte(userJson), &rawUser)
 				assert.NoError(t, err)
@@ -82,9 +82,9 @@ func TestCreateUserSuccessfully(t *testing.T) {
 	testCases := []struct {
 		name              string
 		realmNameTemplate string
-		userNameTemplate  string
+		userName          string
 	}{
-		{name: "create_min_user", realmNameTemplate: "app_realm_{0}", userNameTemplate: "app_user_{0}"},
+		{name: "create_min_user", realmNameTemplate: "app_realm_{0}", userName: "app_user"},
 	}
 
 	for _, tCase := range testCases {
@@ -104,15 +104,17 @@ func TestCreateUserSuccessfully(t *testing.T) {
 			// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
 			assert.Equal(t, realm.Name, r.Name)
 
-			userName := sf.Format(tCase.userNameTemplate, uuid.New().String())
-			userJson := sf.Format("{\"info\":{\"preferred_username\":\"{0}\", \"name\":\"{0}\"}}", userName)
+			jsonTemplate := `{"info":{"name":"{0}", "preferred_username": "{1}"}}`
+			jsonStr := sf.Format(jsonTemplate, tCase.userName, tCase.userName)
 			var rawUser interface{}
-			err = json.Unmarshal([]byte(userJson), &rawUser)
+			err = json.Unmarshal([]byte(jsonStr), &rawUser)
 			assert.NoError(t, err)
-			user := data.CreateUser(&rawUser)
+			user := data.CreateUser(rawUser)
 			err = manager.CreateUser(realm.Name, user)
 			assert.NoError(t, err)
-
+			storedUser, err := manager.GetUser(realm.Name, tCase.userName)
+			assert.NoError(t, err)
+			assert.Equal(t, tCase.userName, storedUser.GetUsername())
 			err = manager.DeleteRealm(realm.Name)
 			assert.NoError(t, err)
 		})
