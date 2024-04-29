@@ -27,6 +27,9 @@ func (mn *RedisDataManager) GetUsers(realmName string) ([]data.User, error) {
 	// TODO(UMV): possibly we should not use this method ??? what if we have 1M+ users .... ? think maybe it should be somehow optimized ...
 	realmUsers, err := mn.getRealmUsers(realmName)
 	if err != nil {
+		if errors.Is(err, errors2.ErrZeroLength) {
+			return []data.User{}, err
+		}
 		return nil, errors2.NewUnknownError("getRealmUsers", "RedisDataManager.GetUsers", err)
 	}
 
