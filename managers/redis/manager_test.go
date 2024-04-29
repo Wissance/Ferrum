@@ -75,7 +75,46 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 }
 
 func TestUpdateRealmSuccessfully(t *testing.T) {
+	// 1. Create Realm
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name:                   sf.Format("app_4_update_check_{0}", uuid.New().String()),
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
+	r, err := manager.GetRealm(realm.Name)
+	assert.NoError(t, err)
+	// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
+	assert.Equal(t, realm.Name, r.Name)
+	prevRealmName := realm.Name
+	// 2. Update Realm
+	realm.Name = sf.Format("app_4_update_check_{0}_new_realm_name", uuid.New().String())
+	realm.TokenExpiration = 5400
+	client := data.Client{
+		Name: "app_4_update_realm",
+		Type: data.Public,
+		ID:   uuid.New(),
+		Auth: data.Authentication{
+			Type:  data.ClientIdAndSecrets,
+			Value: uuid.New().String(),
+		},
+	}
+	realm.Clients = append([]data.Client{client})
 
+	userJson := sf.Format(`{"info":{"preferred_username":"{0}"}}`, "new_app_user")
+	var rawUser interface{}
+	err = json.Unmarshal([]byte(userJson), &rawUser)
+	assert.NoError(t, err)
+	realm.Users = append([]interface{}{rawUser})
+
+	err = manager.UpdateRealm(prevRealmName, realm)
+	assert.NoError(t, err)
+
+	// 3. Delete Realm
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestCreateUserSuccessfully(t *testing.T) {
