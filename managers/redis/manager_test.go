@@ -150,7 +150,7 @@ func TestCreateUserSuccessfully(t *testing.T) {
 			// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
 			assert.Equal(t, realm.Name, r.Name)
 
-			jsonTemplate := `{"info":{"name":"{0}", "preferred_username": "{1}"}}`
+			jsonTemplate := `{"info":{"name":"{0}", "preferred_username": "{1}"}, "credentials":{"password": "123"}}`
 			jsonStr := sf.Format(jsonTemplate, tCase.userName, tCase.userName)
 			var rawUser interface{}
 			err = json.Unmarshal([]byte(jsonStr), &rawUser)
@@ -167,16 +167,48 @@ func TestCreateUserSuccessfully(t *testing.T) {
 	}
 }
 
-func TestUpdateUserSuccessfully(t *testing.T) {
+/*func TestUpdateUserSuccessfully(t *testing.T) {
 
-}
-
-func TestResetUserPasswordSuccessfully(t *testing.T) {
-
-}
+}*/
 
 func TestChangeUserPasswordSuccessfully(t *testing.T) {
+	manager := createTestRedisDataManager()
+	// 1. Create Realm+Client+User
+	realm := data.Realm{
+		Name:                   sf.Format("app_4_user_pwd_change_check_{0}", uuid.New().String()),
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
 
+	client := data.Client{
+		Name: "app_client_4_check_pwd_change",
+		Type: data.Public,
+		ID:   uuid.New(),
+		Auth: data.Authentication{
+			Type:  data.ClientIdAndSecrets,
+			Value: uuid.New().String(),
+		},
+	}
+	realm.Clients = append([]data.Client{client})
+
+	userName := "new_app_user"
+	userJson := sf.Format(`{"info":{"preferred_username":"{0}"}, "credentials":{"password": "123"}}`, userName)
+	var rawUser interface{}
+	err := json.Unmarshal([]byte(userJson), &rawUser)
+	assert.NoError(t, err)
+	realm.Users = append([]interface{}{rawUser})
+
+	err = manager.CreateRealm(realm)
+	assert.NoError(t, err)
+	_, err = manager.GetRealm(realm.Name)
+	assert.NoError(t, err)
+
+	// 2. Reset Password and check ...
+	err = manager.SetPassword(realm.Name, userName, "123_ololo_321")
+	assert.NoError(t, err)
+
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func createTestRedisDataManager() *RedisDataManager {
