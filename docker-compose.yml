@@ -33,10 +33,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - app_data:/data
     environment:
       WAIT_HOSTS: redis:6379
-    #volumes:
-    #  - app_data: /data
     depends_on:
       redis:
         condition: service_started
