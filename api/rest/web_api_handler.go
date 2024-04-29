@@ -48,7 +48,6 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 		wCtx.Logger.Debug("New token issue: realm wasn't provided")
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
-		// todo: validate ...
 		realmPtr, realmReadErr := (*wCtx.DataProvider).GetRealm(realm)
 		if realmReadErr != nil {
 			if e.As(realmReadErr, &errors.ErrDataSourceNotAvailable) {
@@ -192,11 +191,23 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 		status = http.StatusBadRequest
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
-		realmPtr, _ := (*wCtx.DataProvider).GetRealm(realm)
-		if realmPtr == nil {
-			wCtx.Logger.Debug("Get userinfo: realm doesn't exist")
-			status = http.StatusNotFound
-			result = dto.ErrorDetails{Msg: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
+		realmPtr, realmReadErr := (*wCtx.DataProvider).GetRealm(realm)
+		if realmReadErr != nil {
+			if e.As(realmReadErr, &errors.ErrDataSourceNotAvailable) {
+				status = http.StatusServiceUnavailable
+				wCtx.Logger.Error("Data provider not available")
+				result = dto.ErrorDetails{Msg: errors.ServiceIsUnavailable}
+			} else {
+				if e.As(realmReadErr, &errors.EmptyNotFoundErr) {
+					status = http.StatusNotFound
+					wCtx.Logger.Debug("Get UserInfo: realm doesn't exist")
+					result = dto.ErrorDetails{Msg: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
+				} else {
+					status = http.StatusInternalServerError
+					wCtx.Logger.Error(sf.Format("Other error occurred: {0}", realmReadErr.Error()))
+					result = dto.ErrorDetails{Msg: sf.Format(errors.OtherAppError, realm)}
+				}
+			}
 		} else {
 			// Just get access token,  find user + session
 			authorization := request.Header.Get(authorizationHeader)
@@ -260,11 +271,25 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 		afterHandle(&respWriter, status, &result)
 		return
 	}
-	realmPtr, _ := (*wCtx.DataProvider).GetRealm(realm)
-	if realmPtr == nil {
-		status := http.StatusNotFound
-		wCtx.Logger.Debug(sf.Format("Introspect: realm \"{0}\" doesn't exists", realm))
-		result := dto.ErrorDetails{Msg: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
+	realmPtr, realmReadErr := (*wCtx.DataProvider).GetRealm(realm)
+	if realmReadErr != nil {
+		var status int
+		var result interface{}
+		if e.As(realmReadErr, &errors.ErrDataSourceNotAvailable) {
+			status = http.StatusServiceUnavailable
+			wCtx.Logger.Error("Data provider not available")
+			result = dto.ErrorDetails{Msg: errors.ServiceIsUnavailable}
+		} else {
+			if e.As(realmReadErr, &errors.EmptyNotFoundErr) {
+				status = http.StatusNotFound
+				wCtx.Logger.Debug("Introspect: realm doesn't exist")
+				result = dto.ErrorDetails{Msg: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
+			} else {
+				status = http.StatusInternalServerError
+				wCtx.Logger.Error(sf.Format("Other error occurred: {0}", realmReadErr.Error()))
+				result = dto.ErrorDetails{Msg: sf.Format(errors.OtherAppError, realm)}
+			}
+		}
 		afterHandle(&respWriter, status, &result)
 		return
 	}
@@ -342,11 +367,23 @@ func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter
 		wCtx.Logger.Debug("OpenIdConfigurator: realm is missing")
 		result = dto.ErrorDetails{Msg: errors.RealmNotProviderMsg}
 	} else {
-		_, err := (*wCtx.DataProvider).GetRealm(realm)
-		if err != nil {
-			// form answer depends on error type, Real not found or Data Provider down
-			status = http.StatusNotFound
-			result = dto.ErrorDetails{Msg: errors.InvalidRealm, Description: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
+		_, realmReadErr := (*wCtx.DataProvider).GetRealm(realm)
+		if realmReadErr != nil {
+			if e.As(realmReadErr, &errors.ErrDataSourceNotAvailable) {
+				status = http.StatusServiceUnavailable
+				wCtx.Logger.Error("Data provider not available")
+				result = dto.ErrorDetails{Msg: errors.ServiceIsUnavailable}
+			} else {
+				if e.As(realmReadErr, &errors.EmptyNotFoundErr) {
+					status = http.StatusNotFound
+					wCtx.Logger.Debug("Get OpenIdConfig: realm doesn't exist")
+					result = dto.ErrorDetails{Msg: sf.Format(errors.RealmDoesNotExistsTemplate, realm)}
+				} else {
+					status = http.StatusInternalServerError
+					wCtx.Logger.Error(sf.Format("Other error occurred: {0}", realmReadErr.Error()))
+					result = dto.ErrorDetails{Msg: sf.Format(errors.OtherAppError, realm)}
+				}
+			}
 		} else {
 			realmPath := sf.Format("auth/realms/{0}", realm)
 			protocolPath := "protocol/openid-connect"
