@@ -36,18 +36,17 @@ RUN go generate
 
 # Download all the dependencies
 RUN go get -d -v ./...
-
-# Install the package
 RUN go install -v ./...
 
 # Build the Go apps
 RUN go build -o /ferrum
-
 RUN go build -o ferrum-admin ./api/admin/cli
 
+# TODO(SIA) Vulnerability
 COPY --from=ghcr.io/ufoscout/docker-compose-wait:latest /wait /wait
 
 COPY testData ./testData
+COPY tools ./tools
 
 # RUN cp config_docker_w_redis.json /app_data/config_docker_w_redis.json
 
