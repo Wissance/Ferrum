@@ -2,6 +2,7 @@ package files
 
 import (
 	"encoding/json"
+	"github.com/wissance/Ferrum/config"
 	"os"
 
 	"github.com/wissance/Ferrum/errors"
@@ -55,6 +56,10 @@ func CreateFileDataManager(dataFile string, logger *logging.AppLogger) (*FileDat
  * Returns true if DataContext is available
  */
 func (mn *FileDataManager) IsAvailable() bool {
+	if len(mn.dataFile) > 0 {
+		_, err := os.Stat(mn.dataFile)
+		return err == nil
+	}
 	return len(mn.serverData.Realms) > 0
 }
 
@@ -65,6 +70,9 @@ func (mn *FileDataManager) IsAvailable() bool {
  * Returns: Realm and error
  */
 func (mn *FileDataManager) GetRealm(realmName string) (*data.Realm, error) {
+	if !mn.IsAvailable() {
+		return nil, errors.NewDataProviderNotAvailable(string(config.FILE), mn.dataFile)
+	}
 	for _, e := range mn.serverData.Realms {
 		// case-sensitive comparison, myapp and MyApP are different realms
 		if e.Name == realmName {
@@ -82,6 +90,9 @@ func (mn *FileDataManager) GetRealm(realmName string) (*data.Realm, error) {
  * Returns: slice of users and error
  */
 func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {
+	if !mn.IsAvailable() {
+		return nil, errors.NewDataProviderNotAvailable(string(config.FILE), mn.dataFile)
+	}
 	for _, e := range mn.serverData.Realms {
 		// case-sensitive comparison, myapp and MyApP are different realms
 		if e.Name == realmName {
@@ -107,6 +118,9 @@ func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {
  * Returns: Client and error
  */
 func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data.Client, error) {
+	if !mn.IsAvailable() {
+		return nil, errors.NewDataProviderNotAvailable(string(config.FILE), mn.dataFile)
+	}
 	realm, err := mn.GetRealm(realmName)
 	if err != nil {
 		mn.logger.Warn(sf.Format("GetRealm failed: {0}", err.Error()))
@@ -129,6 +143,9 @@ func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data
  * Returns: User and error
  */
 func (mn *FileDataManager) GetUser(realmName string, userName string) (data.User, error) {
+	if !mn.IsAvailable() {
+		return data.User(nil), errors.NewDataProviderNotAvailable(string(config.FILE), mn.dataFile)
+	}
 	users, err := mn.GetUsers(realmName)
 	if err != nil {
 		mn.logger.Warn(sf.Format("GetUsers failed: {0}", err.Error()))
@@ -146,6 +163,9 @@ func (mn *FileDataManager) GetUser(realmName string, userName string) (data.User
 /* same functions as GetUser but uses userId to search instead of username, works by sequential iteration
  */
 func (mn *FileDataManager) GetUserById(realmName string, userId uuid.UUID) (data.User, error) {
+	if !mn.IsAvailable() {
+		return data.User(nil), errors.NewDataProviderNotAvailable(string(config.FILE), mn.dataFile)
+	}
 	users, err := mn.GetUsers(realmName)
 	if err != nil {
 		mn.logger.Warn(sf.Format("GetUsers failed: {0}", err.Error()))
