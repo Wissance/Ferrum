@@ -124,6 +124,50 @@ func TestUpdateRealmSuccessfully(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestCreateClientSuccessfully(t *testing.T) {
+	testCases := []struct {
+		name       string
+		clientName string
+		clientType data.ClientType
+	}{
+		{name: "create_public_client", clientName: "sample_pub_client", clientType: data.Public},
+		{name: "create_conf_client", clientName: "sample_conf_client", clientType: data.Confidential},
+	}
+	for _, tCase := range testCases {
+		t.Run(tCase.name, func(t *testing.T) {
+			t.Parallel()
+			manager := createTestRedisDataManager()
+			realm := data.Realm{
+				Name:                   "sample_realm_4_create_client_tests",
+				TokenExpiration:        3600,
+				RefreshTokenExpiration: 1800,
+			}
+			err := manager.CreateRealm(realm)
+			assert.NoError(t, err)
+			_, err = manager.GetRealm(realm.Name)
+			assert.NoError(t, err)
+
+			client := data.Client{
+				Name: "app_4_update_realm",
+				Type: tCase.clientType,
+				ID:   uuid.New(),
+			}
+			if client.Type == data.Confidential {
+				client.Auth = data.Authentication{
+					Type:  data.ClientIdAndSecrets,
+					Value: uuid.New().String(),
+				}
+			}
+
+			err = manager.CreateClient(realm.Name, client)
+			assert.NoError(t, err)
+
+			err = manager.DeleteRealm(realm.Name)
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func TestCreateUserSuccessfully(t *testing.T) {
 	testCases := []struct {
 		name              string
