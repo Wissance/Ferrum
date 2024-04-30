@@ -95,6 +95,8 @@ At present moment we have 2 fully integration tests, and number of them continue
 ```ps1
 go test
 ```
+For running Manager tests on `Redis` you must have redis on `127.0.0.1:6379` with `ferrum_db` / `FeRRuM000` `auth` `user+password`
+pair, it is possible to start docker_compose and test on compose `ferrum_db` container 
 
 ## 4. Configure
 
