@@ -15,7 +15,7 @@ services:
     volumes:
       - redis_data:/data
     environment:
-      REDIS_ARGS: "--user ferrum_db on >FeRRuM000 allkeys allchannels allcommands --user default off"
+      REDIS_ARGS: "--user ferrum_db on >FeRRuM000 allkeys allchannels allcommands --user default off --save 20 1"
     ports:
       - "6379:6379"
       - "8001:8001"
