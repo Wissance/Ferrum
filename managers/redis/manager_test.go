@@ -106,7 +106,7 @@ func TestUpdateRealmSuccessfully(t *testing.T) {
 	// 1. Create Realm
 	manager := createTestRedisDataManager()
 	realm := data.Realm{
-		Name:                   sf.Format("app_4_update_check_{0}", uuid.New().String()),
+		Name:                   sf.Format("realm_4_update_check_{0}", uuid.New().String()),
 		TokenExpiration:        3600,
 		RefreshTokenExpiration: 1800,
 	}
@@ -117,7 +117,7 @@ func TestUpdateRealmSuccessfully(t *testing.T) {
 	checkRealm(t, &realm, r)
 	prevRealmName := realm.Name
 	// 2. Update Realm
-	realm.Name = sf.Format("app_4_update_check_{0}_new_realm_name", uuid.New().String())
+	realm.Name = sf.Format("realm_4_update_check_{0}_new_realm_name", uuid.New().String())
 	realm.TokenExpiration = 5400
 	client := data.Client{
 		Name: "app_4_update_realm",
@@ -226,7 +226,7 @@ func TestCreateClientSuccessfully(t *testing.T) {
 func TestCreateClientFailsDuplicateClient(t *testing.T) {
 	manager := createTestRedisDataManager()
 	realm := data.Realm{
-		Name:                   "sample_realm_4_check_duplicate",
+		Name:                   "sample_realm_4_check_client_duplicate",
 		TokenExpiration:        3600,
 		RefreshTokenExpiration: 1800,
 	}
@@ -253,7 +253,7 @@ func TestCreateClientFailsDuplicateClient(t *testing.T) {
 func TestUpdateClientSuccessfully(t *testing.T) {
 	manager := createTestRedisDataManager()
 	realm := data.Realm{
-		Name:                   "sample_realm_4_check_duplicate",
+		Name:                   "sample_realm_4_test_client_update",
 		TokenExpiration:        3600,
 		RefreshTokenExpiration: 1800,
 	}
@@ -261,7 +261,7 @@ func TestUpdateClientSuccessfully(t *testing.T) {
 	assert.NoError(t, err)
 
 	client := data.Client{
-		Name: "app_4_check_duplicate_client_create",
+		Name: "app_4_check_client_update",
 		Type: data.Public,
 		ID:   uuid.New(),
 	}
@@ -289,11 +289,46 @@ func TestUpdateClientSuccessfully(t *testing.T) {
 }
 
 func TestUpdateClientFailsNonExistingClient(t *testing.T) {
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name:                   "sample_realm_4_test_non_existing_client_update",
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
 
+	nonExistingClient := sf.Format("non-existing-client_{0}", uuid.New().String())
+	client := data.Client{
+		Name: "Surprise Motherfucker",
+	}
+
+	err = manager.UpdateClient(realm.Name, nonExistingClient, client)
+	assert.Error(t, err)
+	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
+
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestDeleteClientFailsNonExistingClient(t *testing.T) {
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name:                   "sample_realm_4_test_non_existing_client_update",
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
 
+	nonExistingClient := sf.Format("non-existing-client_{0}", uuid.New().String())
+
+	err = manager.DeleteClient(realm.Name, nonExistingClient)
+	assert.Error(t, err)
+	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
+
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestGetClientFailsNonExistingClient(t *testing.T) {
