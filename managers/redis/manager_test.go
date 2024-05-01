@@ -332,7 +332,23 @@ func TestDeleteClientFailsNonExistingClient(t *testing.T) {
 }
 
 func TestGetClientFailsNonExistingClient(t *testing.T) {
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name:                   "sample_realm_4_test_non_existing_client_get",
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
 
+	nonExistingClient := sf.Format("non-existing-client_{0}", uuid.New().String())
+
+	_, err = manager.GetClient(realm.Name, nonExistingClient)
+	assert.Error(t, err)
+	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
+
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestCreateUserSuccessfully(t *testing.T) {
