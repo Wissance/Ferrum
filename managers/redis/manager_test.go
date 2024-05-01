@@ -63,7 +63,7 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 			r, err := manager.GetRealm(realm.Name)
 			assert.NoError(t, err)
 			// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
-			assert.Equal(t, realm.Name, r.Name)
+			checkRealm(t, &realm, r)
 			assert.Equal(t, len(tCase.clients), len(r.Clients))
 			users, err := manager.GetUsers(realm.Name)
 			assert.NoError(t, err)
@@ -192,7 +192,7 @@ func TestCreateUserSuccessfully(t *testing.T) {
 			r, err := manager.GetRealm(realm.Name)
 			assert.NoError(t, err)
 			// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
-			assert.Equal(t, realm.Name, r.Name)
+			checkRealm(t, &realm, r)
 
 			jsonTemplate := `{"info":{"name":"{0}", "preferred_username": "{1}"}, "credentials":{"password": "123"}}`
 			jsonStr := sf.Format(jsonTemplate, tCase.userName, tCase.userName)
@@ -275,4 +275,22 @@ func createTestRedisDataManager() *RedisDataManager {
 	logger := logging.CreateLogger(&loggerCfg)
 	manager, _ := CreateRedisDataManager(&dataSourceCfg, logger)
 	return manager
+}
+
+func checkRealm(t *testing.T, expected *data.Realm, actual *data.Realm) {
+	assert.Equal(t, expected.Name, actual.Name)
+	assert.Equal(t, expected.TokenExpiration, actual.TokenExpiration)
+	assert.Equal(t, expected.RefreshTokenExpiration, actual.RefreshTokenExpiration)
+}
+
+func checkClient(t *testing.T, expected *data.Client, actual *data.Client) {
+	assert.Equal(t, expected.Name, actual.Name)
+	assert.Equal(t, expected.Type, actual.Type)
+	assert.Equal(t, expected.ID, actual.ID)
+	assert.Equal(t, expected.Auth.Type, actual.Auth.Type)
+	assert.Equal(t, expected.Auth.Value, actual.Auth.Value)
+}
+
+func checkUser(t *testing.T, expected *data.User, actual *data.User) {
+
 }
