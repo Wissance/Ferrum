@@ -31,6 +31,7 @@ COPY keyfile ./keyfile
 COPY "main.go" ./"main.go"
 COPY "config_docker_w_redis.json" ./"config_docker_w_redis.json"
 COPY tools/"create_wissance_demo_users_docker.sh" ./"create_wissance_demo_users_docker.sh"
+COPY tools/"docker_app_runner.sh" ./"docker_app_runner.sh"
 
 RUN go generate
 
@@ -39,7 +40,7 @@ RUN go get -d -v ./...
 RUN go install -v ./...
 
 # Build the Go apps
-RUN go build -o /ferrum
+RUN go build -o ferrum
 RUN go build -o ferrum-admin ./api/admin/cli
 
 # TODO(SIA) Vulnerability
@@ -48,6 +49,8 @@ COPY --from=ghcr.io/ufoscout/docker-compose-wait:latest /wait /wait
 COPY testData ./testData
 COPY tools ./tools
 
-# RUN cp config_docker_w_redis.json /app_data/config_docker_w_redis.json
+# TODO(UMV): 1. Build config on a Fly (to use props from Env variables)
 
-CMD ["/bin/bash", "-c", "/wait && ./create_wissance_demo_users_docker.sh && /ferrum --config /app/config_docker_w_redis.json"]
+# TODO(UMV): 2. If we have users, realms and clients do not attempt to insert them
+
+CMD ["/bin/bash", "-c", "./docker_app_runner.sh"]
