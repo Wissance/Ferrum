@@ -24,6 +24,9 @@ func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
 
 	realm, err := mn.getRealmObject(realmName)
 	if err != nil {
+		if errors.As(err, &appErrs.EmptyNotFoundErr) {
+			return nil, err
+		}
 		return nil, appErrs.NewUnknownError("getRealmObject", "RedisDataManager.GetRealm", err)
 	}
 

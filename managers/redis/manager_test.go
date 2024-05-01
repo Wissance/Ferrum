@@ -152,12 +152,31 @@ func TestUpdateRealmSuccessfully(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestDeleteFailsNonExistingRealm(t *testing.T) {
-	// 1. Create Realm
+func TestUpdateRealmFailsNonExistingRealm(t *testing.T) {
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name: "super-duper-realm",
+	}
+	nonExistingRealm := sf.Format("non_existing_{0}", uuid.New().String())
+	err := manager.UpdateRealm(nonExistingRealm, realm)
+	assert.Error(t, err)
+	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
+}
+
+func TestDeleteRealmFailsNonExistingRealm(t *testing.T) {
 	manager := createTestRedisDataManager()
 
 	nonExistingRealm := sf.Format("non_existing_{0}", uuid.New().String())
 	err := manager.DeleteRealm(nonExistingRealm)
+	assert.Error(t, err)
+	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
+}
+
+func TestGetRealmFailsNonExistingRealm(t *testing.T) {
+	manager := createTestRedisDataManager()
+
+	nonExistingRealm := sf.Format("non_existing_{0}", uuid.New().String())
+	_, err := manager.GetRealm(nonExistingRealm)
 	assert.Error(t, err)
 	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
 }
