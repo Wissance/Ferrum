@@ -250,6 +250,56 @@ func TestCreateClientFailsDuplicateClient(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestUpdateClientSuccessfully(t *testing.T) {
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name:                   "sample_realm_4_check_duplicate",
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
+
+	client := data.Client{
+		Name: "app_4_check_duplicate_client_create",
+		Type: data.Public,
+		ID:   uuid.New(),
+	}
+
+	err = manager.CreateClient(realm.Name, client)
+	assert.NoError(t, err)
+
+	c, err := manager.GetClient(realm.Name, client.Name)
+	assert.NoError(t, err)
+	checkClient(t, &client, c)
+
+	client.Auth = data.Authentication{
+		Type:  data.ClientIdAndSecrets,
+		Value: uuid.New().String(),
+	}
+
+	err = manager.UpdateClient(realm.Name, client.Name, client)
+	assert.NoError(t, err)
+	c, err = manager.GetClient(realm.Name, client.Name)
+	assert.NoError(t, err)
+	checkClient(t, &client, c)
+
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
+}
+
+func TestUpdateClientFailsNonExistingClient(t *testing.T) {
+
+}
+
+func TestDeleteClientFailsNonExistingClient(t *testing.T) {
+
+}
+
+func TestGetClientFailsNonExistingClient(t *testing.T) {
+
+}
+
 func TestCreateUserSuccessfully(t *testing.T) {
 	testCases := []struct {
 		name              string
