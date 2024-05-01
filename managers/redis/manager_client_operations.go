@@ -122,6 +122,9 @@ func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) er
 	}
 
 	if err := mn.deleteClientObject(realmName, clientName); err != nil {
+		if errors.As(err, &errors2.EmptyNotFoundErr) {
+			return err
+		}
 		return errors2.NewUnknownError("deleteClientObject", "RedisDataManager.DeleteClient", err)
 	}
 	if err := mn.deleteClientFromRealm(realmName, clientName); err != nil {
@@ -151,6 +154,9 @@ func (mn *RedisDataManager) UpdateClient(realmName string, clientName string, cl
 	// TODO(SIA) Add transaction
 	oldClient, err := mn.GetClient(realmName, clientName)
 	if err != nil {
+		if errors.As(err, &errors2.EmptyNotFoundErr) {
+			return err
+		}
 		return errors2.NewUnknownError("GetClient", "RedisDataManager.UpdateClient", err)
 	}
 	if clientNew.ID != oldClient.ID || clientNew.Name != oldClient.Name {
@@ -298,6 +304,9 @@ func (mn *RedisDataManager) createRealmClients(realmName string, realmClients []
 func (mn *RedisDataManager) deleteClientObject(realmName string, clientName string) error {
 	clientKey := sf.Format(clientKeyTemplate, mn.namespace, realmName, clientName)
 	if err := mn.deleteRedisObject(Client, clientKey); err != nil {
+		if errors.As(err, &errors2.EmptyNotFoundErr) {
+			return err
+		}
 		return errors2.NewUnknownError("deleteRedisObject", "RedisDataManager.deleteClientObject", err)
 	}
 	return nil
