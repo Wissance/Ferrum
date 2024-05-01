@@ -394,9 +394,29 @@ func TestCreateUserSuccessfully(t *testing.T) {
 	}
 }
 
-/*func TestUpdateUserSuccessfully(t *testing.T) {
+func TestCreateUserFailsDuplicateUser(t *testing.T) {
 
-}*/
+}
+
+func TestUpdateUserSuccessfully(t *testing.T) {
+
+}
+
+func TestUpdateUserFailsNonExistingUser(t *testing.T) {
+
+}
+
+func TestDeleteUserSuccessfully(t *testing.T) {
+
+}
+
+func TestDeleteUserFailsNonExistingUser(t *testing.T) {
+
+}
+
+func TestGetUserFailsNonExistingUser(t *testing.T) {
+
+}
 
 func TestChangeUserPasswordSuccessfully(t *testing.T) {
 	manager := createTestRedisDataManager()
@@ -419,7 +439,8 @@ func TestChangeUserPasswordSuccessfully(t *testing.T) {
 	realm.Clients = append([]data.Client{client})
 
 	userName := "new_app_user"
-	userJson := sf.Format(`{"info":{"preferred_username":"{0}"}, "credentials":{"password": "123"}}`, userName)
+	userTemplate := `{"info":{"preferred_username":"{0}"}, "credentials":{"password": "{1}"}}`
+	userJson := sf.Format(userTemplate, userName, "123")
 	var rawUser interface{}
 	err := json.Unmarshal([]byte(userJson), &rawUser)
 	assert.NoError(t, err)
@@ -431,8 +452,17 @@ func TestChangeUserPasswordSuccessfully(t *testing.T) {
 	assert.NoError(t, err)
 
 	// 2. Reset Password and check ...
-	err = manager.SetPassword(realm.Name, userName, "123_ololo_321")
+	newPassword := "123_ololo_321"
+	err = manager.SetPassword(realm.Name, userName, newPassword)
 	assert.NoError(t, err)
+
+	userJson = sf.Format(userTemplate, userName, newPassword)
+	err = json.Unmarshal([]byte(userJson), &rawUser)
+	assert.NoError(t, err)
+	expectedUser := data.CreateUser(rawUser)
+	u, err := manager.GetUser(realm.Name, userName)
+	assert.NoError(t, err)
+	checkUser(t, &expectedUser, &u)
 
 	err = manager.DeleteRealm(realm.Name)
 	assert.NoError(t, err)
