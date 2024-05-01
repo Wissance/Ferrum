@@ -86,8 +86,7 @@ func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client
 	// TODO(SIA) use function isExists
 	_, err = mn.GetClient(realmName, clientNew.Name)
 	if err == nil {
-		// TODO(umv): think about making this error more detailed
-		return errors2.ErrExists
+		return errors2.NewObjectExistsError(Client, clientNew.Name, sf.Format("realm: {0}", realmName))
 	}
 	if !errors.As(err, &errors2.ObjectNotFoundError{}) {
 		return err

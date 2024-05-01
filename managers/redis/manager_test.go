@@ -2,10 +2,12 @@ package redis
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
+	appErrs "github.com/wissance/Ferrum/errors"
 	"github.com/wissance/Ferrum/logging"
 	sf "github.com/wissance/stringFormatter"
 	"testing"
@@ -81,6 +83,25 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 	}
 }
 
+func TestCreateRealmFailsDuplicateRealm(t *testing.T) {
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name:                   "realm_for_duplicate_check",
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
+
+	err = manager.CreateRealm(realm)
+	assert.Error(t, err)
+	assert.True(t, errors.As(err, &appErrs.ErrExists))
+
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
+}
+
 func TestUpdateRealmSuccessfully(t *testing.T) {
 	// 1. Create Realm
 	manager := createTestRedisDataManager()
@@ -129,6 +150,16 @@ func TestUpdateRealmSuccessfully(t *testing.T) {
 	// 3. Delete Realm
 	err = manager.DeleteRealm(realm.Name)
 	assert.NoError(t, err)
+}
+
+func TestDeleteFailsNonExistingRealm(t *testing.T) {
+	// 1. Create Realm
+	manager := createTestRedisDataManager()
+
+	nonExistingRealm := sf.Format("non_existing_{0}", uuid.New().String())
+	err := manager.DeleteRealm(nonExistingRealm)
+	assert.Error(t, err)
+	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
 }
 
 func TestCreateClientSuccessfully(t *testing.T) {
@@ -319,5 +350,7 @@ func checkUsers(t *testing.T, expected *[]data.User, actual *[]data.User) {
 }
 
 func checkUser(t *testing.T, expected *data.User, actual *data.User) {
-
+	assert.Equal(t, (*expected).GetId(), (*actual).GetId())
+	assert.Equal(t, (*expected).GetUsername(), (*actual).GetUsername())
+	assert.Equal(t, (*expected).GetPassword(), (*actual).GetPassword())
 }

@@ -60,7 +60,7 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 	// TODO(SIA) use function isExists
 	_, err := mn.getRealmObject(newRealm.Name)
 	if err == nil {
-		return appErrs.ErrExists
+		return appErrs.NewObjectExistsError(string(Realm), newRealm.Name, "")
 	}
 	if !errors.As(err, &appErrs.EmptyNotFoundErr) {
 		return err
@@ -141,6 +141,9 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
 	}
 	// TODO(SIA) Add transaction
 	if err := mn.deleteRealmObject(realmName); err != nil {
+		if errors.As(err, &appErrs.EmptyNotFoundErr) {
+			return err
+		}
 		return appErrs.NewUnknownError("deleteRealmObject", "RedisDataManager.DeleteRealm", err)
 	}
 
@@ -300,6 +303,9 @@ func (mn *RedisDataManager) upsertRealmObject(realmName string, realmJson string
 func (mn *RedisDataManager) deleteRealmObject(realmName string) error {
 	realmKey := sf.Format(realmKeyTemplate, mn.namespace, realmName)
 	if err := mn.deleteRedisObject(Realm, realmKey); err != nil {
+		if errors.As(err, &appErrs.EmptyNotFoundErr) {
+			return err
+		}
 		return appErrs.NewUnknownError("deleteRedisObject", "RedisDataManager.deleteRealmObject", err)
 	}
 	return nil

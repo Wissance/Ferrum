@@ -135,7 +135,7 @@ func (mn *RedisDataManager) CreateUser(realmName string, userNew data.User) erro
 	// TODO(SIA) use function isExists
 	_, err = mn.GetUser(realmName, userName)
 	if err == nil {
-		return errors2.ErrExists
+		return errors2.NewObjectExistsError(User, userName, sf.Format("realm: {0}", realmName))
 	}
 	if !errors.As(err, &errors2.EmptyNotFoundErr) {
 		mn.logger.Warn(sf.Format("CreateUser: GetUser failed, error: {0}", err.Error()))
