@@ -62,12 +62,19 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 			assert.NoError(t, err)
 			r, err := manager.GetRealm(realm.Name)
 			assert.NoError(t, err)
-			// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
 			checkRealm(t, &realm, r)
 			assert.Equal(t, len(tCase.clients), len(r.Clients))
 			users, err := manager.GetUsers(realm.Name)
 			assert.NoError(t, err)
 			assert.Equal(t, len(realm.Users), len(users))
+			expectedUsers := make([]data.User, len(realm.Users))
+			if len(realm.Users) > 0 {
+
+				for i, _ := range realm.Users {
+					expectedUsers[i] = data.CreateUser(realm.Users[i])
+				}
+			}
+			checkUsers(t, &expectedUsers, &users)
 			err = manager.DeleteRealm(realm.Name)
 			assert.NoError(t, err)
 		})
@@ -293,6 +300,22 @@ func checkClient(t *testing.T, expected *data.Client, actual *data.Client) {
 	assert.Equal(t, expected.ID, actual.ID)
 	assert.Equal(t, expected.Auth.Type, actual.Auth.Type)
 	assert.Equal(t, expected.Auth.Value, actual.Auth.Value)
+}
+
+func checkUsers(t *testing.T, expected *[]data.User, actual *[]data.User) {
+	assert.Equal(t, len(*expected), len(*actual))
+	for _, e := range *expected {
+		// check and find actual ....
+		found := false
+		for _, a := range *actual {
+			if e.GetId() == a.GetId() {
+				checkUser(t, &e, &a)
+				found = true
+				break
+			}
+		}
+		assert.True(t, found)
+	}
 }
 
 func checkUser(t *testing.T, expected *data.User, actual *data.User) {
