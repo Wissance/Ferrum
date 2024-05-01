@@ -114,8 +114,7 @@ func TestUpdateRealmSuccessfully(t *testing.T) {
 	assert.NoError(t, err)
 	r, err := manager.GetRealm(realm.Name)
 	assert.NoError(t, err)
-	// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
-	assert.Equal(t, realm.Name, r.Name)
+	checkRealm(t, &realm, r)
 	prevRealmName := realm.Name
 	// 2. Update Realm
 	realm.Name = sf.Format("app_4_update_check_{0}_new_realm_name", uuid.New().String())
@@ -141,12 +140,7 @@ func TestUpdateRealmSuccessfully(t *testing.T) {
 	assert.NoError(t, err)
 	r, err = manager.GetRealm(realm.Name)
 	assert.NoError(t, err)
-	// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
-	assert.Equal(t, realm.Name, r.Name)
-	assert.Equal(t, realm.TokenExpiration, r.TokenExpiration)
-	assert.Equal(t, len(realm.Clients), len(realm.Clients))
-	assert.Equal(t, len(realm.Users), len(realm.Users))
-
+	checkRealm(t, &realm, r)
 	// 3. Delete Realm
 	err = manager.DeleteRealm(realm.Name)
 	assert.NoError(t, err)
@@ -227,6 +221,33 @@ func TestCreateClientSuccessfully(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+}
+
+func TestCreateClientFailsDuplicateClient(t *testing.T) {
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name:                   "sample_realm_4_check_duplicate",
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
+
+	client := data.Client{
+		Name: "app_4_check_duplicate_client_create",
+		Type: data.Public,
+		ID:   uuid.New(),
+	}
+
+	err = manager.CreateClient(realm.Name, client)
+	assert.NoError(t, err)
+
+	err = manager.CreateClient(realm.Name, client)
+	assert.Error(t, err)
+	assert.True(t, errors.As(err, &appErrs.ErrExists))
+
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestCreateUserSuccessfully(t *testing.T) {
