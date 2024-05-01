@@ -162,6 +162,10 @@ func TestCreateClientSuccessfully(t *testing.T) {
 			err = manager.CreateClient(realm.Name, client)
 			assert.NoError(t, err)
 
+			c, err := manager.GetClient(realm.Name, client.Name)
+			assert.NoError(t, err)
+			checkClient(t, &client, c)
+
 			err = manager.DeleteRealm(realm.Name)
 			assert.NoError(t, err)
 		})
