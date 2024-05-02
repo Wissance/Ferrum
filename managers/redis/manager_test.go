@@ -485,15 +485,73 @@ func TestUpdateUserFailsNonExistingUser(t *testing.T) {
 }
 
 func TestDeleteUserSuccessfully(t *testing.T) {
+	manager := createTestRedisDataManager()
+	// here we are going to create user separately from Realm via manager.CreateUser
+	realm := data.Realm{
+		Name:                   "realm_4_test_user_delete",
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
+	userName := "sidorov"
 
+	jsonTemplate := `{"info":{"name":"{0}", "preferred_username": "{0}"}, "credentials":{"password": "{1}"}}`
+	jsonStr := sf.Format(jsonTemplate, userName, "98765")
+	var rawUser interface{}
+	err = json.Unmarshal([]byte(jsonStr), &rawUser)
+	assert.NoError(t, err)
+	user := data.CreateUser(rawUser)
+	err = manager.CreateUser(realm.Name, user)
+	assert.NoError(t, err)
+	u, err := manager.GetUser(realm.Name, userName)
+	assert.NoError(t, err)
+	checkUser(t, &user, &u)
+
+	err = manager.DeleteUser(realm.Name, userName)
+	assert.NoError(t, err)
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestDeleteUserFailsNonExistingUser(t *testing.T) {
+	manager := createTestRedisDataManager()
+	// here we are going to create user separately from Realm via manager.CreateUser
+	realm := data.Realm{
+		Name:                   "realm_4_test_user_delete_fails_non_existing",
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
 
+	userName := sf.Format("non_existing_user_{0}", uuid.New().String())
+	err = manager.DeleteUser(realm.Name, userName)
+	assert.Error(t, err)
+	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
+
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestGetUserFailsNonExistingUser(t *testing.T) {
+	manager := createTestRedisDataManager()
+	// here we are going to create user separately from Realm via manager.CreateUser
+	realm := data.Realm{
+		Name:                   "realm_4_test_user_delete_fails_non_existing",
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
 
+	userName := sf.Format("non_existing_user_{0}", uuid.New().String())
+	_, err = manager.GetUser(realm.Name, userName)
+	assert.Error(t, err)
+	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
+
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestChangeUserPasswordSuccessfully(t *testing.T) {

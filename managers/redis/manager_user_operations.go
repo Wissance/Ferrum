@@ -168,6 +168,9 @@ func (mn *RedisDataManager) DeleteUser(realmName string, userName string) error 
 		return errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
 	}
 	if err := mn.deleteUserObject(realmName, userName); err != nil {
+		if errors.As(err, &errors2.EmptyNotFoundErr) {
+			return err
+		}
 		return errors2.NewUnknownError("deleteUserObject", "RedisDataManager.DeleteUser", err)
 	}
 	if err := mn.deleteUserFromRealm(realmName, userName); err != nil {
@@ -399,6 +402,9 @@ func (mn *RedisDataManager) createRealmUsers(realmName string, realmUsers []data
 func (mn *RedisDataManager) deleteUserObject(realmName string, userName string) error {
 	userKey := sf.Format(userKeyTemplate, mn.namespace, realmName, userName)
 	if err := mn.deleteRedisObject(User, userKey); err != nil {
+		if errors.As(err, &errors2.EmptyNotFoundErr) {
+			return err
+		}
 		return errors2.NewUnknownError("deleteRedisObject", "RedisDataManager.deleteUserObject", err)
 	}
 	return nil
