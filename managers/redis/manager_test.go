@@ -409,6 +409,18 @@ func TestGetClientFailsNonExistingClient(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetUsersSuccessfully(t *testing.T) {
+
+}
+
+func TestGetUsersSuccessfullyEmptyRealm(t *testing.T) {
+
+}
+
+func TestGetUsersSuccessfullyNonExistingRealm(t *testing.T) {
+
+}
+
 func TestCreateUserSuccessfully(t *testing.T) {
 	testCases := []struct {
 		name              string
