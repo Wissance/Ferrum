@@ -1,6 +1,13 @@
 package files
 
-import "testing"
+import (
+	"github.com/stretchr/testify/require"
+	"github.com/wissance/Ferrum/config"
+	"github.com/wissance/Ferrum/logging"
+	"testing"
+)
+
+const testDataFile = "test_data.json"
 
 func TestGetRealmSuccessfully(t *testing.T) {
 
@@ -44,4 +51,14 @@ func TestGetUsersSuccessfullyNonExistingRealm(t *testing.T) {
 
 func TestGetClientSuccessfullyNonExistingRealm(t *testing.T) {
 
+}
+
+func createTestFileDataManager(t *testing.T) *FileDataManager {
+	loggerCfg := config.LoggingConfig{}
+
+	logger := logging.CreateLogger(&loggerCfg)
+
+	manager, err := CreateFileDataManager(testDataFile, logger)
+	require.NoError(t, err)
+	return manager
 }

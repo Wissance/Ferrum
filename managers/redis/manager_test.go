@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	appErrs "github.com/wissance/Ferrum/errors"
@@ -32,7 +33,7 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
-			manager := createTestRedisDataManager()
+			manager := createTestRedisDataManager(t)
 			realm := data.Realm{
 				Name:                   sf.Format(tCase.realmNameTemplate, uuid.New().String()),
 				TokenExpiration:        3600,
@@ -84,7 +85,7 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 }
 
 func TestCreateRealmFailsDuplicateRealm(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name:                   "realm_for_duplicate_check",
 		TokenExpiration:        3600,
@@ -104,7 +105,7 @@ func TestCreateRealmFailsDuplicateRealm(t *testing.T) {
 
 func TestUpdateRealmSuccessfully(t *testing.T) {
 	// 1. Create Realm
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name:                   sf.Format("realm_4_update_check_{0}", uuid.New().String()),
 		TokenExpiration:        3600,
@@ -147,7 +148,7 @@ func TestUpdateRealmSuccessfully(t *testing.T) {
 }
 
 func TestUpdateRealmFailsNonExistingRealm(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name: "super-duper-realm",
 	}
@@ -158,7 +159,7 @@ func TestUpdateRealmFailsNonExistingRealm(t *testing.T) {
 }
 
 func TestDeleteRealmFailsNonExistingRealm(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 
 	nonExistingRealm := sf.Format("non_existing_{0}", uuid.New().String())
 	err := manager.DeleteRealm(nonExistingRealm)
@@ -167,7 +168,7 @@ func TestDeleteRealmFailsNonExistingRealm(t *testing.T) {
 }
 
 func TestGetRealmFailsNonExistingRealm(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 
 	nonExistingRealm := sf.Format("non_existing_{0}", uuid.New().String())
 	_, err := manager.GetRealm(nonExistingRealm)
@@ -177,7 +178,7 @@ func TestGetRealmFailsNonExistingRealm(t *testing.T) {
 
 func TestGetClientsSuccessfully(t *testing.T) {
 	// 1. Create Realm
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name:                   sf.Format("realm_4_get_multiple_clients_{0}", uuid.New().String()),
 		TokenExpiration:        3600,
@@ -207,7 +208,7 @@ func TestGetClientsSuccessfully(t *testing.T) {
 
 func TestGetClientsSuccessfullyForEmptyRealm(t *testing.T) {
 	// 1. Create Realm
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name:                   sf.Format("empty_realm_4_get_multiple_clients_{0}", uuid.New().String()),
 		TokenExpiration:        3600,
@@ -225,7 +226,7 @@ func TestGetClientsSuccessfullyForEmptyRealm(t *testing.T) {
 }
 
 func TestGetClientsSuccessfullyRealmNotExist(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	nonExistingRealm := sf.Format("non_existing_{0}", uuid.New().String())
 	c, err := manager.GetClients(nonExistingRealm)
 	assert.NoError(t, err)
@@ -244,7 +245,7 @@ func TestCreateClientSuccessfully(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
-			manager := createTestRedisDataManager()
+			manager := createTestRedisDataManager(t)
 			realm := data.Realm{
 				Name:                   "sample_realm_4_create_client_tests",
 				TokenExpiration:        3600,
@@ -281,7 +282,7 @@ func TestCreateClientSuccessfully(t *testing.T) {
 }
 
 func TestCreateClientFailsDuplicateClient(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name:                   "sample_realm_4_check_client_duplicate",
 		TokenExpiration:        3600,
@@ -308,7 +309,7 @@ func TestCreateClientFailsDuplicateClient(t *testing.T) {
 }
 
 func TestUpdateClientSuccessfully(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name:                   "sample_realm_4_test_client_update",
 		TokenExpiration:        3600,
@@ -346,7 +347,7 @@ func TestUpdateClientSuccessfully(t *testing.T) {
 }
 
 func TestUpdateClientFailsNonExistingClient(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name:                   "sample_realm_4_test_non_existing_client_update",
 		TokenExpiration:        3600,
@@ -369,7 +370,7 @@ func TestUpdateClientFailsNonExistingClient(t *testing.T) {
 }
 
 func TestDeleteClientFailsNonExistingClient(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name:                   "sample_realm_4_test_non_existing_client_update",
 		TokenExpiration:        3600,
@@ -389,7 +390,7 @@ func TestDeleteClientFailsNonExistingClient(t *testing.T) {
 }
 
 func TestGetClientFailsNonExistingClient(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name:                   "sample_realm_4_test_non_existing_client_get",
 		TokenExpiration:        3600,
@@ -410,7 +411,7 @@ func TestGetClientFailsNonExistingClient(t *testing.T) {
 
 func TestGetUsersSuccessfully(t *testing.T) {
 	// 1. Create Realm
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name:                   sf.Format("realm_4_get_multiple_users_{0}", uuid.New().String()),
 		TokenExpiration:        3600,
@@ -444,7 +445,7 @@ func TestGetUsersSuccessfully(t *testing.T) {
 
 func TestGetUsersSuccessfullyEmptyRealm(t *testing.T) {
 	// 1. Create Realm
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
 		Name:                   sf.Format("empty_realm_4_get_multiple_users_{0}", uuid.New().String()),
 		TokenExpiration:        3600,
@@ -464,7 +465,7 @@ func TestGetUsersSuccessfullyEmptyRealm(t *testing.T) {
 }
 
 func TestGetUsersSuccessfullyNonExistingRealm(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	nonExistingRealm := sf.Format("non_existing_{0}", uuid.New().String())
 	u, err := manager.GetUsers(nonExistingRealm)
 	assert.Equal(t, 0, len(u))
@@ -472,7 +473,7 @@ func TestGetUsersSuccessfullyNonExistingRealm(t *testing.T) {
 }
 
 func TestGetUserByIdSuccessfully(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	// here we are going to create user separately from Realm via manager.CreateUser
 	realm := data.Realm{
 		Name:                   "realm_4_test_get_user_by_id",
@@ -501,7 +502,7 @@ func TestGetUserByIdSuccessfully(t *testing.T) {
 }
 
 func TestGetUserByIdFailsUserDoesNotExists(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	// here we are going to create user separately from Realm via manager.CreateUser
 	realm := data.Realm{
 		Name:                   "realm_4_test_get_non_existing_user_by_id",
@@ -533,7 +534,7 @@ func TestCreateUserSuccessfully(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
-			manager := createTestRedisDataManager()
+			manager := createTestRedisDataManager(t)
 			// here we are going to create user separately from Realm via manager.CreateUser
 			realm := data.Realm{
 				Name:                   sf.Format(tCase.realmNameTemplate, uuid.New().String()),
@@ -564,7 +565,7 @@ func TestCreateUserSuccessfully(t *testing.T) {
 }
 
 func TestCreateUserFailsDuplicateUser(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	// here we are going to create user separately from Realm via manager.CreateUser
 	realm := data.Realm{
 		Name:                   "realm_4_test_user_create_fails_duplicate",
@@ -592,7 +593,7 @@ func TestCreateUserFailsDuplicateUser(t *testing.T) {
 }
 
 func TestUpdateUserSuccessfully(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	// here we are going to create user separately from Realm via manager.CreateUser
 	realm := data.Realm{
 		Name:                   "realm_4_test_user_update",
@@ -629,7 +630,7 @@ func TestUpdateUserSuccessfully(t *testing.T) {
 }
 
 func TestUpdateUserFailsNonExistingUser(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	// here we are going to create user separately from Realm via manager.CreateUser
 	realm := data.Realm{
 		Name:                   "realm_4_test_user_update_fails_non_existing_user",
@@ -655,7 +656,7 @@ func TestUpdateUserFailsNonExistingUser(t *testing.T) {
 }
 
 func TestDeleteUserSuccessfully(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	// here we are going to create user separately from Realm via manager.CreateUser
 	realm := data.Realm{
 		Name:                   "realm_4_test_user_delete",
@@ -685,7 +686,7 @@ func TestDeleteUserSuccessfully(t *testing.T) {
 }
 
 func TestDeleteUserFailsNonExistingUser(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	// here we are going to create user separately from Realm via manager.CreateUser
 	realm := data.Realm{
 		Name:                   "realm_4_test_user_delete_fails_non_existing",
@@ -705,7 +706,7 @@ func TestDeleteUserFailsNonExistingUser(t *testing.T) {
 }
 
 func TestGetUserFailsNonExistingUser(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	// here we are going to create user separately from Realm via manager.CreateUser
 	realm := data.Realm{
 		Name:                   "realm_4_test_user_delete_fails_non_existing",
@@ -725,7 +726,7 @@ func TestGetUserFailsNonExistingUser(t *testing.T) {
 }
 
 func TestChangeUserPasswordSuccessfully(t *testing.T) {
-	manager := createTestRedisDataManager()
+	manager := createTestRedisDataManager(t)
 	// 1. Create Realm+Client+User
 	realm := data.Realm{
 		Name:                   sf.Format("app_4_user_pwd_change_check_{0}", uuid.New().String()),
@@ -774,7 +775,7 @@ func TestChangeUserPasswordSuccessfully(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func createTestRedisDataManager() *RedisDataManager {
+func createTestRedisDataManager(t *testing.T) *RedisDataManager {
 	rndNamespace := sf.Format("ferrum_test_{0}", uuid.New().String())
 	dataSourceCfg := config.DataSourceConfig{
 		Type:   config.REDIS,
@@ -792,7 +793,8 @@ func createTestRedisDataManager() *RedisDataManager {
 	loggerCfg := config.LoggingConfig{}
 
 	logger := logging.CreateLogger(&loggerCfg)
-	manager, _ := CreateRedisDataManager(&dataSourceCfg, logger)
+	manager, err := CreateRedisDataManager(&dataSourceCfg, logger)
+	require.NoError(t, err)
 	return manager
 }
 
