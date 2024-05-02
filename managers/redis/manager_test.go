@@ -175,6 +175,64 @@ func TestGetRealmFailsNonExistingRealm(t *testing.T) {
 	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
 }
 
+func TestGetClientsSuccessfully(t *testing.T) {
+	// 1. Create Realm
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name:                   sf.Format("realm_4_get_multiple_clients_{0}", uuid.New().String()),
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
+	// 2. Create multiple clients
+	clients := make([]data.Client, 3)
+	for i, _ := range clients {
+		// create && store
+		clients[i] = data.Client{
+			Name: sf.Format("client_{0}_test_multiple_client_get_{1}", i, uuid.New().String()),
+			Type: data.Public,
+		}
+		err = manager.CreateClient(realm.Name, clients[i])
+		assert.NoError(t, err)
+	}
+	// 3. Get all related to realm clients
+	c, err := manager.GetClients(realm.Name)
+	checkClients(t, &clients, &c)
+	assert.NoError(t, err)
+	// 4. Cleanup via Realm Delete
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
+
+}
+
+func TestGetClientsSuccessfullyForEmptyRealm(t *testing.T) {
+	// 1. Create Realm
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name:                   sf.Format("empty_realm_4_get_multiple_clients_{0}", uuid.New().String()),
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
+	// 3. Get all related to realm clients
+	c, err := manager.GetClients(realm.Name)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(c))
+	// 4. Cleanup via Realm Delete
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
+}
+
+func TestGetClientsSuccessfullyRealmNotExist(t *testing.T) {
+	manager := createTestRedisDataManager()
+	nonExistingRealm := sf.Format("non_existing_{0}", uuid.New().String())
+	c, err := manager.GetClients(nonExistingRealm)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(c))
+}
+
 func TestCreateClientSuccessfully(t *testing.T) {
 	testCases := []struct {
 		name       string
@@ -630,6 +688,21 @@ func checkRealm(t *testing.T, expected *data.Realm, actual *data.Realm) {
 	assert.Equal(t, expected.Name, actual.Name)
 	assert.Equal(t, expected.TokenExpiration, actual.TokenExpiration)
 	assert.Equal(t, expected.RefreshTokenExpiration, actual.RefreshTokenExpiration)
+}
+
+func checkClients(t *testing.T, expected *[]data.Client, actual *[]data.Client) {
+	assert.Equal(t, len(*expected), len(*actual))
+	for _, e := range *expected {
+		found := false
+		for _, a := range *actual {
+			if e.Name == a.Name {
+				checkClient(t, &e, &a)
+				found = true
+				break
+			}
+		}
+		assert.True(t, found)
+	}
 }
 
 func checkClient(t *testing.T, expected *data.Client, actual *data.Client) {
