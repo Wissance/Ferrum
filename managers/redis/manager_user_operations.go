@@ -195,6 +195,9 @@ func (mn *RedisDataManager) UpdateUser(realmName string, userName string, userNe
 	// TODO(SIA) Add transaction
 	oldUser, err := mn.GetUser(realmName, userName)
 	if err != nil {
+		if errors.As(err, &errors2.EmptyNotFoundErr) {
+			return err
+		}
 		return errors2.NewUnknownError("GetUser", "RedisDataManager.UpdateUser", err)
 	}
 	oldUserName := oldUser.GetUsername()

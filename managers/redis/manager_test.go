@@ -374,7 +374,6 @@ func TestCreateUserSuccessfully(t *testing.T) {
 			assert.NoError(t, err)
 			r, err := manager.GetRealm(realm.Name)
 			assert.NoError(t, err)
-			// TODO(UMV): IMPL FULL COMPARISON, HERE WE MAKE VERY FORMAL COMPARISON
 			checkRealm(t, &realm, r)
 
 			jsonTemplate := `{"info":{"name":"{0}", "preferred_username": "{1}"}, "credentials":{"password": "123"}}`
@@ -405,7 +404,7 @@ func TestCreateUserFailsDuplicateUser(t *testing.T) {
 	err := manager.CreateRealm(realm)
 	assert.NoError(t, err)
 
-	jsonTemplate := `{"info":{"name":"{0}", "preferred_username": "{1}"}, "credentials":{"password": "123"}}`
+	jsonTemplate := `{"info":{"name":"{0}", "preferred_username": "{0}"}, "credentials":{"password": "{1}"}}`
 	jsonStr := sf.Format(jsonTemplate, "iiivanov", "321_ne_314ras")
 	var rawUser interface{}
 	err = json.Unmarshal([]byte(jsonStr), &rawUser)
@@ -423,11 +422,66 @@ func TestCreateUserFailsDuplicateUser(t *testing.T) {
 }
 
 func TestUpdateUserSuccessfully(t *testing.T) {
+	manager := createTestRedisDataManager()
+	// here we are going to create user separately from Realm via manager.CreateUser
+	realm := data.Realm{
+		Name:                   "realm_4_test_user_update",
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
+	userName := "pppetrov"
 
+	jsonTemplate := `{"info":{"name":"{0}", "preferred_username": "{0}"}, "credentials":{"password": "{1}"}}`
+	jsonStr := sf.Format(jsonTemplate, userName, "67890")
+	var rawUser interface{}
+	err = json.Unmarshal([]byte(jsonStr), &rawUser)
+	assert.NoError(t, err)
+	user := data.CreateUser(rawUser)
+	err = manager.CreateUser(realm.Name, user)
+	assert.NoError(t, err)
+
+	jsonTemplate = `{"info":{"sub":"{2}", "name":"{0}", "preferred_username": "{0}"}, "credentials":{"password": "{1}"}}`
+	jsonStr = sf.Format(jsonTemplate, "pppetrov", "67890", "00000000-0000-0000-0000-000000000001")
+	err = json.Unmarshal([]byte(jsonStr), &rawUser)
+	assert.NoError(t, err)
+	user = data.CreateUser(rawUser)
+
+	err = manager.UpdateUser(realm.Name, userName, user)
+	assert.NoError(t, err)
+	u, err := manager.GetUser(realm.Name, userName)
+	assert.NoError(t, err)
+	checkUser(t, &user, &u)
+
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestUpdateUserFailsNonExistingUser(t *testing.T) {
+	manager := createTestRedisDataManager()
+	// here we are going to create user separately from Realm via manager.CreateUser
+	realm := data.Realm{
+		Name:                   "realm_4_test_user_update_fails_non_existing_user",
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
 
+	userName := sf.Format("non-existing-user-{0}", uuid.New().String())
+	jsonTemplate := `{"info":{"name":"{0}", "preferred_username": "{0}"}, "credentials":{"password": "{1}"}}`
+	jsonStr := sf.Format(jsonTemplate, userName, "67890")
+	var rawUser interface{}
+	err = json.Unmarshal([]byte(jsonStr), &rawUser)
+	assert.NoError(t, err)
+	user := data.CreateUser(rawUser)
+	err = manager.UpdateUser(realm.Name, userName, user)
+	assert.Error(t, err)
+	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
+
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestDeleteUserSuccessfully(t *testing.T) {
