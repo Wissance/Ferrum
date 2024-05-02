@@ -203,7 +203,6 @@ func TestGetClientsSuccessfully(t *testing.T) {
 	// 4. Cleanup via Realm Delete
 	err = manager.DeleteRealm(realm.Name)
 	assert.NoError(t, err)
-
 }
 
 func TestGetClientsSuccessfullyForEmptyRealm(t *testing.T) {
@@ -410,7 +409,37 @@ func TestGetClientFailsNonExistingClient(t *testing.T) {
 }
 
 func TestGetUsersSuccessfully(t *testing.T) {
-
+	// 1. Create Realm
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name:                   sf.Format("realm_4_get_multiple_users_{0}", uuid.New().String()),
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
+	// 2. Create multiple users
+	users := make([]data.User, 3)
+	for i, _ := range users {
+		userId := uuid.New().String()
+		userName := sf.Format("test_user_{0}_{1}", i, userId)
+		jsonTemplate := `{"info":{"sub":"{2}", "name":"{0}", "preferred_username": "{1}"}, "credentials":{"password": "123"}}`
+		jsonStr := sf.Format(jsonTemplate, userName, userName, userId)
+		var rawUser interface{}
+		err = json.Unmarshal([]byte(jsonStr), &rawUser)
+		assert.NoError(t, err)
+		user := data.CreateUser(rawUser)
+		users[i] = user
+		err = manager.CreateUser(realm.Name, user)
+		assert.NoError(t, err)
+	}
+	// 3. Get all related to realm users
+	u, err := manager.GetUsers(realm.Name)
+	checkUsers(t, &users, &u)
+	assert.NoError(t, err)
+	// 4. Cleanup via Realm Delete
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestGetUsersSuccessfullyEmptyRealm(t *testing.T) {
