@@ -101,6 +101,9 @@ func (mn *RedisDataManager) GetUserById(realmName string, userId uuid.UUID) (dat
 	}
 	realmUser, err := mn.getRealmUserById(realmName, userId)
 	if err != nil {
+		if errors.As(err, &errors2.EmptyNotFoundErr) {
+			return nil, err
+		}
 		return nil, errors2.NewUnknownError("getRealmUserById", "RedisDataManager.GetUserById", err)
 	}
 	user, err := mn.GetUser(realmName, realmUser.Name)
@@ -306,6 +309,12 @@ func (mn *RedisDataManager) getRealmUser(realmName string, userName string) (*da
 func (mn *RedisDataManager) getRealmUserById(realmName string, userId uuid.UUID) (*data.ExtendedIdentifier, error) {
 	realmUsers, err := mn.getRealmUsers(realmName)
 	if err != nil {
+		if errors.As(err, &errors2.EmptyNotFoundErr) {
+			return nil, err
+		}
+		if errors.Is(err, errors2.ErrZeroLength) {
+			return nil, errors2.NewObjectNotFoundError(User, userId.String(), sf.Format("realm: {0}", realmName))
+		}
 		return nil, errors2.NewUnknownError("getRealmUsers", "RedisDataManager.getRealmUserById", err)
 	}
 	var user data.ExtendedIdentifier
