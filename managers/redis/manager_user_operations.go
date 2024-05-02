@@ -28,7 +28,7 @@ func (mn *RedisDataManager) GetUsers(realmName string) ([]data.User, error) {
 	realmUsers, err := mn.getRealmUsers(realmName)
 	if err != nil {
 		if errors.Is(err, errors2.ErrZeroLength) {
-			return []data.User{}, err
+			return []data.User{}, nil
 		}
 		return nil, errors2.NewUnknownError("getRealmUsers", "RedisDataManager.GetUsers", err)
 	}

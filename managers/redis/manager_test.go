@@ -443,11 +443,32 @@ func TestGetUsersSuccessfully(t *testing.T) {
 }
 
 func TestGetUsersSuccessfullyEmptyRealm(t *testing.T) {
+	// 1. Create Realm
+	manager := createTestRedisDataManager()
+	realm := data.Realm{
+		Name:                   sf.Format("empty_realm_4_get_multiple_users_{0}", uuid.New().String()),
+		TokenExpiration:        3600,
+		RefreshTokenExpiration: 1800,
+	}
+	err := manager.CreateRealm(realm)
+	assert.NoError(t, err)
 
+	// 2. Get all related to realm users
+	u, err := manager.GetUsers(realm.Name)
+	assert.Equal(t, 0, len(u))
+	assert.NoError(t, err)
+
+	// 3. Cleanup all resources via DeleteRealm
+	err = manager.DeleteRealm(realm.Name)
+	assert.NoError(t, err)
 }
 
 func TestGetUsersSuccessfullyNonExistingRealm(t *testing.T) {
-
+	manager := createTestRedisDataManager()
+	nonExistingRealm := sf.Format("non_existing_{0}", uuid.New().String())
+	u, err := manager.GetUsers(nonExistingRealm)
+	assert.Equal(t, 0, len(u))
+	assert.NoError(t, err)
 }
 
 func TestCreateUserSuccessfully(t *testing.T) {
