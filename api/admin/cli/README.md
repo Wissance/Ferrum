@@ -30,6 +30,8 @@ operations:
 * `reset_password` - reset password to random value
 * `change_password` - changes password to provided
 
+!!! Important NOTE !!! : in some of a systems to pass `JSON` via command line all **`"` should be escaped as `\"`** .
+
 ##### 2.1.1 Standard CRUD operations
 
 ##### 2.1.1.1 Create operations

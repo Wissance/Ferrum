@@ -33,8 +33,8 @@
         "type": "redis",
         "source": "redis:6379",
         "credentials": {
-            "username": "test_user",
-            "password": "test_password"
+            "username": "ferrum_db",
+            "password": "FeRRuM000"
         },
         "options": {
             "namespace": "ferrum_1",

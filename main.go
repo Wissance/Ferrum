@@ -1,3 +1,5 @@
+//go:generate go install github.com/swaggo/swag/cmd/swag@v1.7.6
+//go:generate swag init --parseDependency --parseInternal --parseDepth 6 -o ./swagger
 //go:generate openssl genrsa -out ./certs/server.key 2048
 //go:generate openssl ecparam -genkey -name secp384r1 -out ./certs/server.key
 //go:generate openssl req -new -x509 -sha256 -key ./certs/server.key -out ./certs/server.crt -days 3650 -subj "/C=RU"
@@ -17,6 +19,7 @@ import (
 const defaultConfig = "./config.json"
 
 var configFile = flag.String("config", defaultConfig, "--config ./config_w_redis.json")
+var devMode = flag.Bool("devmode", false, "-devmode")
 
 // main is an authorization server entry point is starts and stops by signal Application
 /* Ferrum requires config to run via cmd line, if no config was provided defaultConfig is using
@@ -31,15 +34,15 @@ func main() {
 	osSignal := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	app := application.CreateAppWithConfigs(*configFile)
-	res, initErr := app.Init()
-	logger := app.GetLogger()
+
+	app := application.CreateAppWithConfigs(*configFile, *devMode)
+	_, initErr := app.Init()
 	if initErr != nil {
-		logger.Error("An error occurred during app init, terminating the app")
+		fmt.Printf("An error occurred during app init, terminating the app: %s\n", initErr)
 		os.Exit(-1)
-	} else {
-		logger.Info("Application was successfully initialized")
 	}
+	logger := app.GetLogger()
+	logger.Info("Application was successfully initialized")
 
 	res, err := app.Start()
 	if !res {

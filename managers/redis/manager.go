@@ -65,6 +65,24 @@ type RedisDataManager struct {
 	ctx         context.Context
 }
 
+// IsAvailable methods that checks whether DataContext could be used or not
+/* Availability means that redisClient is not NULL and Ready for receive requests
+ * Parameters: no
+ * Returns true if DataContext is available
+ */
+func (mn *RedisDataManager) IsAvailable() bool {
+	if mn.redisClient == nil {
+		mn.logger.Debug("Redis client was not initialized")
+		return false
+	}
+	cmd := mn.redisClient.Ping(mn.ctx)
+	_, err := cmd.Result()
+	if err != nil {
+		mn.logger.Debug(sf.Format("Redis Ping executed with error: {0}", err.Error()))
+	}
+	return err == nil
+}
+
 // CreateRedisDataManager is factory function for instance of RedisDataManager creation
 /* Simply creates instance of RedisDataManager and initializes redis client, this function requires config.Namespace to be set up in configs, otherwise
  * defaultNamespace is using
@@ -155,7 +173,7 @@ func (mn *RedisDataManager) deleteRedisObject(objName objectType, objKey string)
 	res := redisIntCmd.Val()
 	if res == 0 {
 		mn.logger.Warn(sf.Format("An error occurred during Del, 0 items deleted {0}: \"{1}\" from Redis server", objName, objKey))
-		return errors.ErrNotExists
+		return errors.NewObjectNotFoundError(string(objName), objKey, "")
 	}
 	return nil
 }
@@ -185,7 +203,7 @@ func getSingleRedisObject[T any](redisClient *redis.Client, ctx context.Context,
 	if redisCmd.Err() != nil {
 		logger.Warn(sf.Format("An error occurred during fetching {0}: \"{1}\" from Redis server", objName, objKey))
 		if redisCmd.Err() == redis.Nil {
-			return nil, errors.ErrNotFound
+			return nil, errors.NewObjectNotFoundError(string(objName), objKey, "")
 		}
 		return nil, redisCmd.Err()
 	}
@@ -207,7 +225,7 @@ func getMultipleRedisObjects[T any](redisClient *redis.Client, ctx context.Conte
 ) ([]T, error) {
 	redisCmd := redisClient.MGet(ctx, objKey...)
 	if redisCmd.Err() != nil {
-		// todo(UMV): print when this will be done https://github.com/Wissance/stringFormatter/issues/14
+		//todo(UMV): print when this will be done https://github.com/Wissance/stringFormatter/issues/14
 		logger.Warn(sf.Format("An error occurred during fetching {0}: from Redis server", objName))
 		return nil, redisCmd.Err()
 	}
@@ -248,8 +266,8 @@ func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Conte
 		jsonBin := []byte(rawVal)
 		err := json.Unmarshal(jsonBin, &portion) // already contains all SLICE in one object
 		if err != nil {
-			logger.Error(sf.Format("An error occurred during unmarshall {0} : \"{1}\"", objName, objKey))
-			return nil, fmt.Errorf("json.Unmarshal failed: %w", err)
+			logger.Error(sf.Format("An error occurred during unmarshall {0} : \"{1}\", err: ", objName, objKey, err.Error()))
+			return nil, err
 		}
 		result = append(result, portion...)
 	}

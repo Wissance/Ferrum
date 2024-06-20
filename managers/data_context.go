@@ -18,6 +18,8 @@ import (
 // now contains only set of Get methods, during implementation admin CLI should be expanded to create && update entities
 // DataContext is a CRUD operations interface over a business objects (data.Realm, data.Client, data.User)
 type DataContext interface {
+	// IsAvailable Checks is Data Storage accessible or not
+	IsAvailable() bool
 	// GetRealm returns realm by name (unique) returns realm with clients but no users
 	GetRealm(realmName string) (*data.Realm, error)
 	// GetClient returns realm client by name (client name is also unique in a realm)

@@ -1,4 +1,6 @@
 FROM golang:1.18-alpine
+#VOLUME /app_data
+
 RUN sed -i 's/https/http/' /etc/apk/repositories
 RUN apk update && apk add --no-cache git && apk add --no-cache bash && apk add --no-cache build-base && apk add --no-cache openssl
 
@@ -27,22 +29,28 @@ COPY "go.mod" ./"go.mod"
 COPY "go.sum" ./"go.sum"
 COPY keyfile ./keyfile
 COPY "main.go" ./"main.go"
-
-# Download all the dependencies
-RUN go get -d -v ./...
-
-# Install the package
-RUN go install -v ./...
+COPY "config_docker_w_redis.json" ./"config_docker_w_redis.json"
+COPY tools/"create_wissance_demo_users_docker.sh" ./"create_wissance_demo_users_docker.sh"
+COPY tools/"docker_app_runner.sh" ./"docker_app_runner.sh"
 
 RUN go generate
 
-# Build the Go app
-RUN go build -o /ferrum
+# Download all the dependencies
+RUN go get -d -v ./...
+RUN go install -v ./...
 
+# Build the Go apps
+RUN go build -o ferrum
 RUN go build -o ferrum-admin ./api/admin/cli
 
+# TODO(SIA) Vulnerability
 COPY --from=ghcr.io/ufoscout/docker-compose-wait:latest /wait /wait
 
 COPY testData ./testData
+COPY tools ./tools
 
-CMD ["/bin/bash", "-c", "/wait && python ./testData/redis/insert_test_data.py && /ferrum --config ./config_docker_w_redis.json"]
+# TODO(UMV): 1. Build config on a Fly (to use props from Env variables)
+
+# TODO(UMV): 2. If we have users, realms and clients do not attempt to insert them
+
+CMD ["/bin/bash", "-c", "./docker_app_runner.sh"]

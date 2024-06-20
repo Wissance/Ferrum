@@ -1,0 +1,421 @@
+definitions:
+  dto.IntrospectTokenResult:
+    properties:
+      active:
+        type: boolean
+      aud:
+        items:
+          type: string
+        type: array
+      auth_time:
+        type: integer
+      exp:
+        type: integer
+      iat:
+        type: integer
+      jti:
+        type: string
+      nbf:
+        type: integer
+      typ:
+        type: string
+    type: object
+  dto.OpenIdConfiguration:
+    properties:
+      authorization_endpoint:
+        type: string
+      back_channel_authorization_endpoint:
+        type: string
+      claim_types_supported:
+        items:
+          type: string
+        type: array
+      claims_parameter_supported:
+        type: boolean
+      claims_supported:
+        description: |-
+          TokenEndpointAuthSigningAlgValuesSupported         []string `json:"token_endpoint_auth_signing_alg_values_supported"`
+          IntrospectionEndpointAuthMethodsSupported          []string `json:"introspection_endpoint_auth_methods_supported"`
+          IntrospectionEndpointAuthSigningAlgValuesSupported []string `json:"introspection_endpoint_auth_signing_alg_values_supported"`
+          AuthorizationSigningAlgValuesSupported             []string `json:"authorization_signing_alg_values_supported"`
+          AuthorizationEncryptionAlgValuesSupported          []string `json:"authorization_encryption_alg_values_supported"`
+          AuthorizationEncryptionEncValuesSupported          []string `json:"authorization_encryption_enc_values_supported"`
+        items:
+          type: string
+        type: array
+      code_challenge_methods_supported:
+        items:
+          type: string
+        type: array
+      device_authorization_endpoint:
+        type: string
+      end_session_endpoint:
+        type: string
+      grant_types_supported:
+        items:
+          type: string
+        type: array
+      introspection_endpoint:
+        type: string
+      issuer:
+        type: string
+      pushed_authorization_request_endpoint:
+        type: string
+      registration_endpoint:
+        type: string
+      request_parameter_supported:
+        type: boolean
+      response_modes_supported:
+        description: |-
+          JwksUri                            string   `json:"jwks_uri"` // TODO (UMV): Uncomment if required
+          FrontChannelLogoutSessionSupported bool         // TODO (UMV): Uncomment if required
+          FrontChannelLogoutSupported bool                // TODO (UMV): Uncomment if required
+          CheckSessionIframe string                       // TODO (UMV): Uncomment if required
+          SubjectTypeSupported []string                   // TODO (UMV): Uncomment if required
+          IdTokenSigningAlgValuesSupported                   []string `json:"id_token_signing_alg_values_supported"`
+          IdTokenEncryptionEncValuesSupported                []string `json:"id_token_encryption_enc_values_supported"`
+          UserInfoSigningAlgValuesSupported                  []string `json:"userinfo_signing_alg_values_supported"`
+          RequestObjectSigningAlgValuesSupported             []string `json:"request_object_signing_alg_values_supported"`
+          RequestEncryptionEncValuesSupported                []string `json:"request_encryption_enc_values_supported"`
+        items:
+          type: string
+        type: array
+      response_types_supported:
+        items:
+          type: string
+        type: array
+      tls_client_certificate_bound_access_token:
+        type: boolean
+      token_endpoint:
+        type: string
+      userinfo_endpoint:
+        type: string
+    type: object
+  dto.Token:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      not-before-policy:
+        type: integer
+      refresh_expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      scope:
+        type: string
+      session_state:
+        type: string
+      token_type:
+        type: string
+    type: object
+  dto.TokenGenerationData:
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      grant_type:
+        type: string
+      password:
+        type: string
+      refresh_token:
+        type: string
+      scope:
+        type: string
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /auth/realms/{realm}/.well-known/openid-configuration:
+    get:
+      consumes:
+      - application/json
+      description: Getting Info about Url and other config values
+      parameters:
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OpenIdConfiguration'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Getting Info about Url and other config values
+      tags:
+      - configuration
+  /auth/realms/{realm}/protocol/openid-connect/token:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Issues new or Refreshes existing token
+      parameters:
+      - description: Token generation data
+        in: body
+        name: function
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TokenGenerationData'
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Token'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Issues new or Refreshes existing token
+      tags:
+      - token
+  /auth/realms/{realm}/protocol/openid-connect/token/introspect:
+    post:
+      consumes:
+      - application/json
+      description: Analyzes state of a token and getting some data from it
+      parameters:
+      - description: Basic User:Password as Base64 i.e. Basic dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo=
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.IntrospectTokenResult'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Analyzes state of a token and getting some data from it
+      tags:
+      - token
+  /auth/realms/{realm}/protocol/openid-connect/userinfo:
+    get:
+      consumes:
+      - application/json
+      description: Getting UserInfo by token
+      parameters:
+      - description: Bearer TOKEN
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Getting UserInfo by token
+      tags:
+      - users
+  /realms/{realm}/.well-known/openid-configuration:
+    get:
+      consumes:
+      - application/json
+      description: Getting Info about Url and other config values
+      parameters:
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OpenIdConfiguration'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Getting Info about Url and other config values
+      tags:
+      - configuration
+  /realms/{realm}/protocol/openid-connect/token:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Issues new or Refreshes existing token
+      parameters:
+      - description: Token generation data
+        in: body
+        name: function
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TokenGenerationData'
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Token'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Issues new or Refreshes existing token
+      tags:
+      - token
+  /realms/{realm}/protocol/openid-connect/token/introspect:
+    post:
+      consumes:
+      - application/json
+      description: Analyzes state of a token and getting some data from it
+      parameters:
+      - description: Basic User:Password as Base64 i.e. Basic dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo=
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.IntrospectTokenResult'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Analyzes state of a token and getting some data from it
+      tags:
+      - token
+  /realms/{realm}/protocol/openid-connect/userinfo:
+    get:
+      consumes:
+      - application/json
+      description: Getting UserInfo by token
+      parameters:
+      - description: Bearer TOKEN
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Realm
+        in: path
+        name: realm
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Getting UserInfo by token
+      tags:
+      - users
+swagger: "2.0"
