@@ -11,4 +11,6 @@ type UserFederation interface {
 	GetUser(userName string, mask string) (data.User, error)
 	// GetUsers searches for Users in external Provider and return []data.User mapped with mask (jsonpath)
 	GetUsers(mask string) []data.User
+	// Authenticate method for Authenticate in external Provider
+	Authenticate(userName string, password string) (bool, error)
 }
