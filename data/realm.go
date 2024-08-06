@@ -11,4 +11,5 @@ type Realm struct {
 	Users                  []interface{} `json:"users"`
 	TokenExpiration        int           `json:"token_expiration"`
 	RefreshTokenExpiration int           `json:"refresh_expiration"`
+	UserFederationServices []UserFederationServiceConfig
 }
