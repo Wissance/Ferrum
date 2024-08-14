@@ -1,0 +1,75 @@
+name: Go CI
+
+on: push
+
+jobs:
+  build-linux:
+    name: Build Ferrum on linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Set up Go
+        uses: actions/setup-go@v5.0.2
+        with:
+          go-version: '1.18'
+          cache: false
+      - name: Build
+        run: go build -v ./...
+
+  build-windows:
+    name: Build Ferrum on windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Set up Go
+        uses: actions/setup-go@v5.0.2
+        with:
+          go-version: '1.18'
+          cache: false
+      - name: Build
+        run: go build -v ./...
+
+  all-tests-linux:
+    name: Run all tests on linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Set up Go
+        uses: actions/setup-go@v5.0.2
+      - name: Set up Redis Stack server
+        run: docker compose up -d redis
+      - name: Get Redis logs
+        run: docker logs $(docker ps -aqf "name=wissance_ferrum_db")
+      - name: Test all
+        run: go test -v ./...
+  
+  #all-tests-windows:
+  #  name: Run all tests on windows
+  #  runs-on: windows-latest
+  #  steps:
+  #    - uses: actions/checkout@v4.1.7
+  #    - name: Set up Go
+  #      uses: actions/setup-go@v5.0.2
+  #    - name: Redis Stack Server
+  #      run: docker compose up -d redis
+  #    - name: Get Redis logs
+  #      run: docker logs $(docker ps -aqf "name=wissance_ferrum_db")
+  #    - name: Test all
+  #      run: go test -v ./...
+  # on windows don't work linux containers by default
+  
+  lint:
+    name: Run golangci linters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Set up Go
+        uses: actions/setup-go@v5.0.2
+        with:
+          go-version: '1.18'
+          cache: false
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6.1.0
+        with:
+          version: v1.50.1
+          args: --timeout 3m --config .golangci.yaml
