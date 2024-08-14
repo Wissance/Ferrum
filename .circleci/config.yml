@@ -22,9 +22,9 @@ jobs:
           key: go-mod-{{ checksum "go.sum" }}
           paths:
             - /home/circleci/go/pkg/mod
-      - run:
-          name: Start (Check) Redis
-          command: redis-cli ping
+#      - run:
+#          name: Start (Check) Redis
+#          command: redis-cli ping
       - run:
           name: Run tests
           command: gotestsum --junitfile junit.xml
