@@ -7,6 +7,8 @@ jobs:
     docker:
       - image: cimg/go:1.20
       - image: redis
+          environment:
+              REDIS_ARGS: "--user ferrum_db on >FeRRuM000 allkeys allchannels allcommands --user default off --save 20 1"
     steps:
       - checkout
       - restore_cache:
