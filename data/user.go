@@ -12,6 +12,7 @@ type User interface {
 	GetUserInfo() interface{}
 	GetRawData() interface{}
 	GetJsonString() string
+	IsFederatedUser() bool
 }
 
 var _ User = (*KeyCloakUser)(nil)
