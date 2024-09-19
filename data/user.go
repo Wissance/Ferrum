@@ -13,6 +13,8 @@ type User interface {
 	GetRawData() interface{}
 	GetJsonString() string
 	IsFederatedUser() bool
+	// GetFederationId actually Federation Name
+	GetFederationId() string
 }
 
 var _ User = (*KeyCloakUser)(nil)

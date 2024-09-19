@@ -107,6 +107,11 @@ func (user *KeyCloakUser) IsFederatedUser() bool {
 	return len(result) > 0
 }
 
+func (user *KeyCloakUser) GetFederationId() string {
+	result := getPathStringValue[string](user.rawData, "federation.name")
+	return result
+}
+
 // getPathStringValue is a generic function to get actually map by key, key represents as a jsonpath navigation property
 /* this function uses json path to navigate over nested maps and return any required type
  * Parameters:
