@@ -4,7 +4,13 @@ import "crypto/tls"
 
 type UserFederationServiceType string
 
+const (
+	LDAP    UserFederationServiceType = "ldap"
+	FreeIPA UserFederationServiceType = "freeipa"
+)
+
 type UserFederationServiceConfig struct {
+	Type UserFederationServiceType `json:"type"`
 	// Name is internal Unique identifier, MUST be unique across all providers
 	Name string `json:"name"`
 	// Url is a base url to fetch data
