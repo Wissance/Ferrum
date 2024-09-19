@@ -12,8 +12,9 @@ func TestInitUserWithJsonAndCheck(t *testing.T) {
 		name              string
 		userName          string
 		preferredUsername string
+		isFederated       bool
 	}{
-		{name: "simple_user_data", userName: "admin", preferredUsername: "Administrator"},
+		{name: "simple_user_data", userName: "admin", preferredUsername: "Administrator", isFederated: false},
 	}
 
 	for _, tCase := range testCases {
@@ -26,6 +27,7 @@ func TestInitUserWithJsonAndCheck(t *testing.T) {
 			assert.NoError(t, err)
 			user := CreateUser(rawUserData)
 			assert.Equal(t, tCase.preferredUsername, user.GetUsername())
+			assert.Equal(t, tCase.isFederated, user.IsFederatedUser())
 		})
 	}
 }

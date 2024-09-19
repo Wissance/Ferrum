@@ -98,8 +98,13 @@ func (user *KeyCloakUser) GetJsonString() string {
 }
 
 // IsFederatedUser returns bool if user storing externally, if user is external, password can't be stored in storage
+/* this function determines whether user stores outside the database i.e. in ActiveDirectory or other systems
+ * navigation property for this federation.name
+ * Parameters: no
+ */
 func (user *KeyCloakUser) IsFederatedUser() bool {
-	return false
+	result := getPathStringValue[string](user.rawData, "federation.name")
+	return len(result) > 0
 }
 
 // getPathStringValue is a generic function to get actually map by key, key represents as a jsonpath navigation property
