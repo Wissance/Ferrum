@@ -13,15 +13,20 @@ func TestInitUserWithJsonAndCheck(t *testing.T) {
 		userName          string
 		preferredUsername string
 		isFederated       bool
+		userTemplate      string
 	}{
-		{name: "simple_user_data", userName: "admin", preferredUsername: "Administrator", isFederated: false},
+		{name: "simple_user", userName: "admin", preferredUsername: "Administrator", isFederated: false,
+			userTemplate: `{"info":{"name":"{0}", "preferred_username": "{1}"}}`},
+		{name: "federated_user", userName: `m.ushakov`, preferredUsername: "m.ushakov", isFederated: true,
+			userTemplate: `{"info":{"name":"{0}", "preferred_username": "{1}"}, "federation":{"name":"Wissance_test_domain"}}`},
+		{name: "federated_user", userName: `root`, preferredUsername: "root", isFederated: false,
+			userTemplate: `{"info":{"name":"{0}", "preferred_username": "{1}"}, "federation":{"cfg":{}}}`},
 	}
 
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
-			jsonTemplate := `{"info":{"name":"{0}", "preferred_username": "{1}"}}`
-			jsonStr := sf.Format(jsonTemplate, tCase.userName, tCase.preferredUsername)
+			jsonStr := sf.Format(tCase.userTemplate, tCase.userName, tCase.preferredUsername)
 			var rawUserData interface{}
 			err := json.Unmarshal([]byte(jsonStr), &rawUserData)
 			assert.NoError(t, err)
