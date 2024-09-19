@@ -1,6 +1,7 @@
 package services
 
 import (
+	sf "github.com/wissance/stringFormatter"
 	"time"
 
 	"github.com/google/uuid"
@@ -72,13 +73,20 @@ func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.T
 		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
 	}
 
-	// todo(UMV): use hash instead raw passwords
-	password := user.GetPassword()
-	if password != tokenIssueData.Password {
-		service.logger.Trace("Credential check: password mismatch")
-		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
+	if user.IsFederatedUser() {
+		msg := sf.Format("User \"{0}\" configured as federated, currently it is not fully supported, wait for future releases",
+			user.GetUsername())
+		service.logger.Warn(msg)
+		return &data.OperationError{Msg: "federated user not supported", Description: msg}
+	} else {
+		// todo(UMV): use hash instead raw passwords
+		password := user.GetPassword()
+		if password != tokenIssueData.Password {
+			service.logger.Trace("Credential check: password mismatch")
+			return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
+		}
+		return nil
 	}
-	return nil
 }
 
 // GetCurrentUserByName return public user info by username
