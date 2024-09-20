@@ -84,6 +84,47 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 	}
 }
 
+func TestCreateRealmWithFederationSuccessfully(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		realmNameTemplate     string
+		federationServiceName string
+		clients               []string
+		users                 []string
+	}{
+		{name: "realm_with_one_fed_service", realmNameTemplate: "app1_test_{0}", federationServiceName: "test_ldap",
+			clients: []string{"client1"}, users: []string{"user1"}},
+	}
+
+	for _, tCase := range testCases {
+		t.Run(tCase.name, func(t *testing.T) {
+			t.Parallel()
+			manager := createTestRedisDataManager(t)
+			realm := data.Realm{
+				Name:                   sf.Format(tCase.realmNameTemplate, uuid.New().String()),
+				TokenExpiration:        3600,
+				RefreshTokenExpiration: 1800,
+				UserFederationServices: []data.UserFederationServiceConfig{
+					{
+						Name: tCase.federationServiceName,
+						Type: data.LDAP,
+						Url:  "ldap://ldap.wissance.com:389",
+					},
+				},
+			}
+
+			// todo(UMV): Create clients && realms ....
+
+			err := manager.CreateRealm(realm)
+			assert.NoError(t, err)
+			r, err := manager.GetRealm(realm.Name)
+			checkRealm(t, &realm, r)
+			err = manager.DeleteRealm(realm.Name)
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func TestCreateRealmFailsDuplicateRealm(t *testing.T) {
 	manager := createTestRedisDataManager(t)
 	realm := data.Realm{
@@ -802,6 +843,7 @@ func checkRealm(t *testing.T, expected *data.Realm, actual *data.Realm) {
 	assert.Equal(t, expected.Name, actual.Name)
 	assert.Equal(t, expected.TokenExpiration, actual.TokenExpiration)
 	assert.Equal(t, expected.RefreshTokenExpiration, actual.RefreshTokenExpiration)
+	checkUserFederationConfigs(t, &expected.UserFederationServices, &actual.UserFederationServices)
 }
 
 func checkClients(t *testing.T, expected *[]data.Client, actual *[]data.Client) {
@@ -847,4 +889,29 @@ func checkUser(t *testing.T, expected *data.User, actual *data.User) {
 	assert.Equal(t, (*expected).GetId(), (*actual).GetId())
 	assert.Equal(t, (*expected).GetUsername(), (*actual).GetUsername())
 	assert.Equal(t, (*expected).GetPassword(), (*actual).GetPassword())
+}
+
+func checkUserFederationConfigs(t *testing.T, expected *[]data.UserFederationServiceConfig, actual *[]data.UserFederationServiceConfig) {
+	assert.Equal(t, len(*expected), len(*actual))
+	for _, e := range *expected {
+		// check and find actual ....
+		found := false
+		for _, a := range *actual {
+			if e.Name == a.Name {
+				checkUserFederationConfig(t, &e, &a)
+				found = true
+				break
+			}
+		}
+		assert.True(t, found)
+	}
+}
+
+func checkUserFederationConfig(t *testing.T, expected *data.UserFederationServiceConfig, actual *data.UserFederationServiceConfig) {
+	assert.Equal(t, expected.Name, actual.Name)
+	assert.Equal(t, expected.Type, actual.Type)
+	assert.Equal(t, expected.Url, actual.Url)
+	assert.Equal(t, expected.EntryPoint, actual.EntryPoint)
+	assert.Equal(t, expected.SysUser, actual.SysUser)
+	assert.Equal(t, expected.SysPassword, actual.SysPassword)
 }
