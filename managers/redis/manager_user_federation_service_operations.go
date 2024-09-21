@@ -72,8 +72,26 @@ func (mn *RedisDataManager) UpdateUserFederationConfig(realmName string, configN
 	return appErrs.ErrOperationNotImplemented
 }
 
+// DeleteUserFederationConfig removes data.UserFederationServiceConfig from storage
+/* It simply removes data.UserFederationServiceConfig by key based on realmName + configName
+ * Arguments:
+ *    - realmName - name of a data.Realm
+ *    - configName - name of a data.UserFederationServiceConfig
+ * Returns: error
+ */
 func (mn *RedisDataManager) DeleteUserFederationConfig(realmName string, configName string) error {
-	return appErrs.ErrOperationNotImplemented
+	if !mn.IsAvailable() {
+		return appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
+
+	if err := mn.deleteUserFederationConfigObject(realmName, configName); err != nil {
+		if errors.As(err, &appErrs.EmptyNotFoundErr) {
+			return err
+		}
+		return appErrs.NewUnknownError("deleteUserFederationConfigObject", "RedisDataManager.DeleteUserFederationConfig", err)
+	}
+
+	return nil
 }
 
 // upsertUserFederationConfigObject - create or update a data.UserFederationServiceConfig
@@ -85,9 +103,27 @@ func (mn *RedisDataManager) DeleteUserFederationConfig(realmName string, configN
  * Returns: error
  */
 func (mn *RedisDataManager) upsertUserFederationConfigObject(realmName string, userFederationConfigName string, userFederationJson string) error {
-	clientKey := sf.Format(realmUserFederationService, mn.namespace, realmName, userFederationConfigName)
-	if err := mn.upsertRedisString(Client, clientKey, userFederationJson); err != nil {
+	configKey := sf.Format(realmUserFederationService, mn.namespace, realmName, userFederationConfigName)
+	if err := mn.upsertRedisString(Client, configKey, userFederationJson); err != nil {
 		return appErrs.NewUnknownError("upsertRedisString", "RedisDataManager.upsertUserFederationConfigObject", err)
+	}
+	return nil
+}
+
+// deleteUserFederationConfigObject - deleting a data.UserFederationServiceConfig
+/* Inside uses realmUserFederationService
+ * Arguments:
+ *    - realmName - name of data.Realm
+ *    - configName - name of data.UserFederationServiceConfig
+ * Returns: error
+ */
+func (mn *RedisDataManager) deleteUserFederationConfigObject(realmName string, configName string) error {
+	configKey := sf.Format(realmUserFederationService, mn.namespace, realmName, configName)
+	if err := mn.deleteRedisObject(RealmUserFederationConfig, configKey); err != nil {
+		if errors.As(err, &appErrs.EmptyNotFoundErr) {
+			return err
+		}
+		return appErrs.NewUnknownError("deleteRedisObject", "RedisDataManager.deleteUserFederationConfigObject", err)
 	}
 	return nil
 }
