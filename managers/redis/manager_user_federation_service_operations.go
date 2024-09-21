@@ -14,7 +14,7 @@ import (
  * Parameters:
  *     - realmName - name of a Realm
  *     - configName - name of a User Federation Service config
- * Returns: client and error
+ * Returns: config and error
  */
 func (mn *RedisDataManager) GetUserFederationConfig(realmName string, configName string) (*data.UserFederationServiceConfig, error) {
 	if !mn.IsAvailable() {
@@ -36,7 +36,7 @@ func (mn *RedisDataManager) GetUserFederationConfig(realmName string, configName
  * Parameters:
  *     - realmName - name of a Realm
  *     - userFederationConfig - newly creating object data.UserFederationServiceConfig
- * Returns: client and error
+ * Returns: error
  */
 func (mn *RedisDataManager) CreateUserFederationConfig(realmName string, userFederationConfig data.UserFederationServiceConfig) error {
 	if !mn.IsAvailable() {
@@ -57,19 +57,49 @@ func (mn *RedisDataManager) CreateUserFederationConfig(realmName string, userFed
 
 	userFederationConfigBytes, err := json.Marshal(userFederationConfig)
 	if err != nil {
-		mn.logger.Error(sf.Format("An error occurred during Marshal Client: {0}", err.Error()))
+		mn.logger.Error(sf.Format("An error occurred during Marshal UserFederationServiceConfig: {0}", err.Error()))
 		return appErrs.NewUnknownError("json.Marshal", "RedisDataManager.CreateUserFederationConfig", err)
 	}
 	err = mn.upsertUserFederationConfigObject(realmName, userFederationConfig.Name, string(userFederationConfigBytes))
 	if err != nil {
-		return appErrs.NewUnknownError("upsertClientObject", "RedisDataManager.CreateUserFederationConfig", err)
+		return appErrs.NewUnknownError("upsertUserFederationConfigObject", "RedisDataManager.CreateUserFederationConfig", err)
 	}
 
 	return nil
 }
 
+// UpdateUserFederationConfig - updating an existing data.UserFederationServiceConfig
+/*  Just upsert object
+ * Arguments:
+ *    - realmName - name of a data.Realm
+ *    - configName - name of a data.UserFederationServiceConfig
+ *    - userFederationConfig - new User Federation Service Config body
+ * Returns: error
+ */
 func (mn *RedisDataManager) UpdateUserFederationConfig(realmName string, configName string, userFederationConfig data.UserFederationServiceConfig) error {
-	return appErrs.ErrOperationNotImplemented
+	if !mn.IsAvailable() {
+		return appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
+	_, err := mn.GetUserFederationConfig(realmName, configName)
+	if err != nil {
+		if errors.As(err, &appErrs.EmptyNotFoundErr) {
+			return err
+		}
+		return appErrs.NewUnknownError("GetUserFederationConfig", "RedisDataManager.UpdateUserFederationConfig", err)
+	}
+
+	configBytes, err := json.Marshal(userFederationConfig)
+	if err != nil {
+		mn.logger.Error(sf.Format("An error occurred during Marshal UserFederationServiceConfig: {0}", err.Error()))
+		return appErrs.NewUnknownError("json.Marshal", "RedisDataManager.UpdateUserFederationConfig", err)
+	}
+
+	err = mn.upsertUserFederationConfigObject(realmName, userFederationConfig.Name, string(configBytes))
+	if err != nil {
+		return appErrs.NewUnknownError("upsertUserFederationConfigObject", "RedisDataManager.UpdateUserFederationConfig", err)
+	}
+
+	return nil
 }
 
 // DeleteUserFederationConfig removes data.UserFederationServiceConfig from storage
@@ -104,7 +134,7 @@ func (mn *RedisDataManager) DeleteUserFederationConfig(realmName string, configN
  */
 func (mn *RedisDataManager) upsertUserFederationConfigObject(realmName string, userFederationConfigName string, userFederationJson string) error {
 	configKey := sf.Format(realmUserFederationService, mn.namespace, realmName, userFederationConfigName)
-	if err := mn.upsertRedisString(Client, configKey, userFederationJson); err != nil {
+	if err := mn.upsertRedisString(RealmUserFederationConfig, configKey, userFederationJson); err != nil {
 		return appErrs.NewUnknownError("upsertRedisString", "RedisDataManager.upsertUserFederationConfigObject", err)
 	}
 	return nil

@@ -137,7 +137,7 @@ func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) er
 	return nil
 }
 
-// UpdateClient - upgrading an existing client
+// UpdateClient - updating an existing client
 /* 1. Removes Client fully from clients and realm clients collections
  * 2. Creates client with new body (clientNew)
  * 3. Add relations between Realm and Client
