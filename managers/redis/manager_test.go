@@ -816,6 +816,52 @@ func TestChangeUserPasswordSuccessfully(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestCreateUserFederationServiceConfigSuccessfully(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		realmNameTemplate     string
+		federationServiceName string
+	}{
+		{name: "realm_with_one_fed_service", realmNameTemplate: "app_with_fed_test_{0}", federationServiceName: "test_ldap"},
+	}
+
+	for _, tCase := range testCases {
+		t.Run(tCase.name, func(t *testing.T) {
+			t.Parallel()
+			manager := createTestRedisDataManager(t)
+			realm := data.Realm{
+				Name:                   sf.Format(tCase.realmNameTemplate, uuid.New().String()),
+				TokenExpiration:        3600,
+				RefreshTokenExpiration: 1800,
+			}
+
+			err := manager.CreateRealm(realm)
+			assert.NoError(t, err)
+			r, err := manager.GetRealm(realm.Name)
+			checkRealm(t, &realm, r)
+
+			// Creation of sample UserFederationService
+			userFederationServiceConfig := data.UserFederationServiceConfig{
+				Name:        tCase.federationServiceName,
+				Url:         "ldap://testldap.wissance.com:389",
+				Type:        data.LDAP,
+				SysUser:     "admin",
+				SysPassword: "admin",
+			}
+
+			err = manager.CreateUserFederationConfig(realm.Name, userFederationServiceConfig)
+			assert.NoError(t, err)
+
+			actualConfig, err := manager.GetUserFederationConfig(realm.Name, userFederationServiceConfig.Name)
+			assert.NoError(t, err)
+			checkUserFederationConfig(t, &userFederationServiceConfig, actualConfig)
+
+			err = manager.DeleteRealm(realm.Name)
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func createTestRedisDataManager(t *testing.T) *RedisDataManager {
 	rndNamespace := sf.Format("ferrum_test_{0}", uuid.New().String())
 	dataSourceCfg := config.DataSourceConfig{
