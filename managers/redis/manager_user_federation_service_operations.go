@@ -21,7 +21,7 @@ func (mn *RedisDataManager) GetUserFederationConfig(realmName string, configName
 		return nil, appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
 	}
 
-	userFederationServiceConfigKey := sf.Format(realmUserFederationService, mn.namespace, realmName, configName)
+	userFederationServiceConfigKey := sf.Format(realmUserFederationServiceTemplate, mn.namespace, realmName, configName)
 	userFederationConfig, err := getSingleRedisObject[data.UserFederationServiceConfig](mn.redisClient, mn.ctx, mn.logger, RealmUserFederationConfig,
 		userFederationServiceConfigKey)
 	if err != nil {
@@ -47,8 +47,8 @@ func (mn *RedisDataManager) CreateUserFederationConfig(realmName string, userFed
 		return err
 	}
 	// TODO(UMV): use function isExists
-	_, err = mn.GetUserFederationConfig(realmName, userFederationConfig.Name)
-	if err == nil {
+	cfg, err := mn.GetUserFederationConfig(realmName, userFederationConfig.Name)
+	if cfg != nil {
 		return appErrs.NewObjectExistsError(RealmUserFederationConfig, userFederationConfig.Name, sf.Format("realm: {0}", realmName))
 	}
 	if !errors.As(err, &appErrs.ObjectNotFoundError{}) {
@@ -133,7 +133,7 @@ func (mn *RedisDataManager) DeleteUserFederationConfig(realmName string, configN
  * Returns: error
  */
 func (mn *RedisDataManager) upsertUserFederationConfigObject(realmName string, userFederationConfigName string, userFederationJson string) error {
-	configKey := sf.Format(realmUserFederationService, mn.namespace, realmName, userFederationConfigName)
+	configKey := sf.Format(realmUserFederationServiceTemplate, mn.namespace, realmName, userFederationConfigName)
 	if err := mn.upsertRedisString(RealmUserFederationConfig, configKey, userFederationJson); err != nil {
 		return appErrs.NewUnknownError("upsertRedisString", "RedisDataManager.upsertUserFederationConfigObject", err)
 	}
@@ -148,7 +148,7 @@ func (mn *RedisDataManager) upsertUserFederationConfigObject(realmName string, u
  * Returns: error
  */
 func (mn *RedisDataManager) deleteUserFederationConfigObject(realmName string, configName string) error {
-	configKey := sf.Format(realmUserFederationService, mn.namespace, realmName, configName)
+	configKey := sf.Format(realmUserFederationServiceTemplate, mn.namespace, realmName, configName)
 	if err := mn.deleteRedisObject(RealmUserFederationConfig, configKey); err != nil {
 		if errors.As(err, &appErrs.EmptyNotFoundErr) {
 			return err

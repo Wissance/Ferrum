@@ -862,6 +862,121 @@ func TestCreateUserFederationServiceConfigSuccessfully(t *testing.T) {
 	}
 }
 
+func TestUpdateUserFederationServiceConfigSuccessfully(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		realmNameTemplate     string
+		federationServiceName string
+	}{
+		{name: "realm_with_one_fed_service", realmNameTemplate: "app_with_fed_test_{0}", federationServiceName: "test_ldap"},
+	}
+
+	for _, tCase := range testCases {
+		t.Run(tCase.name, func(t *testing.T) {
+			t.Parallel()
+			manager := createTestRedisDataManager(t)
+			realm := data.Realm{
+				Name:                   sf.Format(tCase.realmNameTemplate, uuid.New().String()),
+				TokenExpiration:        3600,
+				RefreshTokenExpiration: 1800,
+			}
+
+			err := manager.CreateRealm(realm)
+			assert.NoError(t, err)
+			r, err := manager.GetRealm(realm.Name)
+			checkRealm(t, &realm, r)
+
+			// Creation of sample UserFederationService
+			userFederationServiceConfig := data.UserFederationServiceConfig{
+				Name:        tCase.federationServiceName,
+				Url:         "ldap://testldap.wissance.com:389",
+				Type:        data.LDAP,
+				SysUser:     "admin",
+				SysPassword: "admin",
+			}
+
+			err = manager.CreateUserFederationConfig(realm.Name, userFederationServiceConfig)
+			assert.NoError(t, err)
+
+			actualConfig, err := manager.GetUserFederationConfig(realm.Name, userFederationServiceConfig.Name)
+			assert.NoError(t, err)
+			checkUserFederationConfig(t, &userFederationServiceConfig, actualConfig)
+
+			userFederationServiceConfig.Url = "ldap://domain2.wissance.com:389"
+			err = manager.UpdateUserFederationConfig(realm.Name, userFederationServiceConfig.Name, userFederationServiceConfig)
+			assert.NoError(t, err)
+			actualConfig, err = manager.GetUserFederationConfig(realm.Name, userFederationServiceConfig.Name)
+			assert.NoError(t, err)
+			checkUserFederationConfig(t, &userFederationServiceConfig, actualConfig)
+
+			err = manager.DeleteRealm(realm.Name)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestDeleteUserFederationServiceConfigSuccessfully(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		realmNameTemplate     string
+		federationServiceName string
+	}{
+		{name: "realm_with_one_fed_service", realmNameTemplate: "app_with_fed_test_{0}", federationServiceName: "test_ldap"},
+	}
+
+	for _, tCase := range testCases {
+		t.Run(tCase.name, func(t *testing.T) {
+			t.Parallel()
+			manager := createTestRedisDataManager(t)
+			realm := data.Realm{
+				Name:                   sf.Format(tCase.realmNameTemplate, uuid.New().String()),
+				TokenExpiration:        3600,
+				RefreshTokenExpiration: 1800,
+			}
+
+			err := manager.CreateRealm(realm)
+			assert.NoError(t, err)
+			r, err := manager.GetRealm(realm.Name)
+			checkRealm(t, &realm, r)
+
+			// Creation of sample UserFederationService
+			userFederationServiceConfig := data.UserFederationServiceConfig{
+				Name:        tCase.federationServiceName,
+				Url:         "ldap://testldap.wissance.com:389",
+				Type:        data.LDAP,
+				SysUser:     "admin",
+				SysPassword: "admin",
+			}
+
+			userFederationServiceConfig2 := data.UserFederationServiceConfig{
+				Name:        "another_federation_service",
+				Url:         "ldap://testldap2.wissance.com:389",
+				Type:        data.LDAP,
+				SysUser:     "admin2",
+				SysPassword: "admin2",
+			}
+
+			err = manager.CreateUserFederationConfig(realm.Name, userFederationServiceConfig)
+			assert.NoError(t, err)
+			err = manager.CreateUserFederationConfig(realm.Name, userFederationServiceConfig2)
+			assert.NoError(t, err)
+
+			err = manager.DeleteUserFederationConfig(realm.Name, userFederationServiceConfig.Name)
+			assert.NoError(t, err)
+			actualConfig, err := manager.GetUserFederationConfig(realm.Name, userFederationServiceConfig.Name)
+			assert.Error(t, err)
+			assert.Nil(t, actualConfig)
+
+			actualConfig, err = manager.GetUserFederationConfig(realm.Name, userFederationServiceConfig2.Name)
+			assert.NoError(t, err)
+			checkUserFederationConfig(t, &userFederationServiceConfig2, actualConfig)
+
+			err = manager.DeleteRealm(realm.Name)
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func createTestRedisDataManager(t *testing.T) *RedisDataManager {
 	rndNamespace := sf.Format("ferrum_test_{0}", uuid.New().String())
 	dataSourceCfg := config.DataSourceConfig{
