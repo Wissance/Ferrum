@@ -29,11 +29,12 @@ const (
 type objectType string
 
 const (
-	Realm        objectType = "realm"
-	RealmClients            = "realm clients"
-	RealmUsers              = "realm users"
-	Client                  = "client"
-	User                    = "user"
+	Realm                     objectType = "realm"
+	RealmClients                         = "realm clients"
+	RealmUsers                           = "realm users"
+	RealmUserFederationConfig            = " realm user federation config"
+	Client                               = "client"
+	User                                 = "user"
 )
 
 const defaultNamespace = "fe"
