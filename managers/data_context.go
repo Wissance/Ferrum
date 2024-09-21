@@ -27,7 +27,7 @@ type DataContext interface {
 	// GetUser return realm user (consider what to do with Federated users) by name
 	GetUser(realmName string, userName string) (data.User, error)
 	// GetUserFederationConfig return user federation config by name
-	GetUserFederationConfig(realmName string, configName string) (data.UserFederationServiceConfig, error)
+	GetUserFederationConfig(realmName string, configName string) (*data.UserFederationServiceConfig, error)
 	// GetUserById return realm user by id
 	GetUserById(realmName string, userId uuid.UUID) (data.User, error)
 	// CreateRealm creates new data.Realm in a data store, receive realmData unmarshalled json in a data.Realm
@@ -52,6 +52,8 @@ type DataContext interface {
 	DeleteClient(realmName string, clientName string) error
 	// DeleteUser removes data.User from data store by user (userName) and realm (realmName) name respectively
 	DeleteUser(realmName string, userName string) error
+	// DeleteUserFederationConfig removes data.UserFederationServiceConfig from collection
+	DeleteUserFederationConfig(realmName string, configName string) error
 	// SetPassword(realmName string, userName string, password string) error
 }
 
