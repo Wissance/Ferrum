@@ -1,7 +1,5 @@
 package data
 
-import "crypto/tls"
-
 type UserFederationServiceType string
 
 const (
@@ -20,7 +18,7 @@ type UserFederationServiceConfig struct {
 	// SysPassword is a system password
 	SysPassword string `json:"sys_password"`
 	// TlsCfg is an HTTPS configuration options, use InsecureSkipVerify=true to allow to use self-signed certificate
-	TlsCfg *tls.Config `json:"tls_cfg"`
+	// TlsCfg tls.Config `json:"tls_cfg"`
 	// EntryPoint is case of LDAP is a catalog where we should fetch data, i.e.
 	EntryPoint string `json:"entry_point"`
 }

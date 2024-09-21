@@ -26,6 +26,8 @@ type DataContext interface {
 	GetClient(realmName string, name string) (*data.Client, error)
 	// GetUser return realm user (consider what to do with Federated users) by name
 	GetUser(realmName string, userName string) (data.User, error)
+	// GetUserFederationConfig return user federation config by name
+	GetUserFederationConfig(realmName string, configName string) (data.UserFederationServiceConfig, error)
 	// GetUserById return realm user by id
 	GetUserById(realmName string, userId uuid.UUID) (data.User, error)
 	// CreateRealm creates new data.Realm in a data store, receive realmData unmarshalled json in a data.Realm
@@ -34,19 +36,22 @@ type DataContext interface {
 	CreateClient(realmName string, clientData data.Client) error
 	// CreateUser creates new data.User in a data store within a realm with name = realmName
 	CreateUser(realmName string, userData data.User) error
+	// CreateUserFederationConfig creates new user federation (LDAP, FreeIPA & so on)
+	CreateUserFederationConfig(realmName string, userFederationConfig data.UserFederationServiceConfig) error
 	// UpdateRealm updates existing data.Realm in a data store within name = realmData, and new data = realmData
 	UpdateRealm(realmName string, realmData data.Realm) error
 	// UpdateClient updates existing data.Client in a data store with name = clientName and new data = clientData
 	UpdateClient(realmName string, clientName string, clientData data.Client) error
 	// UpdateUser updates existing data.User in a data store with realm name = realName, username = userName and data=userData
 	UpdateUser(realmName string, userName string, userData data.User) error
+	// UpdateUserFederationConfig updates existing user federation config
+	UpdateUserFederationConfig(realmName string, configName string, userFederationConfig data.UserFederationServiceConfig) error
 	// DeleteRealm removes realm from data storage (Should be a CASCADE remove of all related Users and Clients)
 	DeleteRealm(realmName string) error
 	// DeleteClient removes client with name = clientName from realm with name = clientName
 	DeleteClient(realmName string, clientName string) error
 	// DeleteUser removes data.User from data store by user (userName) and realm (realmName) name respectively
 	DeleteUser(realmName string, userName string) error
-
 	// SetPassword(realmName string, userName string, password string) error
 }
 

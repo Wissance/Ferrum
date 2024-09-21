@@ -92,7 +92,7 @@ func TestCreateRealmWithFederationSuccessfully(t *testing.T) {
 		clients               []string
 		users                 []string
 	}{
-		{name: "realm_with_one_fed_service", realmNameTemplate: "app1_test_{0}", federationServiceName: "test_ldap",
+		{name: "realm_with_one_fed_service", realmNameTemplate: "app_with_fed_test_{0}", federationServiceName: "test_ldap",
 			clients: []string{"client1"}, users: []string{"user1"}},
 	}
 

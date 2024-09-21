@@ -17,11 +17,12 @@ import (
 
 // This set of const of a templates to all data storing in Redis it contains prefix - a namespace {0}
 const (
-	userKeyTemplate         = "{0}.{1}_user_{2}"
-	realmKeyTemplate        = "{0}.realm_{1}"
-	realmClientsKeyTemplate = "{0}.realm_{1}_clients"
-	clientKeyTemplate       = "{0}.{1}_client_{2}"
-	realmUsersKeyTemplate   = "{0}.realm_{1}_users"
+	userKeyTemplate            = "{0}.{1}_user_{2}"
+	realmKeyTemplate           = "{0}.realm_{1}"
+	realmClientsKeyTemplate    = "{0}.realm_{1}_clients"
+	clientKeyTemplate          = "{0}.{1}_client_{2}"
+	realmUsersKeyTemplate      = "{0}.realm_{1}_users"
+	realmUserFederationService = "{0}.realm_{1}_user_federations"
 	// realmUsersFullDataKeyTemplate = "{0}.realm_{1}_users_full_data"
 )
 
