@@ -169,6 +169,12 @@ func main() {
 				log.Fatalf("DeleteRealm failed: %s", err)
 			}
 			fmt.Println(sf.Format("Realm: \"{0}\" successfully deleted", resourceId))
+
+		case operations.UserFederationConfigResource:
+			if err := manager.DeleteUserFederationConfig(params, resourceId); err != nil {
+				log.Fatalf("DeleteUserFederationConfig failed: %s", err)
+			}
+			fmt.Println(sf.Format("User federation service config: \"{0}\" successfully deleted", resourceId))
 		}
 
 		return
@@ -210,6 +216,15 @@ func main() {
 				log.Fatalf("UpdateRealm failed: %s", err)
 			}
 			fmt.Println(sf.Format("Realm: \"{0}\" successfully updated", newRealm.Name))
+		case operations.UserFederationConfigResource:
+			var userFederationServiceConfig data.UserFederationServiceConfig
+			if err := json.Unmarshal(value, &userFederationServiceConfig); err != nil {
+				log.Fatalf("json.Unmarshal failed: %s", err)
+			}
+			if err := manager.UpdateUserFederationConfig(params, resourceId, userFederationServiceConfig); err != nil {
+				log.Fatalf("UpdateUserFederationConfig failed: %s", err)
+			}
+			fmt.Println(sf.Format("User federation service config: \"{0}\" successfully updated", userFederationServiceConfig.Name, params))
 		}
 
 		return
