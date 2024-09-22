@@ -165,12 +165,35 @@ func (mn *RedisDataManager) upsertRedisString(objName objectType, objKey string,
 // deleteRedisObject - delete key
 /* Returns an error, if 0 items are deleted
  * Arguments:
- *    - objName - for logger
+ *    - objName - type of object = resource or table (basically is using for a logger)
  *    - objKey - key object in redis
  * Returns: error
  */
 func (mn *RedisDataManager) deleteRedisObject(objName objectType, objKey string) error {
 	redisIntCmd := mn.redisClient.Del(mn.ctx, objKey)
+	if redisIntCmd.Err() != nil {
+		mn.logger.Warn(sf.Format("An error occurred during Del {0}: \"{1}\" from Redis server", objName, objKey))
+		return redisIntCmd.Err()
+	}
+	res := redisIntCmd.Val()
+	if res == 0 {
+		mn.logger.Warn(sf.Format("An error occurred during Del, 0 items deleted {0}: \"{1}\" from Redis server", objName, objKey))
+		return errors.NewObjectNotFoundError(string(objName), objKey, "")
+	}
+	return nil
+}
+
+// deleteRedisObject - delete key
+/* Returns an error, if 0 items are deleted
+ * Arguments:
+ *    - objName - type of object = resource or table (basically is using for a logger)
+ *    - objKey - key object in redis
+ *    - value - object value to remove
+ * Returns: error
+ */
+func (mn *RedisDataManager) deleteRedisListItem(objName objectType, objKey string, value string) error {
+	redisIntCmd := mn.redisClient.LRem(mn.ctx, objKey, 1, value)
+	//.Del(mn.ctx, objKey)
 	if redisIntCmd.Err() != nil {
 		mn.logger.Warn(sf.Format("An error occurred during Del {0}: \"{1}\" from Redis server", objName, objKey))
 		return redisIntCmd.Err()
