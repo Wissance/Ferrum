@@ -90,6 +90,13 @@ func main() {
 				log.Fatalf("GetRealm failed: %s", err)
 			}
 			fmt.Println(*realm)
+
+		case operations.UserFederationConfigResource:
+			userFederation, err := manager.GetUserFederationConfig(params, resourceId)
+			if err != nil {
+				log.Fatalf("GetUserFederationConfig failed: %s", err)
+			}
+			fmt.Println(*userFederation)
 		}
 
 		return
@@ -128,6 +135,15 @@ func main() {
 				log.Fatalf("CreateRealm failed: %s", err)
 			}
 			fmt.Println(sf.Format("Realm: \"{0}\" successfully created", newRealm.Name))
+		case operations.UserFederationConfigResource:
+			var userFederationConfig data.UserFederationServiceConfig
+			if err := json.Unmarshal(value, &userFederationConfig); err != nil {
+				log.Fatalf("json.Unmarshal failed: %s", err)
+			}
+			if err := manager.CreateUserFederationConfig(params, userFederationConfig); err != nil {
+				log.Fatalf("CreateUserFederationConfig failed: %s", err)
+			}
+			fmt.Println(sf.Format("User federation service config: \"{0}\" successfully created", userFederationConfig.Name))
 		}
 
 		return
