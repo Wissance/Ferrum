@@ -96,7 +96,6 @@ func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.Use
  */
 func (mn *RedisDataManager) GetUserById(realmName string, userId uuid.UUID) (data.User, error) {
 	if !mn.IsAvailable() {
-		// todo(UMV): is this Valid or NOT ????
 		return data.User(nil), errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
 	}
 	realmUser, err := mn.getRealmUserById(realmName, userId)
@@ -259,13 +258,13 @@ func (mn *RedisDataManager) SetPassword(realmName string, userName string, passw
  */
 func (mn *RedisDataManager) getRealmUsers(realmName string) ([]data.ExtendedIdentifier, error) {
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realmName)
-	realmUsers, err := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
+	realmUsers, err := getObjectsListOfSlicesItemsFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if err != nil {
 		if errors.Is(err, errors2.ErrZeroLength) {
 			return nil, err
 		}
 
-		return nil, errors2.NewUnknownError("getObjectsListFromRedis", "RedisDataManager.getRealmUsers", err)
+		return nil, errors2.NewUnknownError("getObjectsListOfSlicesItemsFromRedis", "RedisDataManager.getRealmUsers", err)
 	}
 	return realmUsers, nil
 }

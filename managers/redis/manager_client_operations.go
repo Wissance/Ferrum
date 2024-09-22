@@ -190,12 +190,12 @@ func (mn *RedisDataManager) UpdateClient(realmName string, clientName string, cl
  */
 func (mn *RedisDataManager) getRealmClients(realmName string) ([]data.ExtendedIdentifier, error) {
 	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realmName)
-	realmClients, err := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
+	realmClients, err := getObjectsListOfSlicesItemsFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
 	if err != nil {
 		if errors.Is(err, errors2.ErrZeroLength) {
 			return nil, err
 		}
-		return nil, errors2.NewUnknownError("getObjectsListFromRedis", "RedisDataManager.getRealmClients", err)
+		return nil, errors2.NewUnknownError("getObjectsListOfSlicesItemsFromRedis", "RedisDataManager.getRealmClients", err)
 	}
 	return realmClients, nil
 }

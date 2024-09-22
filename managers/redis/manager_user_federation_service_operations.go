@@ -11,6 +11,7 @@ import (
 
 // GetUserFederationConfig return data.UserFederationServiceConfig of configured Federation service
 /* This function constructs Redis key by pattern combines namespace and realm name and config name (realmUserFederationService)
+ * all Realm Federation Config stores in Redis List Object
  * Parameters:
  *     - realmName - name of a Realm
  *     - configName - name of a User Federation Service config
@@ -21,13 +22,21 @@ func (mn *RedisDataManager) GetUserFederationConfig(realmName string, configName
 		return nil, appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
 	}
 
-	userFederationServiceConfigKey := sf.Format(realmUserFederationServiceTemplate, mn.namespace, realmName, configName)
-	userFederationConfig, err := getSingleRedisObject[data.UserFederationServiceConfig](mn.redisClient, mn.ctx, mn.logger, RealmUserFederationConfig,
-		userFederationServiceConfigKey)
+	realmUserFederationServiceConfigKey := sf.Format(realmUserFederationServiceTemplate, mn.namespace, realmName)
+	realmUserFederationConfig, err := getObjectsListOfNonSlicesItemsFromRedis[data.UserFederationServiceConfig](mn.redisClient, mn.ctx, mn.logger, RealmUserFederationConfig,
+		realmUserFederationServiceConfigKey)
 	if err != nil {
+		if errors.Is(err, appErrs.ErrZeroLength) {
+			return nil, appErrs.NewObjectNotFoundError(realmUserFederationServiceTemplate, configName, sf.Format("realm: {0}", realmName))
+		}
 		return nil, err
 	}
-	return userFederationConfig, nil
+	for _, v := range realmUserFederationConfig {
+		if v.Name == configName {
+			return &v, err
+		}
+	}
+	return nil, appErrs.NewObjectNotFoundError(realmUserFederationServiceTemplate, configName, sf.Format("realm: {0}", realmName))
 }
 
 // CreateUserFederationConfig creates new data.UserFederationServiceConfig related to data.Realm by name
@@ -60,9 +69,9 @@ func (mn *RedisDataManager) CreateUserFederationConfig(realmName string, userFed
 		mn.logger.Error(sf.Format("An error occurred during Marshal UserFederationServiceConfig: {0}", err.Error()))
 		return appErrs.NewUnknownError("json.Marshal", "RedisDataManager.CreateUserFederationConfig", err)
 	}
-	err = mn.upsertUserFederationConfigObject(realmName, userFederationConfig.Name, string(userFederationConfigBytes))
+	err = mn.createUserFederationConfigObject(realmName, string(userFederationConfigBytes))
 	if err != nil {
-		return appErrs.NewUnknownError("upsertUserFederationConfigObject", "RedisDataManager.CreateUserFederationConfig", err)
+		return appErrs.NewUnknownError("createUserFederationConfigObject", "RedisDataManager.CreateUserFederationConfig", err)
 	}
 
 	return nil
@@ -94,9 +103,9 @@ func (mn *RedisDataManager) UpdateUserFederationConfig(realmName string, configN
 		return appErrs.NewUnknownError("json.Marshal", "RedisDataManager.UpdateUserFederationConfig", err)
 	}
 
-	err = mn.upsertUserFederationConfigObject(realmName, userFederationConfig.Name, string(configBytes))
+	err = mn.updateUserFederationConfigObject(realmName, userFederationConfig.Name, string(configBytes))
 	if err != nil {
-		return appErrs.NewUnknownError("upsertUserFederationConfigObject", "RedisDataManager.UpdateUserFederationConfig", err)
+		return appErrs.NewUnknownError("updateUserFederationConfigObject", "RedisDataManager.UpdateUserFederationConfig", err)
 	}
 
 	return nil
@@ -124,20 +133,55 @@ func (mn *RedisDataManager) DeleteUserFederationConfig(realmName string, configN
 	return nil
 }
 
-// upsertUserFederationConfigObject - create or update a data.UserFederationServiceConfig
-/* If such a key exists, the value will be overwritten without error
+// createUserFederationConfigObject - create (append )data.UserFederationServiceConfig to appropriate LIST object related to a Realm
+/* We don't check whether we have such item in LIST or not here because we do it in CreateUserFederationConfig function
  * Arguments:
  *    - realmName name of a data.Realm
- *    - userFederationConfigName name of a data.UserFederationServiceConfig that is using as a Unique Identifier among Realm
  *    - userFederationJson - string with serialized (Marshalled object)
  * Returns: error
  */
-func (mn *RedisDataManager) upsertUserFederationConfigObject(realmName string, userFederationConfigName string, userFederationJson string) error {
-	configKey := sf.Format(realmUserFederationServiceTemplate, mn.namespace, realmName, userFederationConfigName)
-	if err := mn.upsertRedisString(RealmUserFederationConfig, configKey, userFederationJson); err != nil {
-		return appErrs.NewUnknownError("upsertRedisString", "RedisDataManager.upsertUserFederationConfigObject", err)
+func (mn *RedisDataManager) createUserFederationConfigObject(realmName string, userFederationJson string) error {
+	realmConfigsKey := sf.Format(realmUserFederationServiceTemplate, mn.namespace, realmName)
+	_, err := getObjectsListOfNonSlicesItemsFromRedis[data.UserFederationServiceConfig](mn.redisClient, mn.ctx, mn.logger, RealmUserFederationConfig, realmConfigsKey)
+	if err != nil {
+		if errors.Is(err, appErrs.ErrZeroLength) {
+		} else {
+			return appErrs.NewUnknownError("getObjectsListOfNonSlicesItemsFromRedis", "RedisDataManager.createUserFederationConfigObject", err)
+		}
+	}
+
+	if err = mn.appendStringToRedisList(RealmUserFederationConfig, realmConfigsKey, userFederationJson); err != nil {
+		return appErrs.NewUnknownError("upsertRedisString", "RedisDataManager.createUserFederationConfigObject", err)
 	}
 	return nil
+}
+
+// createUserFederationConfigObject - updates a data.UserFederationServiceConfig
+/* We are iterating here through whole list of data.UserFederationServiceConfig related to Realm with realmName, if there are no such item,
+ * an error of type appErrs.ObjectNotFoundError will be rise up
+ * Arguments:
+ *    - realmName name of a data.Realm
+ *    - userFederation - user federation
+ * Returns: error
+ */
+func (mn *RedisDataManager) updateUserFederationConfigObject(realmName string, userFederationName string, userFederationJson string /**data.UserFederationServiceConfig*/) error {
+	realmConfigsKey := sf.Format(realmUserFederationServiceTemplate, mn.namespace, realmName)
+	configs, err := getObjectsListOfNonSlicesItemsFromRedis[data.UserFederationServiceConfig](mn.redisClient, mn.ctx, mn.logger, RealmUserFederationConfig, realmConfigsKey)
+	if err != nil {
+		if errors.Is(err, appErrs.ErrZeroLength) {
+		} else {
+			return appErrs.NewUnknownError("getObjectsListOfNonSlicesItemsFromRedis", "RedisDataManager.updateUserFederationConfigObject", err)
+		}
+	}
+
+	for k, v := range configs {
+		if v.Name == userFederationName {
+			return updateObjectListItemInRedis[string](mn.redisClient, mn.ctx, mn.logger, RealmUserFederationConfig,
+				realmConfigsKey, int64(k), userFederationJson)
+		}
+	}
+
+	return appErrs.NewObjectNotFoundError(RealmUserFederationConfig, userFederationName, sf.Format("Realm: {0}", realmName))
 }
 
 // deleteUserFederationConfigObject - deleting a data.UserFederationServiceConfig
