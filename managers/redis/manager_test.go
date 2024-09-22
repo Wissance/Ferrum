@@ -92,8 +92,8 @@ func TestCreateRealmWithFederationSuccessfully(t *testing.T) {
 		clients               []string
 		users                 []string
 	}{
-		{name: "realm_with_one_fed_service", realmNameTemplate: "app_with_fed_test_{0}", federationServiceName: "test_ldap",
-			clients: []string{"client1"}, users: []string{"user1"}},
+		{name: "realm_with_two_fed_service", realmNameTemplate: "app_with_fed_test_{0}", federationServiceName: "test_ldap",
+			clients: []string{}, users: []string{}},
 	}
 
 	for _, tCase := range testCases {
@@ -110,10 +110,13 @@ func TestCreateRealmWithFederationSuccessfully(t *testing.T) {
 						Type: data.LDAP,
 						Url:  "ldap://ldap.wissance.com:389",
 					},
+					{
+						Name: tCase.federationServiceName + "_2",
+						Type: data.LDAP,
+						Url:  "ldap://ldap2.wissance.com:389",
+					},
 				},
 			}
-
-			// todo(UMV): Create clients && realms ....
 
 			err := manager.CreateRealm(realm)
 			assert.NoError(t, err)

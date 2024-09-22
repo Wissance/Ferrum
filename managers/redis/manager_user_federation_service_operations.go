@@ -39,6 +39,17 @@ func (mn *RedisDataManager) GetUserFederationConfig(realmName string, configName
 	return nil, appErrs.NewObjectNotFoundError(realmUserFederationServiceTemplate, configName, sf.Format("realm: {0}", realmName))
 }
 
+func (mn *RedisDataManager) GetUserFederationConfigs(realmName string) ([]data.UserFederationServiceConfig, error) {
+	if !mn.IsAvailable() {
+		return []data.UserFederationServiceConfig{}, appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
+	}
+
+	realmUserFederationServiceConfigKey := sf.Format(realmUserFederationServiceTemplate, mn.namespace, realmName)
+	realmUserFederationConfig, err := getObjectsListOfNonSlicesItemsFromRedis[data.UserFederationServiceConfig](mn.redisClient, mn.ctx, mn.logger,
+		RealmUserFederationConfig, realmUserFederationServiceConfigKey)
+	return realmUserFederationConfig, err
+}
+
 // CreateUserFederationConfig creates new data.UserFederationServiceConfig related to data.Realm by name
 /* This function constructs Redis key by pattern combines namespace and realm name and config name (realmUserFederationService)
  * and creates config, unlike Users or Clients number of UserFederationConfig is not big, therefore we don't create a new sub-storage

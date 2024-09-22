@@ -40,6 +40,14 @@ func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
 	}
 	realm.Clients = clients
 
+	configs, err := mn.GetUserFederationConfigs(realmName)
+	if err != nil {
+		if !errors.Is(err, appErrs.ErrZeroLength) {
+			return nil, appErrs.NewUnknownError("GetUserFederationConfigs", "RedisDataManager.GetRealm", err)
+		}
+	}
+	realm.UserFederationServices = configs
+
 	return realm, nil
 }
 
@@ -124,6 +132,18 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 	if upsertRealmErr := mn.upsertRealmObject(newRealm.Name, string(jsonShortRealm)); upsertRealmErr != nil {
 		return appErrs.NewUnknownError("upsertRealmObject", "RedisDataManager.CreateRealm", upsertRealmErr)
 	}
+
+	// Creating UserFederationServiceConfig[] after Realm creation
+	if len(newRealm.UserFederationServices) > 0 {
+		for _, userFederationCfg := range newRealm.UserFederationServices {
+			createUserFederationServiceErr := mn.CreateUserFederationConfig(newRealm.Name, userFederationCfg)
+			if createUserFederationServiceErr != nil {
+				return appErrs.NewUnknownError("createUserFederationService", "RedisDataManager.CreateRealm",
+					createUserFederationServiceErr)
+			}
+		}
+	}
+
 	return nil
 }
 
