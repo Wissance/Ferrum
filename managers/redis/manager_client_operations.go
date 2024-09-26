@@ -137,7 +137,7 @@ func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) er
 	return nil
 }
 
-// UpdateClient - upgrading an existing client
+// UpdateClient - updating an existing client
 /* 1. Removes Client fully from clients and realm clients collections
  * 2. Creates client with new body (clientNew)
  * 3. Add relations between Realm and Client
@@ -190,12 +190,12 @@ func (mn *RedisDataManager) UpdateClient(realmName string, clientName string, cl
  */
 func (mn *RedisDataManager) getRealmClients(realmName string) ([]data.ExtendedIdentifier, error) {
 	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realmName)
-	realmClients, err := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
+	realmClients, err := getObjectsListOfSlicesItemsFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
 	if err != nil {
 		if errors.Is(err, errors2.ErrZeroLength) {
 			return nil, err
 		}
-		return nil, errors2.NewUnknownError("getObjectsListFromRedis", "RedisDataManager.getRealmClients", err)
+		return nil, errors2.NewUnknownError("getObjectsListOfSlicesItemsFromRedis", "RedisDataManager.getRealmClients", err)
 	}
 	return realmClients, nil
 }

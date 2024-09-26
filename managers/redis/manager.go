@@ -17,22 +17,24 @@ import (
 
 // This set of const of a templates to all data storing in Redis it contains prefix - a namespace {0}
 const (
-	userKeyTemplate         = "{0}.{1}_user_{2}"
-	realmKeyTemplate        = "{0}.realm_{1}"
-	realmClientsKeyTemplate = "{0}.realm_{1}_clients"
-	clientKeyTemplate       = "{0}.{1}_client_{2}"
-	realmUsersKeyTemplate   = "{0}.realm_{1}_users"
+	userKeyTemplate                    = "{0}.{1}_user_{2}"
+	realmKeyTemplate                   = "{0}.realm_{1}"
+	realmClientsKeyTemplate            = "{0}.realm_{1}_clients"
+	clientKeyTemplate                  = "{0}.{1}_client_{2}"
+	realmUsersKeyTemplate              = "{0}.realm_{1}_users"
+	realmUserFederationServiceTemplate = "{0}.realm_{1}_user_federations"
 	// realmUsersFullDataKeyTemplate = "{0}.realm_{1}_users_full_data"
 )
 
 type objectType string
 
 const (
-	Realm        objectType = "realm"
-	RealmClients            = "realm clients"
-	RealmUsers              = "realm users"
-	Client                  = "client"
-	User                    = "user"
+	Realm                     objectType = "realm"
+	RealmClients                         = "realm clients"
+	RealmUsers                           = "realm users"
+	RealmUserFederationConfig            = " realm user federation config"
+	Client                               = "client"
+	User                                 = "user"
 )
 
 const defaultNamespace = "fe"
@@ -140,6 +142,9 @@ func buildRedisConfig(dataSourceCfd *config.DataSourceConfig, logger *logging.Ap
 	return &opts
 }
 
+// TODO(SIA) add function keyExists
+// TODO(SIA) Add a function to delete multiple keys at once
+
 // upsertRedisString - inserting or updating a value by key
 /* If there is no key, a key-value will be created. If the key is present, the value will be updated
  * Arguments:
@@ -160,12 +165,35 @@ func (mn *RedisDataManager) upsertRedisString(objName objectType, objKey string,
 // deleteRedisObject - delete key
 /* Returns an error, if 0 items are deleted
  * Arguments:
- *    - objName - for logger
+ *    - objName - type of object = resource or table (basically is using for a logger)
  *    - objKey - key object in redis
  * Returns: error
  */
 func (mn *RedisDataManager) deleteRedisObject(objName objectType, objKey string) error {
 	redisIntCmd := mn.redisClient.Del(mn.ctx, objKey)
+	if redisIntCmd.Err() != nil {
+		mn.logger.Warn(sf.Format("An error occurred during Del {0}: \"{1}\" from Redis server", objName, objKey))
+		return redisIntCmd.Err()
+	}
+	res := redisIntCmd.Val()
+	if res == 0 {
+		mn.logger.Warn(sf.Format("An error occurred during Del, 0 items deleted {0}: \"{1}\" from Redis server", objName, objKey))
+		return errors.NewObjectNotFoundError(string(objName), objKey, "")
+	}
+	return nil
+}
+
+// deleteRedisObject - delete key
+/* Returns an error, if 0 items are deleted
+ * Arguments:
+ *    - objName - type of object = resource or table (basically is using for a logger)
+ *    - objKey - key object in redis
+ *    - value - object value to remove
+ * Returns: error
+ */
+func (mn *RedisDataManager) deleteRedisListItem(objName objectType, objKey string, value string) error {
+	redisIntCmd := mn.redisClient.LRem(mn.ctx, objKey, 1, value)
+	//.Del(mn.ctx, objKey)
 	if redisIntCmd.Err() != nil {
 		mn.logger.Warn(sf.Format("An error occurred during Del {0}: \"{1}\" from Redis server", objName, objKey))
 		return redisIntCmd.Err()
@@ -244,8 +272,18 @@ func getMultipleRedisObjects[T any](redisClient *redis.Client, ctx context.Conte
 	return result, nil
 }
 
-// this functions gets object that stored as a LIST Object type
-func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
+// getObjectsListOfSlicesItemsFromRedis functions returns object that stored as a LIST Object type every item of LIST is a slice
+/* This function attempts to get Redis LIST object, if there are no objects in list return an error of type errors.ErrZeroLength
+ * Every item of LIST is a SLICE of T -> []T
+ * Parameters:
+ * - redisClient - client to access Redis database
+ * - ctx - go context
+ * - logger - logger
+ * - objName - name of resource (table)
+ * - objKey - name of a list
+ * Returns: slice []T and error
+ */
+func getObjectsListOfSlicesItemsFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
 	objName objectType, objKey string,
 ) ([]T, error) {
 	redisCmd := redisClient.LRange(ctx, objKey, 0, -1)
@@ -274,5 +312,54 @@ func getObjectsListFromRedis[T any](redisClient *redis.Client, ctx context.Conte
 	return result, nil
 }
 
-// TODO(SIA) add function keyExists
-// TODO(SIA) Add a function to delete multiple keys at once
+// getObjectsListOfNonSlicesItemsFromRedis functions gets object that stored as a LIST Object type every item is a single object
+/* This function attempts to get Redis LIST object, if there are no objects in list return an error of type errors.ErrZeroLength
+ * Every item of LIST is a T
+ * Parameters:
+ * - redisClient - client to access Redis database
+ * - ctx - go context
+ * - logger - logger
+ * - objName - name of resource (table)
+ * - objKey - name of a list
+ * Returns: slice []T and error
+ */
+func getObjectsListOfNonSlicesItemsFromRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
+	objName objectType, objKey string,
+) ([]T, error) {
+	redisCmd := redisClient.LRange(ctx, objKey, 0, -1)
+	if redisCmd.Err() != nil {
+		logger.Warn(sf.Format("An error occurred during fetching {0}: \"{1}\" from Redis server", objName, objKey))
+		return nil, redisCmd.Err()
+	}
+
+	// var obj T
+	items := redisCmd.Val()
+	if len(items) == 0 {
+		logger.Warn(sf.Format("Received zero list items {0}: \"{1}\" from Redis server", objName, objKey))
+		return nil, errors.ErrZeroLength
+	}
+	var result []T
+	var portion T
+	for _, rawVal := range items {
+		jsonBin := []byte(rawVal)
+		err := json.Unmarshal(jsonBin, &portion) // already contains all SLICE in one object
+		if err != nil {
+			logger.Error(sf.Format("An error occurred during unmarshall {0} : \"{1}\", err: ", objName, objKey, err.Error()))
+			return nil, err
+		}
+		result = append(result, portion)
+	}
+	return result, nil
+}
+
+func updateObjectListItemInRedis[T any](redisClient *redis.Client, ctx context.Context, logger *logging.AppLogger,
+	objName objectType, objKey string, index int64, item T) error {
+	redisCmd := redisClient.LSet(ctx, objKey, index, item)
+	if redisCmd.Err() != nil {
+		logger.Warn(sf.Format("An error occurred during setting (update) item in LIST with key: \"{0}\" of type \"{1}\" with index {2}, error: {3}",
+			objKey, objName, index, redisCmd.Err()))
+		return errors.NewUnknownError("LSet", "updateObjectListItemInRedis", redisCmd.Err())
+	}
+
+	return nil
+}

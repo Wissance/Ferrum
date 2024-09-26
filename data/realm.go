@@ -6,9 +6,10 @@ package data
  * in such systems Clients && Users would be empty, and we should to get User or Client separately
  */
 type Realm struct {
-	Name                   string        `json:"name"`
-	Clients                []Client      `json:"clients"`
-	Users                  []interface{} `json:"users"`
-	TokenExpiration        int           `json:"token_expiration"`
-	RefreshTokenExpiration int           `json:"refresh_expiration"`
+	Name                   string                        `json:"name"`
+	Clients                []Client                      `json:"clients"`
+	Users                  []interface{}                 `json:"users"`
+	TokenExpiration        int                           `json:"token_expiration"`
+	RefreshTokenExpiration int                           `json:"refresh_expiration"`
+	UserFederationServices []UserFederationServiceConfig `json:"user_federation_services"`
 }

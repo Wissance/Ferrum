@@ -47,6 +47,7 @@ func (user *KeyCloakUser) GetUsername() string {
  * Parameters: no
  * Returns: password
  */
+// todo(UMV): this function should be changed to GetPasswordHash also we should consider case when User is External
 func (user *KeyCloakUser) GetPassword() string {
 	return getPathStringValue[string](user.rawData, pathToPassword)
 }
@@ -94,6 +95,21 @@ func (user *KeyCloakUser) GetRawData() interface{} {
 
 func (user *KeyCloakUser) GetJsonString() string {
 	return user.jsonRawData
+}
+
+// IsFederatedUser returns bool if user storing externally, if user is external, password can't be stored in storage
+/* this function determines whether user stores outside the database i.e. in ActiveDirectory or other systems
+ * navigation property for this federation.name
+ * Parameters: no
+ */
+func (user *KeyCloakUser) IsFederatedUser() bool {
+	result := getPathStringValue[string](user.rawData, "federation.name")
+	return len(result) > 0
+}
+
+func (user *KeyCloakUser) GetFederationId() string {
+	result := getPathStringValue[string](user.rawData, "federation.name")
+	return result
 }
 
 // getPathStringValue is a generic function to get actually map by key, key represents as a jsonpath navigation property
