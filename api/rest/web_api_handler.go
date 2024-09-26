@@ -45,7 +45,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]
 	if !Validate(realm) {
-		wCtx.Logger.Debug(sf.Format("New token issue: realm validation error '{0}'", realm))
+		wCtx.Logger.Debug(sf.Format("New token issue: is invalid realmName: '{0}'", realm))
 		status := http.StatusBadRequest
 		result := dto.ErrorDetails{Msg: sf.Format(errors.InvalidRealm, realm)}
 		afterHandle(&respWriter, status, &result)
@@ -191,7 +191,7 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]
 	if !Validate(realm) {
-		wCtx.Logger.Debug(sf.Format("Get UserInfo: realm validation error '{0}'", realm))
+		wCtx.Logger.Debug(sf.Format("Get UserInfo: is invalid realmName: '{0}'", realm))
 		status := http.StatusBadRequest
 		result := dto.ErrorDetails{Msg: sf.Format(errors.InvalidRealm, realm)}
 		afterHandle(&respWriter, status, &result)
@@ -271,7 +271,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]
 	if !Validate(realm) {
-		wCtx.Logger.Debug(sf.Format("Introspect: realm validation error '{0}'", realm))
+		wCtx.Logger.Debug(sf.Format("Introspect: is invalid realmName: '{0}'", realm))
 		status := http.StatusBadRequest
 		result := dto.ErrorDetails{Msg: sf.Format(errors.InvalidRealm, realm)}
 		afterHandle(&respWriter, status, &result)
@@ -370,7 +370,7 @@ func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]
 	if !Validate(realm) {
-		wCtx.Logger.Debug(sf.Format("Get OpenIdConfig: realm validation error '{0}'", realm))
+		wCtx.Logger.Debug(sf.Format("Get OpenIdConfig: is invalid realmName: '{0}'", realm))
 		status := http.StatusBadRequest
 		result := dto.ErrorDetails{Msg: sf.Format(errors.InvalidRealm, realm)}
 		afterHandle(&respWriter, status, &result)
