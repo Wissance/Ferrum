@@ -47,7 +47,7 @@ func TestValidate(t *testing.T) {
 
 func FuzzValidate(f *testing.F) {
 	for _, tc := range cases {
-		f.Add(tc.value) // Use f.Add to provide a seed corpus
+		f.Add(tc.value)
 	}
 	f.Fuzz(func(t *testing.T, input string) {
 		isValid := Validate(input)
@@ -61,6 +61,7 @@ func FuzzValidate(f *testing.F) {
 	})
 }
 
+// Returns true if at least one rune is contained
 func isContainsOne(input string, args ...rune) bool {
 	for _, r := range args {
 		isContains := strings.ContainsRune(input, r)

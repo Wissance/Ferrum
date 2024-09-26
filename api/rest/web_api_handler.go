@@ -41,6 +41,12 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]
+	if !Validate(realm) {
+		status := http.StatusBadRequest
+		result := dto.ErrorDetails{Msg: sf.Format(errors.InvalidRealm, realm)}
+		afterHandle(&respWriter, status, &result)
+		return
+	}
 	var result interface{}
 	status := http.StatusOK
 	if len(realm) == 0 {
@@ -185,6 +191,12 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]
+	if !Validate(realm) {
+		status := http.StatusBadRequest
+		result := dto.ErrorDetails{Msg: sf.Format(errors.InvalidRealm, realm)}
+		afterHandle(&respWriter, status, &result)
+		return
+	}
 	var result interface{}
 	status := http.StatusOK
 	if len(realm) == 0 {
@@ -270,6 +282,12 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]
+	if !Validate(realm) {
+		status := http.StatusBadRequest
+		result := dto.ErrorDetails{Msg: sf.Format(errors.InvalidRealm, realm)}
+		afterHandle(&respWriter, status, &result)
+		return
+	}
 	if len(realm) == 0 {
 		// 400
 		status := http.StatusBadRequest
@@ -367,6 +385,12 @@ func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter
 	beforeHandle(&respWriter)
 	vars := mux.Vars(request)
 	realm := vars[globals.RealmPathVar]
+	if !Validate(realm) {
+		status := http.StatusBadRequest
+		result := dto.ErrorDetails{Msg: sf.Format(errors.InvalidRealm, realm)}
+		afterHandle(&respWriter, status, &result)
+		return
+	}
 	status := http.StatusOK
 	var result interface{}
 	if len(realm) == 0 {
