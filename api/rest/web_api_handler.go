@@ -265,7 +265,7 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 // @Tags token
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Basic User:Password as Base64 i.e. Basic dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo="
+// @Param Authorization header string true "Basic client_id:client_secret as Base64 i.e. Basic V2lzc2FuY2VXZWJEZW1vOmZiNlo0UnNPYWRWeWNRb2VRaU41N3hwdTh3OHcxMTEx"
 // @Param realm path string true "Realm"
 // @Success 200 {object} dto.IntrospectTokenResult
 // @Failure 400 {string} dto.ErrorDetails
