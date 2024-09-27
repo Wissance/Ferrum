@@ -218,6 +218,10 @@ func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *
 				wCtx.Logger.Debug("Get userinfo: expected only Bearer authorization yet")
 				status = http.StatusBadRequest
 				result = dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
+			} else if len(parts) < 2 {
+				wCtx.Logger.Debug("Get userinfo: token not provided")
+				status = http.StatusBadRequest
+				result = dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
 			} else {
 				session := (*wCtx.Security).GetSessionByAccessToken(realm, &parts[1])
 				if session == nil {
