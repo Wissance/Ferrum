@@ -40,15 +40,15 @@ var (
 						Value: testClient1Secret,
 					}},
 				}, Users: []interface{}{
-					map[string]interface{}{
-						"info": map[string]interface{}{
-							"sub":  "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
-							"name": "vano", "preferred_username": "vano",
-							"given_name": "vano ivanov", "family_name": "ivanov", "email_verified": true,
-						},
-						"credentials": map[string]interface{}{"password": "1234567890"},
+				map[string]interface{}{
+					"info": map[string]interface{}{
+						"sub":  "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
+						"name": "vano", "preferred_username": "vano",
+						"given_name": "vano ivanov", "family_name": "ivanov", "email_verified": true,
 					},
+					"credentials": map[string]interface{}{"password": "1234567890"},
 				},
+			},
 			},
 		},
 	}
@@ -151,6 +151,11 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	userInfo = getUserInfo(t, baseUrl, realm, token.AccessToken, "200 OK")
 	assert.True(t, len(userInfo) > 0)
 	assert.Equal(t, username, userInfo["preferred_username"])
+	// 7. Issue new token && refresh
+	response = issueNewToken(t, baseUrl, realm, testClient1, testClient1Secret, username, "1234567890")
+	assert.Equal(t, response.Status, "200 OK")
+	response = refreshToken(t, baseUrl, realm, testClient1, testClient1Secret, token.RefreshToken)
+	assert.Equal(t, response.Status, "200 OK")
 
 	res, err = app.Stop()
 	assert.True(t, res)
