@@ -141,6 +141,7 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 	for i, s := range realmSessions {
 		if s.UserId == userId {
 			realmSessions[i].Expired = time.Now().Add(time.Second * time.Duration(duration))
+			realmSessions[i].RefreshExpired = time.Now().Add(time.Second * time.Duration(refresh))
 			service.UserSessions[realm] = realmSessions
 			return s.Id
 		}

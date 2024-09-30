@@ -46,8 +46,8 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 	realm := vars[globals.RealmPathVar]
 	if !Validate(realm) {
 		wCtx.Logger.Debug(sf.Format("New token issue: is invalid realmName: '{0}'", realm))
-		status := http.StatusBadRequest
-		result := dto.ErrorDetails{Msg: sf.Format(errors.InvalidRealm, realm)}
+		status = http.StatusBadRequest
+		result = dto.ErrorDetails{Msg: sf.Format(errors.InvalidRealm, realm)}
 		afterHandle(&respWriter, status, &result)
 		return
 	}
