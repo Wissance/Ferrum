@@ -121,13 +121,14 @@ func TestCreateRealmWithFederationSuccessfully(t *testing.T) {
 					},
 				},
 			}
-
 			err := manager.CreateRealm(realm)
 			assert.NoError(t, err)
 			r, err := manager.GetRealm(realm.Name)
 			checkRealm(t, &realm, r)
 			err = manager.DeleteRealm(realm.Name)
-			assert.NoError(t, err)
+			userFederationConfigs, err := manager.GetUserFederationConfigs(realm.Name)
+			assert.ErrorIs(t, err, appErrs.ErrZeroLength)
+			assert.Nil(t, userFederationConfigs)
 		})
 	}
 }
