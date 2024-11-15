@@ -3,6 +3,8 @@ package redis
 import (
 	"encoding/json"
 	"errors"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,12 +13,13 @@ import (
 	appErrs "github.com/wissance/Ferrum/errors"
 	"github.com/wissance/Ferrum/logging"
 	sf "github.com/wissance/stringFormatter"
-	"testing"
 )
 
-const testUser = "ferrum_db"
-const testUserPassword = "FeRRuM000"
-const testRedisSource = "127.0.0.1:6379"
+const (
+	testUser         = "ferrum_db"
+	testUserPassword = "FeRRuM000"
+	testRedisSource  = "127.0.0.1:6379"
+)
 
 func TestCreateRealmSuccessfully(t *testing.T) {
 	testCases := []struct {
@@ -72,8 +75,7 @@ func TestCreateRealmSuccessfully(t *testing.T) {
 			assert.Equal(t, len(realm.Users), len(users))
 			expectedUsers := make([]data.User, len(realm.Users))
 			if len(realm.Users) > 0 {
-
-				for i, _ := range realm.Users {
+				for i := range realm.Users {
 					expectedUsers[i] = data.CreateUser(realm.Users[i])
 				}
 			}
@@ -92,8 +94,10 @@ func TestCreateRealmWithFederationSuccessfully(t *testing.T) {
 		clients               []string
 		users                 []string
 	}{
-		{name: "realm_with_two_fed_service", realmNameTemplate: "app_with_fed_test_{0}", federationServiceName: "test_ldap",
-			clients: []string{}, users: []string{}},
+		{
+			name: "realm_with_two_fed_service", realmNameTemplate: "app_with_fed_test_{0}", federationServiceName: "test_ldap",
+			clients: []string{}, users: []string{},
+		},
 	}
 
 	for _, tCase := range testCases {
@@ -117,13 +121,14 @@ func TestCreateRealmWithFederationSuccessfully(t *testing.T) {
 					},
 				},
 			}
-
 			err := manager.CreateRealm(realm)
 			assert.NoError(t, err)
 			r, err := manager.GetRealm(realm.Name)
 			checkRealm(t, &realm, r)
 			err = manager.DeleteRealm(realm.Name)
-			assert.NoError(t, err)
+			userFederationConfigs, err := manager.GetUserFederationConfigs(realm.Name)
+			assert.ErrorIs(t, err, appErrs.ErrZeroLength)
+			assert.Nil(t, userFederationConfigs)
 		})
 	}
 }
@@ -232,7 +237,7 @@ func TestGetClientsSuccessfully(t *testing.T) {
 	assert.NoError(t, err)
 	// 2. Create multiple clients
 	clients := make([]data.Client, 3)
-	for i, _ := range clients {
+	for i := range clients {
 		// create && store
 		clients[i] = data.Client{
 			Name: sf.Format("client_{0}_test_multiple_client_get_{1}", i, uuid.New().String()),
@@ -465,7 +470,7 @@ func TestGetUsersSuccessfully(t *testing.T) {
 	assert.NoError(t, err)
 	// 2. Create multiple users
 	users := make([]data.User, 3)
-	for i, _ := range users {
+	for i := range users {
 		userId := uuid.New().String()
 		userName := sf.Format("test_user_{0}_{1}", i, userId)
 		jsonTemplate := `{"info":{"sub":"{2}", "name":"{0}", "preferred_username": "{1}"}, "credentials":{"password": "123"}}`

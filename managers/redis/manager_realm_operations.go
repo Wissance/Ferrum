@@ -3,6 +3,7 @@ package redis
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	appErrs "github.com/wissance/Ferrum/errors"
@@ -18,7 +19,6 @@ import (
  */
 func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
 	if !mn.IsAvailable() {
-
 		return nil, appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
 	}
 
@@ -203,6 +203,19 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
 		}
 		if deleteRealmUserErr := mn.deleteRealmUsersObject(realmName); deleteRealmUserErr != nil {
 			return appErrs.NewUnknownError("deleteRealmUsersObject", "RedisDataManager.DeleteRealm", deleteRealmUserErr)
+		}
+	}
+
+	userFederationConfigs, err := mn.GetUserFederationConfigs(realmName)
+	if err != nil {
+		if !errors.Is(err, appErrs.ErrZeroLength) {
+			return appErrs.NewUnknownError("GetUserFederationConfigs", "RedisDataManager.DeleteRealm", err)
+		}
+	} else {
+		for _, userFederation := range userFederationConfigs {
+			if deleteUserFederationErr := mn.DeleteUserFederationConfig(realmName, userFederation.Name); deleteUserFederationErr != nil {
+				return appErrs.NewUnknownError("deleteUserFederationConfigObject", "RedisDataManager.DeleteRealm", deleteUserFederationErr)
+			}
 		}
 	}
 
