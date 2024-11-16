@@ -10,12 +10,12 @@ services:
     hostname: redis
     image: "redis/redis-stack:7.2.0-v2"
     env_file:
-      - settings.env
+      - .env
     restart: always
     volumes:
       - redis_data:/data
     environment:
-      REDIS_ARGS: "--user ferrum_db on >FeRRuM000 allkeys allchannels allcommands --user default off --save 20 1"
+      REDIS_ARGS: ${REDIS_ARGS}
     ports:
       - "6379:6379"
       - "8001:8001"
@@ -29,7 +29,7 @@ services:
     stdin_open: true
     tty: true
     env_file:
-      - settings.env
+      - .env
     build:
       context: .
       dockerfile: Dockerfile
