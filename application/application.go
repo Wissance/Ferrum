@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -221,7 +222,11 @@ func (app *Application) initSwaggerRoutes(router *mux.Router) {
 	swagger.SwaggerInfo.Version = "v0.9"
 	swagger.SwaggerInfo.Title = "Ferrum Authorization Server"
 	swagger.SwaggerInfo.Description = "Ferrum a better Authorization server compatible by API with a KeyCloak"
-	swagger.SwaggerInfo.Host = stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
+	address := app.getLocalAddress()
+	if address == "" {
+		address = app.appConfig.ServerCfg.Address
+	}
+	swagger.SwaggerInfo.Host = stringFormatter.Format("{0}:{1}", address, app.appConfig.ServerCfg.Port)
 
 	router.PathPrefix("/swagger/").Handler(httpSwagger.Handler())
 }
@@ -337,4 +342,20 @@ func (app *Application) createHttpLoggingHandler(index int, router *mux.Router) 
 		}
 	}
 	return &resultRouter
+}
+
+func (app *Application) getLocalAddress() string {
+	addresses, err := net.InterfaceAddrs()
+	if err != nil {
+		return ""
+	}
+	for _, address := range addresses {
+		// check the address type and if it is not a loopback the display it
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return ""
 }
