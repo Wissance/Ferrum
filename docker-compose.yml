@@ -42,6 +42,8 @@ services:
     networks:
       wissance_ferrum_eth:
         ipv4_address: 10.50.40.3
+        aliases:
+          - ferrum.dev.local
     hostname: ferrum
     stdin_open: true
     tty: true
@@ -54,8 +56,8 @@ services:
       - app_data:/data
       - nginx_cfg:/nginx_cfg
     environment:
-      - VIRTUAL_HOST=ferrum.local
-      - WAIT_HOSTS=redis:6379
+      VIRTUAL_HOST: ferrum.dev.local
+      WAIT_HOSTS: redis:6379
     depends_on:
       redis:
         condition: service_started
@@ -72,6 +74,8 @@ services:
         ipv4_address: 10.50.40.4
     ports:
       - '80:80'
+    extra_hosts:
+      - ferrum.dev.local:10.50.40.3
     depends_on:
       - ferrum
     volumes:

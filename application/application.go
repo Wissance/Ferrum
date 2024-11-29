@@ -27,6 +27,8 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+const ferrumSwaggerAddressEnvVariable = "FERRUM_SWAGGER_EXT_ADDRESS"
+
 type Application struct {
 	devMode            bool
 	appConfigFile      *string
@@ -222,7 +224,7 @@ func (app *Application) initSwaggerRoutes(router *mux.Router) {
 	swagger.SwaggerInfo.Version = "v0.9"
 	swagger.SwaggerInfo.Title = "Ferrum Authorization Server"
 	swagger.SwaggerInfo.Description = "Ferrum a better Authorization server compatible by API with a KeyCloak"
-	address := app.getLocalAddress()
+	address := app.getSwaggerAddress()
 	if address == "" {
 		address = app.appConfig.ServerCfg.Address
 	}
@@ -344,7 +346,14 @@ func (app *Application) createHttpLoggingHandler(index int, router *mux.Router) 
 	return &resultRouter
 }
 
-func (app *Application) getLocalAddress() string {
+func (app *Application) getSwaggerAddress() string {
+	// 1. Get ENV Variable - FERRUM_SWAGGER_EXT_ADDRESS (see .env file)
+	envAddr := os.Getenv(ferrumSwaggerAddressEnvVariable)
+	if len(envAddr) > 0 {
+		return envAddr
+	}
+	
+	// 2. Get Address from Network Interfaces
 	addresses, err := net.InterfaceAddrs()
 	if err != nil {
 		return ""
