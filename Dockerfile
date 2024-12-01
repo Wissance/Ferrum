@@ -1,15 +1,12 @@
-FROM golang:1.18-alpine
+FROM golang:1.22-alpine
 VOLUME /app_data
 VOLUME /nginx_cfg
 
 RUN sed -i 's/https/http/' /etc/apk/repositories
 RUN apk update && apk add --no-cache git && apk add --no-cache bash && apk add --no-cache build-base && apk add --no-cache openssl
 
-RUN apk add --update --no-cache python3 && ln -sf python3 /usr/bin/python
-RUN python3 -m ensurepip
-RUN pip3 install --no-cache --upgrade pip setuptools
-
-RUN pip install redis
+RUN apk add --update --no-cache python3 && ln -sf python3 /usr/bin/python && apk add py3-pip
+RUN apk add py3-setuptools && apk add py3-redis
 
 RUN mkdir /app
 WORKDIR /app
@@ -34,12 +31,12 @@ COPY "config_docker_w_redis.json" ./"config_docker_w_redis.json"
 COPY tools/"create_wissance_demo_users_docker.sh" ./"create_wissance_demo_users_docker.sh"
 COPY tools/"docker_app_runner.sh" ./"docker_app_runner.sh"
 COPY docs/nginx/"nginx_docker.conf" /nginx_cfg/"nginx.conf"
+COPY swagger ./swagger
 # TODO(UMV): I need to create dhparam directory in VOLUME, there are no other way or i have not found it yet
 # COPY "LICENSE" /nginx_cfg/dhparam/
 RUN mkdir -p /nginx_cfg/dhparam && mkdir -p /nginx_cfg/certs && mkdir -p /nginx_cfg/conf.d
 
-RUN go generate
-
+RUN go mod tidy && go generate
 # Download all the dependencies
 RUN go get -d -v ./...
 RUN go install -v ./...

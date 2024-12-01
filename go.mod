@@ -1,6 +1,6 @@
 module github.com/wissance/Ferrum
 
-go 1.18
+go 1.19
 
 require (
 	github.com/go-ldap/ldap/v3 v3.4.8
@@ -10,15 +10,16 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
 	github.com/mattn/go-colorable v0.1.6
-	github.com/ohler55/ojg v1.14.4
+	github.com/ohler55/ojg v1.25.0
 	github.com/redis/go-redis/v9 v9.0.2
 	github.com/sirupsen/logrus v1.6.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/http-swagger v1.2.8
 	github.com/swaggo/swag v1.8.2
 	github.com/ttys3/rotatefilehook v1.0.0
+	github.com/wissance/go-config-extender v1.0.0
 	github.com/wissance/gwuu v1.2.4
-	github.com/wissance/stringFormatter v1.2.0
+	github.com/wissance/stringFormatter v1.3.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
