@@ -29,6 +29,7 @@ var (
 
 func main() {
 	flag.Parse()
+	// TODO(UMV): extend config
 	cfg, err := config.ReadAppConfig(*argConfigFile)
 	if err != nil {
 		log.Fatalf("readAppConfig failed: %s", err)
@@ -107,13 +108,13 @@ func main() {
 		switch resource {
 		case operations.ClientResource:
 			var clientNew data.Client
-			if err := json.Unmarshal(value, &clientNew); err != nil {
-				log.Fatalf("json.Unmarshal failed: %s", err)
+			if unmarshalErr := json.Unmarshal(value, &clientNew); unmarshalErr != nil {
+				log.Fatalf(sf.Format("json.Unmarshal failed: {0}", unmarshalErr.Error()))
 			}
-			if err := manager.CreateClient(params, clientNew); err != nil {
-				log.Fatalf("CreateClient failed: %s", err)
+			if createErr := manager.CreateClient(params, clientNew); createErr != nil {
+				log.Fatalf(sf.Format("CreateClient failed: {0}", createErr.Error()))
 			}
-			fmt.Println(sf.Format("Client: \"{0}\" successfully created", clientNew.Name))
+			log.Print(sf.Format("Client: \"{0}\" successfully created", clientNew.Name))
 
 		case operations.UserResource:
 			var userNew any
