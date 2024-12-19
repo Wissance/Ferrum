@@ -2,9 +2,10 @@ package data
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	sf "github.com/wissance/stringFormatter"
-	"testing"
 )
 
 func TestInitUserWithJsonAndCheck(t *testing.T) {
@@ -16,12 +17,18 @@ func TestInitUserWithJsonAndCheck(t *testing.T) {
 		userTemplate      string
 		federationId      string
 	}{
-		{name: "simple_user", userName: "admin", preferredUsername: "Administrator", isFederated: false,
-			userTemplate: `{"info":{"name":"{0}", "preferred_username": "{1}"}}`},
-		{name: "federated_user", userName: `m.ushakov`, preferredUsername: "m.ushakov", isFederated: true, federationId: "Wissance_test_domain",
-			userTemplate: `{"info":{"name":"{0}", "preferred_username": "{1}"}, "federation":{"name":"Wissance_test_domain"}}`},
-		{name: "federated_user", userName: `root`, preferredUsername: "root", isFederated: false,
-			userTemplate: `{"info":{"name":"{0}", "preferred_username": "{1}"}, "federation":{"cfg":{}}}`},
+		{
+			name: "simple_user", userName: "admin", preferredUsername: "Administrator", isFederated: false,
+			userTemplate: `{"info":{"name":"{0}", "preferred_username": "{1}"}}`,
+		},
+		{
+			name: "federated_user", userName: `m.ushakov`, preferredUsername: "m.ushakov", isFederated: true, federationId: "Wissance_test_domain",
+			userTemplate: `{"info":{"name":"{0}", "preferred_username": "{1}"}, "federation":{"name":"Wissance_test_domain"}}`,
+		},
+		{
+			name: "federated_user", userName: `root`, preferredUsername: "root", isFederated: false,
+			userTemplate: `{"info":{"name":"{0}", "preferred_username": "{1}"}, "federation":{"cfg":{}}}`,
+		},
 	}
 
 	for _, tCase := range testCases {

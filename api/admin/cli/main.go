@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/wissance/Ferrum/managers"
 	"log"
+
+	"github.com/wissance/Ferrum/managers"
 
 	"github.com/wissance/Ferrum/api/admin/cli/operations"
 	"github.com/wissance/Ferrum/config"

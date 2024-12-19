@@ -2,8 +2,9 @@ package files
 
 import (
 	"encoding/json"
-	"github.com/wissance/Ferrum/config"
 	"os"
+
+	"github.com/wissance/Ferrum/config"
 
 	"github.com/wissance/Ferrum/errors"
 

@@ -6,8 +6,9 @@ import "github.com/google/uuid"
 // because Password is not an only method for authentication
 type User interface {
 	GetUsername() string
-	GetPassword() string
-	SetPassword(password string) error
+	GetPasswordHash() string
+	SetPassword(password, salt string) error
+	HashPassword(salt string)
 	GetId() uuid.UUID
 	GetUserInfo() interface{}
 	GetRawData() interface{}

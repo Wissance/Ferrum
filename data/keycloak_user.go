@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ohler55/ojg/jp"
+	b64hasher "github.com/wissance/Ferrum/utils/hasher"
 )
 
 const (
@@ -42,23 +43,36 @@ func (user *KeyCloakUser) GetUsername() string {
 	return getPathStringValue[string](user.rawData, "info.preferred_username")
 }
 
-// GetPassword returns password
-/* this function use internal map to navigate over credentials.password keys to retrieve a password
+// GetPasswordHash returns hash of password
+/* this function use internal map to navigate over credentials.password keys to retrieve a hash of password
  * Parameters: no
- * Returns: password
+ * Returns: hash of password
  */
-// todo(UMV): this function should be changed to GetPasswordHash also we should consider case when User is External
-func (user *KeyCloakUser) GetPassword() string {
-	return getPathStringValue[string](user.rawData, pathToPassword)
+// todo(UMV): we should consider case when User is External
+func (user *KeyCloakUser) GetPasswordHash() string {
+	password := getPathStringValue[string](user.rawData, pathToPassword)
+	if !b64hasher.IsPasswordHashed(password) {
+		// todo (YuriShang): think about actions if the password is not hashed
+	}
+	return password
 }
 
-func (user *KeyCloakUser) SetPassword(password string) error {
-	mask, err := jp.ParseString(pathToPassword)
-	if err != nil {
-		return fmt.Errorf("jp.ParseString failed: %w", err)
-	}
-	if err := mask.Set(user.rawData, password); err != nil {
-		return fmt.Errorf("jp.Set failed: %w", err)
+// HashPassword
+/* this function changes a raw password to its hash in the user's rawData and jsonRawData
+ * Parameters: salt - salt for make password hash more strong
+ */
+func (user *KeyCloakUser) HashPassword(salt string) {
+	password := getPathStringValue[string](user.rawData, pathToPassword)
+	hashedPassword := b64hasher.HashPassword(password, salt)
+	setPathStringValue(user.rawData, pathToPassword, hashedPassword)
+	jsonData, _ := json.Marshal(&user.rawData)
+	user.jsonRawData = string(jsonData)
+}
+
+func (user *KeyCloakUser) SetPassword(password, salt string) error {
+	hashedPassword := b64hasher.HashPassword(password, salt)
+	if err := setPathStringValue(user.rawData, pathToPassword, hashedPassword); err != nil {
+		return err
 	}
 	jsonData, _ := json.Marshal(user.rawData)
 	user.jsonRawData = string(jsonData)
@@ -130,4 +144,22 @@ func getPathStringValue[T any](rawData interface{}, path string) T {
 		result = res[0].(T)
 	}
 	return result
+}
+
+// setPathStringValue is a function to search data by path and set data by key, key represents as a jsonpath navigation property
+/* this function uses json path to navigate over nested maps and set data
+ * Parameters:
+ *    - rawData - json object
+ *    - path - json path to retrieve part of json
+ *    - value - value to be set to rawData
+ */
+func setPathStringValue(rawData interface{}, path string, value string) error {
+	mask, err := jp.ParseString(path)
+	if err != nil {
+		return fmt.Errorf("jp.ParseString failed: %w", err)
+	}
+	if err := mask.Set(rawData, value); err != nil {
+		return fmt.Errorf("jp.Set failed: %w", err)
+	}
+	return nil
 }

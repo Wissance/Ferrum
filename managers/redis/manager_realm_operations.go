@@ -7,6 +7,7 @@ import (
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	appErrs "github.com/wissance/Ferrum/errors"
+	b64hasher "github.com/wissance/Ferrum/utils/hasher"
 	sf "github.com/wissance/stringFormatter"
 )
 
@@ -123,6 +124,7 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 		Users:                  []any{},
 		TokenExpiration:        newRealm.TokenExpiration,
 		RefreshTokenExpiration: newRealm.RefreshTokenExpiration,
+		PasswordSalt:           b64hasher.GenerateSalt(),
 	}
 	jsonShortRealm, err := json.Marshal(shortRealm)
 	if err != nil {
