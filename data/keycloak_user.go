@@ -63,10 +63,12 @@ func (user *KeyCloakUser) GetPasswordHash() string {
  */
 func (user *KeyCloakUser) HashPassword(salt string) {
 	password := getPathStringValue[string](user.rawData, pathToPassword)
-	hashedPassword := b64hasher.HashPassword(password, salt)
-	setPathStringValue(user.rawData, pathToPassword, hashedPassword)
-	jsonData, _ := json.Marshal(&user.rawData)
-	user.jsonRawData = string(jsonData)
+	if !b64hasher.IsPasswordHashed(password) {
+		hashedPassword := b64hasher.HashPassword(password, salt)
+		setPathStringValue(user.rawData, pathToPassword, hashedPassword)
+		jsonData, _ := json.Marshal(&user.rawData)
+		user.jsonRawData = string(jsonData)
+	}
 }
 
 func (user *KeyCloakUser) SetPassword(password, salt string) error {
