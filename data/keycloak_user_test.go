@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/wissance/Ferrum/utils/encoding"
 	sf "github.com/wissance/stringFormatter"
 )
 
@@ -38,7 +39,8 @@ func TestInitUserWithJsonAndCheck(t *testing.T) {
 			var rawUserData interface{}
 			err := json.Unmarshal([]byte(jsonStr), &rawUserData)
 			assert.NoError(t, err)
-			user := CreateUser(rawUserData)
+			encoder := encoding.NewPasswordJsonEncoder("salt")
+			user := CreateUser(rawUserData, encoder)
 			assert.Equal(t, tCase.preferredUsername, user.GetUsername())
 			assert.Equal(t, tCase.isFederated, user.IsFederatedUser())
 			if user.IsFederatedUser() {

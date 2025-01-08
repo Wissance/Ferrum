@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ohler55/ojg/jp"
-	b64hasher "github.com/wissance/Ferrum/utils/hasher"
+	"github.com/wissance/Ferrum/utils/encoding"
 )
 
 const (
@@ -26,9 +26,11 @@ type KeyCloakUser struct {
  *    - rawData - any json
  * Return: instance of User as KeyCloakUser
  */
-func CreateUser(rawData interface{}) User {
+func CreateUser(rawData interface{}, encoder encoding.PasswordJsonEncoder) User {
 	jsonData, _ := json.Marshal(&rawData)
 	kcUser := &KeyCloakUser{rawData: rawData, jsonRawData: string(jsonData)}
+	password := getPathStringValue[string](kcUser.rawData, pathToPassword)
+	kcUser.SetPassword(password, encoder)
 	user := User(kcUser)
 	return user
 }
@@ -51,32 +53,24 @@ func (user *KeyCloakUser) GetUsername() string {
 // todo(UMV): we should consider case when User is External
 func (user *KeyCloakUser) GetPasswordHash() string {
 	password := getPathStringValue[string](user.rawData, pathToPassword)
-	if !b64hasher.IsPasswordHashed(password) {
+	if !encoding.IsPasswordHashed(password) {
 		// todo (YuriShang): think about actions if the password is not hashed
 	}
 	return password
 }
 
-// HashPassword
-/* this function changes a raw password to its hash in the user's rawData and jsonRawData
- * Parameters: salt - salt for make password hash more strong
+// SetPassword
+/* this function changes a raw password to its hash in the user's rawData and jsonRawData and sets it
+ * Parameters:
+ *	- password - new password
+ *	- encoder - encoder object with salt and hasher
  */
-func (user *KeyCloakUser) HashPassword(salt string) {
-	password := getPathStringValue[string](user.rawData, pathToPassword)
-	if !b64hasher.IsPasswordHashed(password) {
-		hashedPassword := b64hasher.HashPassword(password, salt)
-		setPathStringValue(user.rawData, pathToPassword, hashedPassword)
-		jsonData, _ := json.Marshal(&user.rawData)
-		user.jsonRawData = string(jsonData)
-	}
-}
-
-func (user *KeyCloakUser) SetPassword(password, salt string) error {
-	hashedPassword := b64hasher.HashPassword(password, salt)
-	if err := setPathStringValue(user.rawData, pathToPassword, hashedPassword); err != nil {
+func (user *KeyCloakUser) SetPassword(password string, encoder encoding.PasswordJsonEncoder) error {
+	hashed := encoder.HashPassword(password)
+	if err := setPathStringValue(user.rawData, pathToPassword, hashed); err != nil {
 		return err
 	}
-	jsonData, _ := json.Marshal(user.rawData)
+	jsonData, _ := json.Marshal(&user.rawData)
 	user.jsonRawData = string(jsonData)
 	return nil
 }

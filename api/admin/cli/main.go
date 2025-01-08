@@ -122,7 +122,14 @@ func main() {
 			if err := json.Unmarshal(value, &userNew); err != nil {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
-			user := data.CreateUser(userNew)
+			if resourceId == "" {
+				log.Fatalf("Realm name not specified")
+			}
+			realm, err := manager.GetRealm(resourceId)
+			if err != nil {
+				log.Fatalf("GetRealm failed: %s", err)
+			}
+			user := data.CreateUser(userNew, realm.Encoder)
 			if err := manager.CreateUser(params, user); err != nil {
 				log.Fatalf("CreateUser failed: %s", err)
 			}
@@ -203,7 +210,14 @@ func main() {
 			if err := json.Unmarshal(value, &newUser); err != nil {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
-			user := data.CreateUser(newUser)
+			if resourceId == "" {
+				log.Fatalf("Realm name not specified")
+			}
+			realm, err := manager.GetRealm(resourceId)
+			if err != nil {
+				log.Fatalf("GetRealm failed: %s", err)
+			}
+			user := data.CreateUser(newUser, realm.Encoder)
 			if err := manager.UpdateUser(params, resourceId, user); err != nil {
 				log.Fatalf("UpdateUser failed: %s", err)
 			}

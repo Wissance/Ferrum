@@ -1,4 +1,4 @@
-package b64hasher
+package encoding
 
 import (
 	"testing"
@@ -11,10 +11,11 @@ func Test_HashPassword(t *testing.T) {
 		// Arrange
 		pwd := "qwerty"
 		salt := "salt"
+		encoder := NewPasswordJsonEncoder(salt)
 
 		// Act
-		hashedPwd := HashPassword(pwd, salt)
-		isMatch := IsPasswordsMatch(pwd, salt, hashedPwd)
+		hashedPwd := encoder.HashPassword(pwd)
+		isMatch := encoder.IsPasswordsMatch(pwd, hashedPwd)
 
 		// Assert
 		assert.True(t, isMatch)

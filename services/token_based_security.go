@@ -11,7 +11,6 @@ import (
 	"github.com/wissance/Ferrum/errors"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/Ferrum/managers"
-	b64hasher "github.com/wissance/Ferrum/utils/hasher"
 )
 
 // TokenBasedSecurityService structure that implements SecurityService
@@ -88,7 +87,7 @@ func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.T
 		return &data.OperationError{Msg: "federated user not supported", Description: msg}
 	} else {
 		oldPasswordHash := user.GetPasswordHash()
-		if !b64hasher.IsPasswordsMatch(tokenIssueData.Password, realm.PasswordSalt, oldPasswordHash) {
+		if !realm.Encoder.IsPasswordsMatch(tokenIssueData.Password, oldPasswordHash) {
 			service.logger.Trace("Credential check: password mismatch")
 			return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
 		}

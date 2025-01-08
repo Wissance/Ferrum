@@ -17,7 +17,7 @@ import (
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/dto"
 	"github.com/wissance/Ferrum/errors"
-	b64hasher "github.com/wissance/Ferrum/utils/hasher"
+	"github.com/wissance/Ferrum/utils/encoding"
 	"github.com/wissance/stringFormatter"
 )
 
@@ -31,7 +31,8 @@ const (
 
 var (
 	testSalt           = "salt"
-	testHashedPassowrd = b64hasher.HashPassword("1234567890", testSalt)
+	encoder            = encoding.NewPasswordJsonEncoder(testSalt)
+	testHashedPassowrd = encoder.HashPassword("1234567890")
 	testKey            = []byte("qwerty1234567890")
 	testServerData     = data.ServerData{
 		Realms: []data.Realm{

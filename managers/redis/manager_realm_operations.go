@@ -7,7 +7,7 @@ import (
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	appErrs "github.com/wissance/Ferrum/errors"
-	b64hasher "github.com/wissance/Ferrum/utils/hasher"
+	"github.com/wissance/Ferrum/utils/encoding"
 	sf "github.com/wissance/stringFormatter"
 )
 
@@ -48,6 +48,7 @@ func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
 		}
 	}
 	realm.UserFederationServices = configs
+	realm.Encoder = encoding.NewPasswordJsonEncoder(realm.PasswordSalt)
 
 	return realm, nil
 }
@@ -70,7 +71,7 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 	}
 	// TODO(SIA) Add transaction
 	// TODO(SIA) use function isExists
-	_, err := mn.getRealmObject(newRealm.Name)
+	_, err := mn.GetRealm(newRealm.Name)
 	if err == nil {
 		return appErrs.NewObjectExistsError(string(Realm), newRealm.Name, "")
 	}
@@ -99,10 +100,13 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 		}
 	}
 
+	salt := encoding.GenerateRandomSalt()
+
 	if len(newRealm.Users) != 0 {
 		realmUsers := make([]data.ExtendedIdentifier, len(newRealm.Users))
+		encoder := encoding.NewPasswordJsonEncoder(salt)
 		for i, user := range newRealm.Users {
-			newUser := data.CreateUser(user)
+			newUser := data.CreateUser(user, encoder)
 			newUserName := newUser.GetUsername()
 			if upsertUserErr := mn.upsertUserObject(newRealm.Name, newUserName, newUser.GetJsonString()); upsertUserErr != nil {
 				return appErrs.NewUnknownError("upsertUserObject", "RedisDataManager.CreateRealm", upsertUserErr)
@@ -124,7 +128,8 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 		Users:                  []any{},
 		TokenExpiration:        newRealm.TokenExpiration,
 		RefreshTokenExpiration: newRealm.RefreshTokenExpiration,
-		PasswordSalt:           b64hasher.GenerateSalt(),
+		PasswordSalt:           salt,
+		Encoder:                encoding.PasswordJsonEncoder{},
 	}
 	jsonShortRealm, err := json.Marshal(shortRealm)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/wissance/Ferrum/config"
+	"github.com/wissance/Ferrum/utils/encoding"
 
 	"github.com/wissance/Ferrum/errors"
 
@@ -78,6 +79,7 @@ func (mn *FileDataManager) GetRealm(realmName string) (*data.Realm, error) {
 		// case-sensitive comparison, myapp and MyApP are different realms
 		if e.Name == realmName {
 			e.Users = nil
+			e.Encoder = encoding.NewPasswordJsonEncoder(e.PasswordSalt)
 			return &e, nil
 		}
 	}
@@ -101,8 +103,9 @@ func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {
 				return nil, errors.ErrZeroLength
 			}
 			users := make([]data.User, len(e.Users))
+			e.Encoder = encoding.NewPasswordJsonEncoder(e.PasswordSalt)
 			for i, u := range e.Users {
-				user := data.CreateUser(u)
+				user := data.CreateUser(u, e.Encoder)
 				users[i] = user
 			}
 			return users, nil

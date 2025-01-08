@@ -14,7 +14,7 @@ import (
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/dto"
-	b64hasher "github.com/wissance/Ferrum/utils/hasher"
+	"github.com/wissance/Ferrum/utils/encoding"
 	sf "github.com/wissance/stringFormatter"
 
 	"github.com/stretchr/testify/assert"
@@ -30,10 +30,11 @@ const (
 )
 
 var (
-	testSalt       = "salt"
-	hashedPassword = b64hasher.HashPassword("1234567890", testSalt)
-	testKey        = []byte("qwerty1234567890")
-	testServerData = data.ServerData{
+	testSalt           = "salt"
+	encoder            = encoding.NewPasswordJsonEncoder(testSalt)
+	testHashedPassowrd = encoder.HashPassword("1234567890")
+	testKey            = []byte("qwerty1234567890")
+	testServerData     = data.ServerData{
 		Realms: []data.Realm{
 			{
 				Name: testRealm1, TokenExpiration: testAccessTokenExpiration, RefreshTokenExpiration: testRefreshTokenExpiration,
@@ -50,7 +51,7 @@ var (
 							"name": "vano", "preferred_username": "vano",
 							"given_name": "vano ivanov", "family_name": "ivanov", "email_verified": true,
 						},
-						"credentials": map[string]interface{}{"password": hashedPassword},
+						"credentials": map[string]interface{}{"password": testHashedPassowrd},
 					},
 				},
 				PasswordSalt: testSalt,
