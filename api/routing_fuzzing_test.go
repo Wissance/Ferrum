@@ -32,7 +32,7 @@ const (
 var (
 	testSalt           = "salt"
 	encoder            = encoding.NewPasswordJsonEncoder(testSalt)
-	testHashedPassowrd = encoder.HashPassword("1234567890")
+	testHashedPassowrd = encoder.GetB64PasswordHash("1234567890")
 	testKey            = []byte("qwerty1234567890")
 	testServerData     = data.ServerData{
 		Realms: []data.Realm{

@@ -20,7 +20,7 @@ func NewPasswordJsonEncoder(salt string) PasswordJsonEncoder {
 	return encoder
 }
 
-func (e *PasswordJsonEncoder) HashPassword(password string) string {
+func (e *PasswordJsonEncoder) GetB64PasswordHash(password string) string {
 	if IsPasswordHashed(password) {
 		return password
 	}
@@ -34,7 +34,7 @@ func (e *PasswordJsonEncoder) HashPassword(password string) string {
 }
 
 func (e *PasswordJsonEncoder) IsPasswordsMatch(password, hash string) bool {
-	currPasswordHash := e.HashPassword(password)
+	currPasswordHash := e.GetB64PasswordHash(password)
 	return b64Decode(hash) == b64Decode(currPasswordHash)
 }
 

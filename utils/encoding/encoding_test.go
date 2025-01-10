@@ -14,7 +14,7 @@ func Test_HashPassword(t *testing.T) {
 		encoder := NewPasswordJsonEncoder(salt)
 
 		// Act
-		hashedPwd := encoder.HashPassword(pwd)
+		hashedPwd := encoder.GetB64PasswordHash(pwd)
 		isMatch := encoder.IsPasswordsMatch(pwd, hashedPwd)
 
 		// Assert

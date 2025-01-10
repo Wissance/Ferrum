@@ -30,7 +30,8 @@ func CreateUser(rawData interface{}, encoder encoding.PasswordJsonEncoder) User 
 	jsonData, _ := json.Marshal(&rawData)
 	kcUser := &KeyCloakUser{rawData: rawData, jsonRawData: string(jsonData)}
 	password := getPathStringValue[string](kcUser.rawData, pathToPassword)
-	kcUser.SetPassword(password, encoder)
+	// todo(UMV): handle CreateUser errors in the future
+	_ = kcUser.SetPassword(password, encoder)
 	user := User(kcUser)
 	return user
 }
@@ -66,7 +67,7 @@ func (user *KeyCloakUser) GetPasswordHash() string {
  *	- encoder - encoder object with salt and hasher
  */
 func (user *KeyCloakUser) SetPassword(password string, encoder encoding.PasswordJsonEncoder) error {
-	hashed := encoder.HashPassword(password)
+	hashed := encoder.GetB64PasswordHash(password)
 	if err := setPathStringValue(user.rawData, pathToPassword, hashed); err != nil {
 		return err
 	}
