@@ -122,10 +122,7 @@ func main() {
 			if err := json.Unmarshal(value, &userNew); err != nil {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
-			if resourceId == "" {
-				log.Fatalf("Realm name not specified")
-			}
-			realm, err := manager.GetRealm(resourceId)
+			realm, err := manager.GetRealm(params)
 			if err != nil {
 				log.Fatalf("GetRealm failed: %s", err)
 			}
@@ -210,10 +207,7 @@ func main() {
 			if err := json.Unmarshal(value, &newUser); err != nil {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
-			if resourceId == "" {
-				log.Fatalf("Realm name not specified")
-			}
-			realm, err := manager.GetRealm(resourceId)
+			realm, err := manager.GetRealm(params)
 			if err != nil {
 				log.Fatalf("GetRealm failed: %s", err)
 			}
