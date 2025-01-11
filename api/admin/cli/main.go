@@ -20,12 +20,12 @@ import (
 const defaultConfig = "./config_w_redis.json"
 
 var (
-	argConfigFile = flag.String("config", defaultConfig, "")
-	argOperation  = flag.String("operation", "", "")
-	argResource   = flag.String("resource", "", "")
-	argResourceId = flag.String("resource_id", "", "")
-	argParams     = flag.String("params", "", "This is the name of the realm for operations on client or user resources")
-	argValue      = flag.String("value", "", "Json object")
+	argConfigFile = flag.String("config", defaultConfig, "Application config for working with a persistent data store")
+	argOperation  = flag.String("operation", "", "One of the available operations read|create|update|delete or user specific change/reset password")
+	argResource   = flag.String("resource", "", "\"realm\", \"client\" or \"user\" or maybe other in future")
+	argResourceId = flag.String("resource_id", "", "resource object identifier, id required for the update|delete or read operation")
+	argParams     = flag.String("params", "", "Name of a realm for operations on client or user resources")
+	argValue      = flag.String("value", "", "Json encoded resource itself")
 )
 
 func main() {
