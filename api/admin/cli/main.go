@@ -251,7 +251,7 @@ func main() {
 			}
 			// TODO(SIA)  Moving password verification to another location
 			if len(value) < 8 {
-				log.Fatalf("Password length must be greater than 8")
+				log.Fatalf("Password length must be greater than 7")
 			}
 			password := string(value)
 			passwordManager := manager.(PasswordManager)
