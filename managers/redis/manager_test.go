@@ -466,7 +466,6 @@ func TestGetUsersSuccessfully(t *testing.T) {
 		Name:                   sf.Format("realm_4_get_multiple_users_{0}", uuid.New().String()),
 		TokenExpiration:        3600,
 		RefreshTokenExpiration: 1800,
-		Encoder:                encoding.NewPasswordJsonEncoder("salt"),
 	}
 	err := manager.CreateRealm(r)
 	assert.NoError(t, err)
@@ -482,7 +481,7 @@ func TestGetUsersSuccessfully(t *testing.T) {
 		var rawUser interface{}
 		err = json.Unmarshal([]byte(jsonStr), &rawUser)
 		assert.NoError(t, err)
-		user := data.CreateUser(rawUser, r.Encoder)
+		user := data.CreateUser(rawUser, nil)
 		err = manager.CreateUser(realm.Name, user)
 		users[i] = user
 		assert.NoError(t, err)
@@ -532,7 +531,6 @@ func TestGetUserByIdSuccessfully(t *testing.T) {
 		Name:                   "realm_4_test_get_user_by_id",
 		TokenExpiration:        3600,
 		RefreshTokenExpiration: 1800,
-		Encoder:                encoding.NewPasswordJsonEncoder("salt"),
 	}
 	err := manager.CreateRealm(realm)
 	assert.NoError(t, err)
@@ -543,7 +541,7 @@ func TestGetUserByIdSuccessfully(t *testing.T) {
 	var rawUser interface{}
 	err = json.Unmarshal([]byte(jsonStr), &rawUser)
 	assert.NoError(t, err)
-	user := data.CreateUser(rawUser, realm.Encoder)
+	user := data.CreateUser(rawUser, nil)
 	err = manager.CreateUser(realm.Name, user)
 	assert.NoError(t, err)
 
@@ -673,7 +671,7 @@ func TestUpdateUserSuccessfully(t *testing.T) {
 	jsonStr = sf.Format(jsonTemplate, "pppetrov", "67890", "00000000-0000-0000-0000-000000000001")
 	err = json.Unmarshal([]byte(jsonStr), &rawUser)
 	assert.NoError(t, err)
-	user = data.CreateUser(rawUser, realm.Encoder)
+	user = data.CreateUser(rawUser, nil)
 
 	err = manager.UpdateUser(realm.Name, userName, user)
 	assert.NoError(t, err)
@@ -692,7 +690,6 @@ func TestUpdateUserFailsNonExistingUser(t *testing.T) {
 		Name:                   "realm_4_test_user_update_fails_non_existing_user",
 		TokenExpiration:        3600,
 		RefreshTokenExpiration: 1800,
-		Encoder:                encoding.NewPasswordJsonEncoder("salt"),
 	}
 	err := manager.CreateRealm(realm)
 	assert.NoError(t, err)
@@ -703,7 +700,7 @@ func TestUpdateUserFailsNonExistingUser(t *testing.T) {
 	var rawUser interface{}
 	err = json.Unmarshal([]byte(jsonStr), &rawUser)
 	assert.NoError(t, err)
-	user := data.CreateUser(rawUser, realm.Encoder)
+	user := data.CreateUser(rawUser, nil)
 	err = manager.UpdateUser(realm.Name, userName, user)
 	assert.Error(t, err)
 	assert.True(t, errors.As(err, &appErrs.EmptyNotFoundErr))
@@ -719,7 +716,6 @@ func TestDeleteUserSuccessfully(t *testing.T) {
 		Name:                   "realm_4_test_user_delete",
 		TokenExpiration:        3600,
 		RefreshTokenExpiration: 1800,
-		Encoder:                encoding.NewPasswordJsonEncoder("salt"),
 	}
 	err := manager.CreateRealm(realm)
 	assert.NoError(t, err)
@@ -730,7 +726,7 @@ func TestDeleteUserSuccessfully(t *testing.T) {
 	var rawUser interface{}
 	err = json.Unmarshal([]byte(jsonStr), &rawUser)
 	assert.NoError(t, err)
-	user := data.CreateUser(rawUser, realm.Encoder)
+	user := data.CreateUser(rawUser, nil)
 	err = manager.CreateUser(realm.Name, user)
 	assert.NoError(t, err)
 	u, err := manager.GetUser(realm.Name, userName)

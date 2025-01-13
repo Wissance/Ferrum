@@ -103,9 +103,8 @@ func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {
 				return nil, errors.ErrZeroLength
 			}
 			users := make([]data.User, len(e.Users))
-			e.Encoder = encoding.NewPasswordJsonEncoder(e.PasswordSalt)
 			for i, u := range e.Users {
-				user := data.CreateUser(u, e.Encoder)
+				user := data.CreateUser(u, nil)
 				users[i] = user
 			}
 			return users, nil

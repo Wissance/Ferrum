@@ -129,7 +129,7 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 		TokenExpiration:        newRealm.TokenExpiration,
 		RefreshTokenExpiration: newRealm.RefreshTokenExpiration,
 		PasswordSalt:           salt,
-		Encoder:                encoding.PasswordJsonEncoder{},
+		Encoder:                nil,
 	}
 	jsonShortRealm, err := json.Marshal(shortRealm)
 	if err != nil {

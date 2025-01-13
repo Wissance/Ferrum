@@ -68,9 +68,7 @@ func TestGetUserSuccessfully(t *testing.T) {
 	var rawUser interface{}
 	err := json.Unmarshal([]byte(userJson), &rawUser)
 	assert.NoError(t, err)
-	r, err := manager.GetRealm(realm)
-	assert.NoError(t, err)
-	expectedUser := data.CreateUser(rawUser, r.Encoder)
+	expectedUser := data.CreateUser(rawUser, nil)
 	user, err := manager.GetUser(realm, userName)
 	assert.NoError(t, err)
 	checkUser(t, &expectedUser, &user)
@@ -99,9 +97,7 @@ func TestGetUserByIdSuccessfully(t *testing.T) {
 	var rawUser interface{}
 	err := json.Unmarshal([]byte(userJson), &rawUser)
 	assert.NoError(t, err)
-	r, err := manager.GetRealm(realm)
-	assert.NoError(t, err)
-	expectedUser := data.CreateUser(rawUser, r.Encoder)
+	expectedUser := data.CreateUser(rawUser, nil)
 	user, err := manager.GetUserById(realm, userId)
 	assert.NoError(t, err)
 	checkUser(t, &expectedUser, &user)

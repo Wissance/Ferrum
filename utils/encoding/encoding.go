@@ -12,18 +12,15 @@ type PasswordJsonEncoder struct {
 	hasher hash.Hash
 }
 
-func NewPasswordJsonEncoder(salt string) PasswordJsonEncoder {
+func NewPasswordJsonEncoder(salt string) *PasswordJsonEncoder {
 	encoder := PasswordJsonEncoder{
 		hasher: sha512.New(),
 		salt:   salt,
 	}
-	return encoder
+	return &encoder
 }
 
 func (e *PasswordJsonEncoder) GetB64PasswordHash(password string) string {
-	if IsPasswordHashed(password) {
-		return password
-	}
 	passwordBytes := []byte(password + e.salt)
 	e.hasher.Write(passwordBytes)
 	hashedPasswordBytes := e.hasher.Sum(nil)
@@ -45,14 +42,6 @@ func GenerateRandomSalt() string {
 		salt[i] = charset[rand.Intn(len(charset))]
 	}
 	return string(salt)
-}
-
-func IsPasswordHashed(password string) bool {
-	decoded := b64Decode(password)
-	if len(decoded) == 0 {
-		return false
-	}
-	return true
 }
 
 func b64Encode(encoded []byte) string {
