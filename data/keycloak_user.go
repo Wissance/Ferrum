@@ -26,12 +26,14 @@ type KeyCloakUser struct {
  *    - rawData - any json
  * Return: instance of User as KeyCloakUser
  */
-func CreateUser(rawData interface{}, encoder encoding.PasswordJsonEncoder) User {
+func CreateUser(rawData interface{}, encoder *encoding.PasswordJsonEncoder) User {
 	jsonData, _ := json.Marshal(&rawData)
 	kcUser := &KeyCloakUser{rawData: rawData, jsonRawData: string(jsonData)}
 	password := getPathStringValue[string](kcUser.rawData, pathToPassword)
-	// todo(UMV): handle CreateUser errors in the future
-	_ = kcUser.SetPassword(password, encoder)
+	if encoder != nil {
+		// todo(UMV): handle CreateUser errors in the future
+		_ = kcUser.SetPassword(password, encoder)
+	}
 	user := User(kcUser)
 	return user
 }
@@ -54,9 +56,6 @@ func (user *KeyCloakUser) GetUsername() string {
 // todo(UMV): we should consider case when User is External
 func (user *KeyCloakUser) GetPasswordHash() string {
 	password := getPathStringValue[string](user.rawData, pathToPassword)
-	if !encoding.IsPasswordHashed(password) {
-		// todo (YuriShang): think about actions if the password is not hashed
-	}
 	return password
 }
 
@@ -66,7 +65,7 @@ func (user *KeyCloakUser) GetPasswordHash() string {
  *	- password - new password
  *	- encoder - encoder object with salt and hasher
  */
-func (user *KeyCloakUser) SetPassword(password string, encoder encoding.PasswordJsonEncoder) error {
+func (user *KeyCloakUser) SetPassword(password string, encoder *encoding.PasswordJsonEncoder) error {
 	hashed := encoder.GetB64PasswordHash(password)
 	if err := setPathStringValue(user.rawData, pathToPassword, hashed); err != nil {
 		return err

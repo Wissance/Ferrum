@@ -10,7 +10,7 @@ import (
 type User interface {
 	GetUsername() string
 	GetPasswordHash() string
-	SetPassword(password string, encoder encoding.PasswordJsonEncoder) error
+	SetPassword(password string, encoder *encoding.PasswordJsonEncoder) error
 	GetId() uuid.UUID
 	GetUserInfo() interface{}
 	GetRawData() interface{}

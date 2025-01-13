@@ -57,12 +57,8 @@ func (mn *RedisDataManager) GetUsers(realmName string) ([]data.User, error) {
 	}
 
 	userData := make([]data.User, len(realmUsersData))
-	realm, err := mn.GetRealm(realmName)
-	if err != nil {
-		return []data.User{}, nil
-	}
 	for i, u := range realmUsersData {
-		userData[i] = data.CreateUser(u, realm.Encoder)
+		userData[i] = data.CreateUser(u, nil)
 	}
 	return userData, nil
 }
@@ -87,11 +83,7 @@ func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.Use
 		}
 		return nil, errors2.NewUnknownError("getSingleRedisObject", "RedisDataManager.GetUser", err)
 	}
-	realm, err := mn.GetRealm(realmName)
-	if err != nil {
-		return nil, err
-	}
-	user := data.CreateUser(*rawUser, realm.Encoder)
+	user := data.CreateUser(*rawUser, nil)
 	return user, nil
 }
 

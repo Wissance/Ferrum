@@ -15,5 +15,5 @@ type Realm struct {
 	RefreshTokenExpiration int                           `json:"refresh_expiration"`
 	UserFederationServices []UserFederationServiceConfig `json:"user_federation_services"`
 	PasswordSalt           string                        `json:"password_salt"`
-	Encoder                encoding.PasswordJsonEncoder
+	Encoder                *encoding.PasswordJsonEncoder
 }
