@@ -252,7 +252,7 @@ Features:
 * used different config to run locally and in docker
 * newer `Keycloak` versions support
 * checked stability if `Redis` is down, `Ferrum` does not crushes and wait until `Redis` is ready
-* swagger (-devmode) and `Keycloak` compatible HTTP endpoint `openid-configuration`
+* `swagger` (`-devmode` option in cmd line) and `Keycloak` compatible HTTP endpoint `openid-configuration`
 * support for federated user (without full providers impl, just preliminary)
 * store password as a hashes
 
