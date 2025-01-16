@@ -3,6 +3,7 @@ package redis
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
@@ -57,7 +58,7 @@ func (mn *RedisDataManager) GetUsers(realmName string) ([]data.User, error) {
 
 	userData := make([]data.User, len(realmUsersData))
 	for i, u := range realmUsersData {
-		userData[i] = data.CreateUser(u)
+		userData[i] = data.CreateUser(u, nil)
 	}
 	return userData, nil
 }
@@ -82,7 +83,7 @@ func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.Use
 		}
 		return nil, errors2.NewUnknownError("getSingleRedisObject", "RedisDataManager.GetUser", err)
 	}
-	user := data.CreateUser(*rawUser)
+	user := data.CreateUser(*rawUser, nil)
 	return user, nil
 }
 
@@ -128,7 +129,7 @@ func (mn *RedisDataManager) CreateUser(realmName string, userNew data.User) erro
 	}
 	// TODO(SIA) Add transaction
 	// TODO(SIA) use function isExists
-	_, err := mn.getRealmObject(realmName)
+	_, err := mn.GetRealm(realmName)
 	if err != nil {
 		mn.logger.Warn(sf.Format("CreateUser: GetRealmObject failed, error: {0}", err.Error()))
 		return err
@@ -143,7 +144,6 @@ func (mn *RedisDataManager) CreateUser(realmName string, userNew data.User) erro
 		mn.logger.Warn(sf.Format("CreateUser: GetUser failed, error: {0}", err.Error()))
 		return err
 	}
-
 	upsertUserErr := mn.upsertUserObject(realmName, userName, userNew.GetJsonString())
 	if upsertUserErr != nil {
 		mn.logger.Error(sf.Format("CreateUser: addUserToRealm failed, error: {0}", upsertUserErr.Error()))
@@ -241,7 +241,11 @@ func (mn *RedisDataManager) SetPassword(realmName string, userName string, passw
 	if err != nil {
 		return errors2.NewUnknownError("GetUser", "RedisDataManager.SetPassword", err)
 	}
-	if setPasswordErr := user.SetPassword(password); setPasswordErr != nil {
+	realm, err := mn.GetRealm(realmName)
+	if err != nil {
+		return errors2.NewUnknownError("GetRealm", "RedisDataManager.SetPassword", err)
+	}
+	if setPasswordErr := user.SetPassword(password, realm.Encoder); setPasswordErr != nil {
 		return errors2.NewUnknownError("SetPassword", "RedisDataManager.SetPassword", setPasswordErr)
 	}
 	if upsertUserErr := mn.upsertUserObject(realmName, userName, user.GetJsonString()); upsertUserErr != nil {

@@ -4,6 +4,7 @@
             "name": "myapp",
             "token_expiration": 330,
             "refresh_expiration": 200,
+            "password_salt": "1234567890",
             "clients": [
                 {
                     "id": "d4dc483d-7d0d-4d2e-a0a0-2d34b55e5a14",
@@ -29,7 +30,7 @@
                         "family_name": "sys"
                     },
                     "credentials": {
-                        "password": "1s2d3f4g90xs"
+                        "password": "AcMWCBu5AQDN8IvSRExUUSQq7H3RH6IzsxZJqyIoEmPFtJwGknUUvzet0vhS95hgkrKLNM66v0mUB5xji8zdqA=="
                     }
                 },
                 {
