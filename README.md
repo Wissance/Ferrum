@@ -6,7 +6,7 @@ Ferrum is a **better** Authorization Server, this is a Community version.
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/Ferrum?style=plastic) 
 ![GitHub issues](https://img.shields.io/github/issues/wissance/Ferrum?style=plastic)
 ![GitHub Release Date](https://img.shields.io/github/release-date/wissance/Ferrum) 
-![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.1/total?style=plastic)
+![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.2/total?style=plastic)
 
 ![Ferrum: A better Auth Server](/img/ferrum_cover.png)
 
@@ -42,6 +42,8 @@ it has `endpoints` SIMILAR to `Keycloak`, at present time we are having followin
 3. Introspect tokens `POST ~/auth/realms/{realm}/protocol/openid-connect/token/introspect`
 
 ## 3. How to use
+
+`Ferrum` is thoroughly developing with maximal quality of code and solution; we are working using a `git-flow` approach; even `master` branch is a stable release branch, but `develop` is also highly stable, therefore develop version could also be used in a production.
 
 ### 3.1 Build
 
@@ -193,7 +195,68 @@ Since version `0.9.1` it is possible to use `CLI Admin` [See](api/admin/cli/READ
 
 ![Use CLI Admin from docker](/img/additional/cli_from_docker.png)
 
-## 6. Contributors
+## 6. Changes
+
+Brief info about changes in releases.
+
+### 6.1 Changes in 0.0.1
+
+Features:
+* `Keycloak` compatible HTTP-endpoints to issue a new `token` and to get `userinfo`
+
+### 6.2 Changes in 0.1.0
+
+Features:
+* documentation (`readme.md` file)
+* integration tests
+
+### 6.3 Changes in 0.1.1
+
+Features:
+* fixed modules names
+
+### 6.4 Changes in 0.1.2
+
+Features:
+* changed module names to make it available to embed `Ferrum` in an other applications
+
+### 6.5 Changes in 0.1.3
+
+Features:
+* `Keycloak` compatible HTTP-endpoint for token introspect
+
+### 6.6 Changes in 0.1.4
+
+Features:
+* removed `/` therefore it is possible to interact with `Ferrum` using `go-cloak` package
+
+### 6.7 Changes in 0.9.0
+
+Features
+* logging
+* implemented token refresh
+* better docs
+
+### 6.8 Changes in 0.9.1
+
+Features:
+* `docker` && `docker-compose` for app running
+* admin `CLI` `API`
+* `Redis` as a production data storage
+
+### 6.9 Changes in 0.9.2
+
+Features:
+* admin cli added to docker
+* test on `Redis` data manger
+* used different config to run locally and in docker
+* newer `Keycloak` versions support
+* checked stability if `Redis` is down, `Ferrum` does not crushes and wait until `Redis` is ready
+* `swagger` (`-devmode` option in cmd line) and `Keycloak` compatible HTTP endpoint `openid-configuration`
+* support for federated user (without full providers impl, just preliminary)
+* store password as a hashes
+
+## 7. Contributors
 
 <a href="https://github.com/Wissance/Ferrum/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=Wissance/Ferrum" />

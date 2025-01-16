@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/wissance/Ferrum/managers"
 	"log"
+
+	"github.com/wissance/Ferrum/managers"
 
 	"github.com/wissance/Ferrum/api/admin/cli/operations"
 	"github.com/wissance/Ferrum/config"
@@ -19,16 +20,17 @@ import (
 const defaultConfig = "./config_w_redis.json"
 
 var (
-	argConfigFile = flag.String("config", defaultConfig, "")
-	argOperation  = flag.String("operation", "", "")
-	argResource   = flag.String("resource", "", "")
-	argResourceId = flag.String("resource_id", "", "")
-	argParams     = flag.String("params", "", "This is the name of the realm for operations on client or user resources")
-	argValue      = flag.String("value", "", "Json object")
+	argConfigFile = flag.String("config", defaultConfig, "Application config for working with a persistent data store")
+	argOperation  = flag.String("operation", "", "One of the available operations read|create|update|delete or user specific change/reset password")
+	argResource   = flag.String("resource", "", "\"realm\", \"client\" or \"user\" or maybe other in future")
+	argResourceId = flag.String("resource_id", "", "resource object identifier, id required for the update|delete or read operation")
+	argParams     = flag.String("params", "", "Name of a realm for operations on client or user resources")
+	argValue      = flag.String("value", "", "Json encoded resource itself")
 )
 
 func main() {
 	flag.Parse()
+	// TODO(UMV): extend config
 	cfg, err := config.ReadAppConfig(*argConfigFile)
 	if err != nil {
 		log.Fatalf("readAppConfig failed: %s", err)
@@ -90,6 +92,13 @@ func main() {
 				log.Fatalf("GetRealm failed: %s", err)
 			}
 			fmt.Println(*realm)
+
+		case operations.UserFederationConfigResource:
+			userFederation, err := manager.GetUserFederationConfig(params, resourceId)
+			if err != nil {
+				log.Fatalf("GetUserFederationConfig failed: %s", err)
+			}
+			fmt.Println(*userFederation)
 		}
 
 		return
@@ -100,20 +109,24 @@ func main() {
 		switch resource {
 		case operations.ClientResource:
 			var clientNew data.Client
-			if err := json.Unmarshal(value, &clientNew); err != nil {
-				log.Fatalf("json.Unmarshal failed: %s", err)
+			if unmarshalErr := json.Unmarshal(value, &clientNew); unmarshalErr != nil {
+				log.Fatalf(sf.Format("json.Unmarshal failed: {0}", unmarshalErr.Error()))
 			}
-			if err := manager.CreateClient(params, clientNew); err != nil {
-				log.Fatalf("CreateClient failed: %s", err)
+			if createErr := manager.CreateClient(params, clientNew); createErr != nil {
+				log.Fatalf(sf.Format("CreateClient failed: {0}", createErr.Error()))
 			}
-			fmt.Println(sf.Format("Client: \"{0}\" successfully created", clientNew.Name))
+			log.Print(sf.Format("Client: \"{0}\" successfully created", clientNew.Name))
 
 		case operations.UserResource:
 			var userNew any
 			if err := json.Unmarshal(value, &userNew); err != nil {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
-			user := data.CreateUser(userNew)
+			realm, err := manager.GetRealm(params)
+			if err != nil {
+				log.Fatalf("GetRealm failed: %s", err)
+			}
+			user := data.CreateUser(userNew, realm.Encoder)
 			if err := manager.CreateUser(params, user); err != nil {
 				log.Fatalf("CreateUser failed: %s", err)
 			}
@@ -128,6 +141,15 @@ func main() {
 				log.Fatalf("CreateRealm failed: %s", err)
 			}
 			fmt.Println(sf.Format("Realm: \"{0}\" successfully created", newRealm.Name))
+		case operations.UserFederationConfigResource:
+			var userFederationConfig data.UserFederationServiceConfig
+			if err := json.Unmarshal(value, &userFederationConfig); err != nil {
+				log.Fatalf("json.Unmarshal failed: %s", err)
+			}
+			if err := manager.CreateUserFederationConfig(params, userFederationConfig); err != nil {
+				log.Fatalf("CreateUserFederationConfig failed: %s", err)
+			}
+			fmt.Println(sf.Format("User federation service config: \"{0}\" successfully created", userFederationConfig.Name))
 		}
 
 		return
@@ -153,6 +175,12 @@ func main() {
 				log.Fatalf("DeleteRealm failed: %s", err)
 			}
 			fmt.Println(sf.Format("Realm: \"{0}\" successfully deleted", resourceId))
+
+		case operations.UserFederationConfigResource:
+			if err := manager.DeleteUserFederationConfig(params, resourceId); err != nil {
+				log.Fatalf("DeleteUserFederationConfig failed: %s", err)
+			}
+			fmt.Println(sf.Format("User federation service config: \"{0}\" successfully deleted", resourceId))
 		}
 
 		return
@@ -179,7 +207,7 @@ func main() {
 			if err := json.Unmarshal(value, &newUser); err != nil {
 				log.Fatalf("json.Unmarshal failed: %s", err)
 			}
-			user := data.CreateUser(newUser)
+			user := data.CreateUser(newUser, nil)
 			if err := manager.UpdateUser(params, resourceId, user); err != nil {
 				log.Fatalf("UpdateUser failed: %s", err)
 			}
@@ -194,6 +222,15 @@ func main() {
 				log.Fatalf("UpdateRealm failed: %s", err)
 			}
 			fmt.Println(sf.Format("Realm: \"{0}\" successfully updated", newRealm.Name))
+		case operations.UserFederationConfigResource:
+			var userFederationServiceConfig data.UserFederationServiceConfig
+			if err := json.Unmarshal(value, &userFederationServiceConfig); err != nil {
+				log.Fatalf("json.Unmarshal failed: %s", err)
+			}
+			if err := manager.UpdateUserFederationConfig(params, resourceId, userFederationServiceConfig); err != nil {
+				log.Fatalf("UpdateUserFederationConfig failed: %s", err)
+			}
+			fmt.Println(sf.Format("User federation service config: \"{0}\" successfully updated", userFederationServiceConfig.Name, params))
 		}
 
 		return
@@ -210,7 +247,7 @@ func main() {
 			}
 			// TODO(SIA)  Moving password verification to another location
 			if len(value) < 8 {
-				log.Fatalf("Password length must be greater than 8")
+				log.Fatalf("Password length must be greater than 7")
 			}
 			password := string(value)
 			passwordManager := manager.(PasswordManager)
