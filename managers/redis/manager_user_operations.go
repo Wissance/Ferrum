@@ -3,6 +3,7 @@ package redis
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
@@ -57,7 +58,7 @@ func (mn *RedisDataManager) GetUsers(realmName string) ([]data.User, error) {
 
 	userData := make([]data.User, len(realmUsersData))
 	for i, u := range realmUsersData {
-		userData[i] = data.CreateUser(u)
+		userData[i] = data.CreateUser(u, nil)
 	}
 	return userData, nil
 }
@@ -82,7 +83,7 @@ func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.Use
 		}
 		return nil, errors2.NewUnknownError("getSingleRedisObject", "RedisDataManager.GetUser", err)
 	}
-	user := data.CreateUser(*rawUser)
+	user := data.CreateUser(*rawUser, nil)
 	return user, nil
 }
 
@@ -96,7 +97,6 @@ func (mn *RedisDataManager) GetUser(realmName string, userName string) (data.Use
  */
 func (mn *RedisDataManager) GetUserById(realmName string, userId uuid.UUID) (data.User, error) {
 	if !mn.IsAvailable() {
-		// todo(UMV): is this Valid or NOT ????
 		return data.User(nil), errors2.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
 	}
 	realmUser, err := mn.getRealmUserById(realmName, userId)
@@ -129,7 +129,7 @@ func (mn *RedisDataManager) CreateUser(realmName string, userNew data.User) erro
 	}
 	// TODO(SIA) Add transaction
 	// TODO(SIA) use function isExists
-	_, err := mn.getRealmObject(realmName)
+	_, err := mn.GetRealm(realmName)
 	if err != nil {
 		mn.logger.Warn(sf.Format("CreateUser: GetRealmObject failed, error: {0}", err.Error()))
 		return err
@@ -138,13 +138,12 @@ func (mn *RedisDataManager) CreateUser(realmName string, userNew data.User) erro
 	// TODO(SIA) use function isExists
 	_, err = mn.GetUser(realmName, userName)
 	if err == nil {
-		return errors2.NewObjectExistsError(User, userName, sf.Format("realm: {0}", realmName))
+		return errors2.NewObjectExistsError(string(User), userName, sf.Format("realm: {0}", realmName))
 	}
 	if !errors.As(err, &errors2.EmptyNotFoundErr) {
 		mn.logger.Warn(sf.Format("CreateUser: GetUser failed, error: {0}", err.Error()))
 		return err
 	}
-
 	upsertUserErr := mn.upsertUserObject(realmName, userName, userNew.GetJsonString())
 	if upsertUserErr != nil {
 		mn.logger.Error(sf.Format("CreateUser: addUserToRealm failed, error: {0}", upsertUserErr.Error()))
@@ -242,7 +241,11 @@ func (mn *RedisDataManager) SetPassword(realmName string, userName string, passw
 	if err != nil {
 		return errors2.NewUnknownError("GetUser", "RedisDataManager.SetPassword", err)
 	}
-	if setPasswordErr := user.SetPassword(password); setPasswordErr != nil {
+	realm, err := mn.GetRealm(realmName)
+	if err != nil {
+		return errors2.NewUnknownError("GetRealm", "RedisDataManager.SetPassword", err)
+	}
+	if setPasswordErr := user.SetPassword(password, realm.Encoder); setPasswordErr != nil {
 		return errors2.NewUnknownError("SetPassword", "RedisDataManager.SetPassword", setPasswordErr)
 	}
 	if upsertUserErr := mn.upsertUserObject(realmName, userName, user.GetJsonString()); upsertUserErr != nil {
@@ -259,13 +262,13 @@ func (mn *RedisDataManager) SetPassword(realmName string, userName string, passw
  */
 func (mn *RedisDataManager) getRealmUsers(realmName string) ([]data.ExtendedIdentifier, error) {
 	userRealmsKey := sf.Format(realmUsersKeyTemplate, mn.namespace, realmName)
-	realmUsers, err := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
+	realmUsers, err := getObjectsListOfSlicesItemsFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmUsers, userRealmsKey)
 	if err != nil {
 		if errors.Is(err, errors2.ErrZeroLength) {
 			return nil, err
 		}
 
-		return nil, errors2.NewUnknownError("getObjectsListFromRedis", "RedisDataManager.getRealmUsers", err)
+		return nil, errors2.NewUnknownError("getObjectsListOfSlicesItemsFromRedis", "RedisDataManager.getRealmUsers", err)
 	}
 	return realmUsers, nil
 }
@@ -277,6 +280,7 @@ func (mn *RedisDataManager) getRealmUsers(realmName string) ([]data.ExtendedIden
  *    - userName
  * Returns: *ExtendedIdentifier, error
  */
+// nolint unused
 func (mn *RedisDataManager) getRealmUser(realmName string, userName string) (*data.ExtendedIdentifier, error) {
 	realmUsers, err := mn.getRealmUsers(realmName)
 	if err != nil {
@@ -294,7 +298,7 @@ func (mn *RedisDataManager) getRealmUser(realmName string, userName string) (*da
 	}
 	if !userFound {
 		mn.logger.Debug(sf.Format("User with name: \"{0}\" was not found for realm: \"{1}\"", userName, realmName))
-		return nil, errors2.NewObjectNotFoundError(User, userName, sf.Format("realm: {0}", realmName))
+		return nil, errors2.NewObjectNotFoundError(string(User), userName, sf.Format("realm: {0}", realmName))
 	}
 	return &user, nil
 }
@@ -313,7 +317,7 @@ func (mn *RedisDataManager) getRealmUserById(realmName string, userId uuid.UUID)
 			return nil, err
 		}
 		if errors.Is(err, errors2.ErrZeroLength) {
-			return nil, errors2.NewObjectNotFoundError(User, userId.String(), sf.Format("realm: {0}", realmName))
+			return nil, errors2.NewObjectNotFoundError(string(User), userId.String(), sf.Format("realm: {0}", realmName))
 		}
 		return nil, errors2.NewUnknownError("getRealmUsers", "RedisDataManager.getRealmUserById", err)
 	}
@@ -328,7 +332,7 @@ func (mn *RedisDataManager) getRealmUserById(realmName string, userId uuid.UUID)
 	}
 	if !userFound {
 		mn.logger.Debug(sf.Format("User with id: \"{0}\" was not found for realm: \"{1}\"", userId, realmName))
-		return nil, errors2.NewObjectNotFoundError(User, userId.String(), sf.Format("realm: {0}", realmName))
+		return nil, errors2.NewObjectNotFoundError(string(User), userId.String(), sf.Format("realm: {0}", realmName))
 	}
 	return &user, nil
 }
@@ -389,7 +393,7 @@ func (mn *RedisDataManager) createRealmUsers(realmName string, realmUsers []data
 	if isAllPreDelete {
 		if deleteRealmUserErr := mn.deleteRealmUsersObject(realmName); deleteRealmUserErr != nil {
 			// todo(UMV): errors.Is because ErrNotExists doesn't have custom type
-			if deleteRealmUserErr != nil && !errors.Is(deleteRealmUserErr, errors2.ErrNotExists) {
+			if !errors.Is(deleteRealmUserErr, errors2.ErrNotExists) {
 				return errors2.NewUnknownError("deleteRealmUsersObject", "RedisDataManager.createRealmUsers", deleteRealmUserErr)
 			}
 		}
@@ -447,7 +451,7 @@ func (mn *RedisDataManager) deleteUserFromRealm(realmName string, userName strin
 		}
 	}
 	if !isHasUser {
-		return errors2.NewObjectNotFoundError(User, userName, sf.Format("realm: {0}", realmName))
+		return errors2.NewObjectNotFoundError(string(User), userName, sf.Format("realm: {0}", realmName))
 	}
 	if createRealmUserErr := mn.createRealmUsers(realmName, realmUsers, true); createRealmUserErr != nil {
 		return errors2.NewUnknownError("createRealmUsers", "RedisDataManager.deleteUserFromRealm", createRealmUserErr)

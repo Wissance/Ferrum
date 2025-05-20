@@ -3,7 +3,8 @@
         "schema": "http",
         "address": "127.0.0.1",
         "port": 8182,
-        "secret_file": "./keyfile"
+        "secret_file": "./keyfile",
+        "shutdown_timeout": 30
     },
     "logging": {
         "level": "debug",
@@ -33,8 +34,8 @@
         "type": "redis",
         "source": "127.0.0.1:6379",
         "credentials": {
-            "username": "test_user",
-            "password": "test_password"
+            "username": "ferrum_db",
+            "password": "FeRRuM000"
         },
         "options": {
             "namespace": "ferrum_1",

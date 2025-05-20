@@ -3,9 +3,11 @@ package redis
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	appErrs "github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/utils/encoding"
 	sf "github.com/wissance/stringFormatter"
 )
 
@@ -18,7 +20,6 @@ import (
  */
 func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
 	if !mn.IsAvailable() {
-
 		return nil, appErrs.NewDataProviderNotAvailable(string(config.REDIS), mn.redisOption.Addr)
 	}
 
@@ -39,6 +40,15 @@ func (mn *RedisDataManager) GetRealm(realmName string) (*data.Realm, error) {
 		}
 	}
 	realm.Clients = clients
+
+	configs, err := mn.GetUserFederationConfigs(realmName)
+	if err != nil {
+		if !errors.Is(err, appErrs.ErrZeroLength) {
+			return nil, appErrs.NewUnknownError("GetUserFederationConfigs", "RedisDataManager.GetRealm", err)
+		}
+	}
+	realm.UserFederationServices = configs
+	realm.Encoder = encoding.NewPasswordJsonEncoder(realm.PasswordSalt)
 
 	return realm, nil
 }
@@ -61,7 +71,7 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 	}
 	// TODO(SIA) Add transaction
 	// TODO(SIA) use function isExists
-	_, err := mn.getRealmObject(newRealm.Name)
+	_, err := mn.GetRealm(newRealm.Name)
 	if err == nil {
 		return appErrs.NewObjectExistsError(string(Realm), newRealm.Name, "")
 	}
@@ -90,10 +100,13 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 		}
 	}
 
+	salt := encoding.GenerateRandomSalt()
+
 	if len(newRealm.Users) != 0 {
 		realmUsers := make([]data.ExtendedIdentifier, len(newRealm.Users))
+		encoder := encoding.NewPasswordJsonEncoder(salt)
 		for i, user := range newRealm.Users {
-			newUser := data.CreateUser(user)
+			newUser := data.CreateUser(user, encoder)
 			newUserName := newUser.GetUsername()
 			if upsertUserErr := mn.upsertUserObject(newRealm.Name, newUserName, newUser.GetJsonString()); upsertUserErr != nil {
 				return appErrs.NewUnknownError("upsertUserObject", "RedisDataManager.CreateRealm", upsertUserErr)
@@ -115,6 +128,8 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 		Users:                  []any{},
 		TokenExpiration:        newRealm.TokenExpiration,
 		RefreshTokenExpiration: newRealm.RefreshTokenExpiration,
+		PasswordSalt:           salt,
+		Encoder:                nil,
 	}
 	jsonShortRealm, err := json.Marshal(shortRealm)
 	if err != nil {
@@ -124,6 +139,18 @@ func (mn *RedisDataManager) CreateRealm(newRealm data.Realm) error {
 	if upsertRealmErr := mn.upsertRealmObject(newRealm.Name, string(jsonShortRealm)); upsertRealmErr != nil {
 		return appErrs.NewUnknownError("upsertRealmObject", "RedisDataManager.CreateRealm", upsertRealmErr)
 	}
+
+	// Creating UserFederationServiceConfig[] after Realm creation
+	if len(newRealm.UserFederationServices) > 0 {
+		for _, userFederationCfg := range newRealm.UserFederationServices {
+			createUserFederationServiceErr := mn.CreateUserFederationConfig(newRealm.Name, userFederationCfg)
+			if createUserFederationServiceErr != nil {
+				return appErrs.NewUnknownError("createUserFederationService", "RedisDataManager.CreateRealm",
+					createUserFederationServiceErr)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -183,6 +210,19 @@ func (mn *RedisDataManager) DeleteRealm(realmName string) error {
 		}
 		if deleteRealmUserErr := mn.deleteRealmUsersObject(realmName); deleteRealmUserErr != nil {
 			return appErrs.NewUnknownError("deleteRealmUsersObject", "RedisDataManager.DeleteRealm", deleteRealmUserErr)
+		}
+	}
+
+	userFederationConfigs, err := mn.GetUserFederationConfigs(realmName)
+	if err != nil {
+		if !errors.Is(err, appErrs.ErrZeroLength) {
+			return appErrs.NewUnknownError("GetUserFederationConfigs", "RedisDataManager.DeleteRealm", err)
+		}
+	} else {
+		for _, userFederation := range userFederationConfigs {
+			if deleteUserFederationErr := mn.DeleteUserFederationConfig(realmName, userFederation.Name); deleteUserFederationErr != nil {
+				return appErrs.NewUnknownError("deleteUserFederationConfigObject", "RedisDataManager.DeleteRealm", deleteUserFederationErr)
+			}
 		}
 	}
 

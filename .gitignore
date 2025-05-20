@@ -21,3 +21,5 @@ extTestApps/Wissance.Auth.FerrumChecker/.vs/
 extTestApps/Wissance.Auth.FerrumChecker/Wissance.Auth.FerrumChecker/bin/
 
 extTestApps/Wissance.Auth.FerrumChecker/Wissance.Auth.FerrumChecker/obj/
+
+.vscode/

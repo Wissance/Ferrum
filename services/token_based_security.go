@@ -3,6 +3,8 @@ package services
 import (
 	"time"
 
+	sf "github.com/wissance/stringFormatter"
+
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/dto"
@@ -72,13 +74,25 @@ func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.T
 		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
 	}
 
-	// todo(UMV): use hash instead raw passwords
-	password := user.GetPassword()
-	if password != tokenIssueData.Password {
-		service.logger.Trace("Credential check: password mismatch")
-		return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
+	realm, err := (*service.DataProvider).GetRealm(realmName)
+	if err != nil {
+		service.logger.Trace("Credential check: failed to get realm")
+		return &data.OperationError{Msg: "failed to get realm", Description: err.Error()}
 	}
-	return nil
+
+	if user.IsFederatedUser() {
+		msg := sf.Format("User \"{0}\" configured as federated, currently it is not fully supported, wait for future releases",
+			user.GetUsername())
+		service.logger.Warn(msg)
+		return &data.OperationError{Msg: "federated user not supported", Description: msg}
+	} else {
+		oldPasswordHash := user.GetPasswordHash()
+		if !realm.Encoder.IsPasswordsMatch(tokenIssueData.Password, oldPasswordHash) {
+			service.logger.Trace("Credential check: password mismatch")
+			return &data.OperationError{Msg: errors.InvalidUserCredentialsMsg, Description: errors.InvalidUserCredentialsDesc}
+		}
+		return nil
+	}
 }
 
 // GetCurrentUserByName return public user info by username
@@ -133,6 +147,7 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 	for i, s := range realmSessions {
 		if s.UserId == userId {
 			realmSessions[i].Expired = time.Now().Add(time.Second * time.Duration(duration))
+			realmSessions[i].RefreshExpired = time.Now().Add(time.Second * time.Duration(refresh))
 			service.UserSessions[realm] = realmSessions
 			return s.Id
 		}

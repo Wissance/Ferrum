@@ -18,7 +18,7 @@ All Admin CLI operation have the same scheme as follows:
 `{admin_cli_executable} --resource={resorce_name} --operation={operation_type} [additional_arguments]`
 where:
 * `{admin_cli_executable}` is a name of executable file
-* `{resource_name}` - `realm`, `client` or `user`
+* `{resource_name}` - `realm`, `client`, `user` or `user_federation`
 * `{operation_type}` is an operation to perform over resource (see operation description below)
 * `[additional_arguments]` a set of additional `--key=value` pairs i.e. resource id (for get), or value (for create and|or update)
 
@@ -53,6 +53,11 @@ Create `user` example:
 ```ps1
 ./ferrum-admin.exe --resource=user --operation=create --value='{\"info\": {\"sub\": \"667ff6a7-3f6b-449b-a217-6fc5d9ac6890\", \"email_verified\": true, \"roles\": [\"admin\"], \"name\": \"M.V.Ushakov\", \"preferred_username\": \"umv\", \"given_name\": \"Michael\", \"family_name\": \"Ushakov\"}, \"credentials\": {\"password\": \"1s2d3f4g90xs\"}}' --params=WissanceFerrumDemo
 ```
+
+Create `user_federation` example:
+```ps1
+./ferrum-admin.exe --resource=user_federation --operation=create --value='{\"name\":\"test_ldap\", \"type\":\"ldap\", \"url\":\"ldap://ldap.wissance.com:389\"}' --params=WissanceFerrumDemo
+```
 ##### 2.1.1.2 Update operations
 
 Update operation fully replace item by key `--resource_id` + `--param={realm_name}` (realm does not requires)
@@ -72,6 +77,11 @@ Update `client` example:
 Update `user` example:
 ```ps1
 ./ferrum-admin.exe --resource=user --operation=update --resource_id=umv --value='{\"info\": {\"sub\": \"667ff6a7-3f6b-449b-a217-6fc5d9ac6890\", \"email_verified\": true, \"roles\": [\"admin\", \"managers\"], \"name\": \"M.V.Ushakov\", \"preferred_username\": \"umv\", \"given_name\": \"Michael\", \"family_name\": \"Ushakov\"}, \"credentials\": {\"password\": \"1s2d3f4g90xs\"}}' --params=WissanceFerrumDemo
+```
+
+Update `user_federation` example:
+```ps1
+./ferrum-admin.exe --resource=user_federation --operation=update --resource_id=test_ldap --value='{\"name\":\"test_ldap\", \"type\":\"ldap\", \"url\":\"ldap://custom_ldap.wissance.com:389\"}' --params=WissanceFerrumDemo
 ```
 
 Question:
@@ -97,6 +107,11 @@ Get `user` example:
 ```
 Get user should hide credential section (have to test, not tested yet).
 
+Get `user_federation` example:
+```ps1
+./ferrum-admin.exe --resource=user_federation --operation=get --resource_id=test_ldap --params=WissanceFerrumDemo
+```
+
 ##### 2.1.1.3 Delete operations
 
 Delete operation requires `--resource_id` and `--params` to be provided.
@@ -114,6 +129,11 @@ Delete `client` example:
 Delete `user` example:
 ```ps1
 ./ferrum-admin.exe --resource=user --operation=delete --resource_id=umv --params=WissanceFerrumDemo
+```
+
+Delete `user_federation` example:
+```ps1
+./ferrum-admin.exe --resource=user_federation --operation=delete --resource_id=test_ldap --params=WissanceFerrumDemo
 ```
 
 Questions (todo for work):

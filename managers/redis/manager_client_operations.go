@@ -3,6 +3,7 @@ package redis
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	errors2 "github.com/wissance/Ferrum/errors"
@@ -86,7 +87,7 @@ func (mn *RedisDataManager) CreateClient(realmName string, clientNew data.Client
 	// TODO(SIA) use function isExists
 	_, err = mn.GetClient(realmName, clientNew.Name)
 	if err == nil {
-		return errors2.NewObjectExistsError(Client, clientNew.Name, sf.Format("realm: {0}", realmName))
+		return errors2.NewObjectExistsError(string(Client), clientNew.Name, sf.Format("realm: {0}", realmName))
 	}
 	if !errors.As(err, &errors2.ObjectNotFoundError{}) {
 		return err
@@ -137,7 +138,7 @@ func (mn *RedisDataManager) DeleteClient(realmName string, clientName string) er
 	return nil
 }
 
-// UpdateClient - upgrading an existing client
+// UpdateClient - updating an existing client
 /* 1. Removes Client fully from clients and realm clients collections
  * 2. Creates client with new body (clientNew)
  * 3. Add relations between Realm and Client
@@ -190,12 +191,12 @@ func (mn *RedisDataManager) UpdateClient(realmName string, clientName string, cl
  */
 func (mn *RedisDataManager) getRealmClients(realmName string) ([]data.ExtendedIdentifier, error) {
 	realmClientsKey := sf.Format(realmClientsKeyTemplate, mn.namespace, realmName)
-	realmClients, err := getObjectsListFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
+	realmClients, err := getObjectsListOfSlicesItemsFromRedis[data.ExtendedIdentifier](mn.redisClient, mn.ctx, mn.logger, RealmClients, realmClientsKey)
 	if err != nil {
 		if errors.Is(err, errors2.ErrZeroLength) {
 			return nil, err
 		}
-		return nil, errors2.NewUnknownError("getObjectsListFromRedis", "RedisDataManager.getRealmClients", err)
+		return nil, errors2.NewUnknownError("getObjectsListOfSlicesItemsFromRedis", "RedisDataManager.getRealmClients", err)
 	}
 	return realmClients, nil
 }
@@ -207,6 +208,7 @@ func (mn *RedisDataManager) getRealmClients(realmName string) ([]data.ExtendedId
  *    - clientName
  * Returns: *ExtendedIdentifier, error
  */
+// nolint unused
 func (mn *RedisDataManager) getRealmClient(realmName string, clientName string) (*data.ExtendedIdentifier, error) {
 	realmClients, err := mn.getRealmClients(realmName)
 	if err != nil {
@@ -282,7 +284,7 @@ func (mn *RedisDataManager) createRealmClients(realmName string, realmClients []
 	if isAllPreDelete {
 		if delErr := mn.deleteRealmClientsObject(realmName); delErr != nil {
 			// todo(UMV): errors.Is because ErrZeroLength doesn't have custom type
-			if delErr != nil && !errors.Is(delErr, errors2.ErrNotExists) {
+			if !errors.Is(delErr, errors2.ErrNotExists) {
 				return errors2.NewUnknownError("deleteRealmClientsObject", "RedisDataManager.createRealmClients", delErr)
 			}
 		}
@@ -341,7 +343,7 @@ func (mn *RedisDataManager) deleteClientFromRealm(realmName string, clientName s
 		}
 	}
 	if !isHasClient {
-		return errors2.NewObjectNotFoundError(Client, clientName, sf.Format("realm: {0}", realmName))
+		return errors2.NewObjectNotFoundError(string(Client), clientName, sf.Format("realm: {0}", realmName))
 	}
 	if createClientErr := mn.createRealmClients(realmName, realmClients, true); createClientErr != nil {
 		return errors2.NewUnknownError("createRealmClients", "RedisDataManager.deleteClientFromRealm", createClientErr)

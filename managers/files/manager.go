@@ -2,8 +2,10 @@ package files
 
 import (
 	"encoding/json"
-	"github.com/wissance/Ferrum/config"
 	"os"
+
+	"github.com/wissance/Ferrum/config"
+	"github.com/wissance/Ferrum/utils/encoding"
 
 	"github.com/wissance/Ferrum/errors"
 
@@ -17,8 +19,8 @@ type objectType string
 
 const (
 	Realm  objectType = "realm"
-	Client            = "client"
-	User              = "user"
+	Client objectType = "client"
+	User   objectType = "user"
 )
 
 // FileDataManager is the simplest Data Storage without any dependencies, it uses single JSON file (it is users and clients RO auth server)
@@ -77,6 +79,7 @@ func (mn *FileDataManager) GetRealm(realmName string) (*data.Realm, error) {
 		// case-sensitive comparison, myapp and MyApP are different realms
 		if e.Name == realmName {
 			e.Users = nil
+			e.Encoder = encoding.NewPasswordJsonEncoder(e.PasswordSalt)
 			return &e, nil
 		}
 	}
@@ -101,13 +104,13 @@ func (mn *FileDataManager) GetUsers(realmName string) ([]data.User, error) {
 			}
 			users := make([]data.User, len(e.Users))
 			for i, u := range e.Users {
-				user := data.CreateUser(u)
+				user := data.CreateUser(u, nil)
 				users[i] = user
 			}
 			return users, nil
 		}
 	}
-	return nil, errors.NewObjectNotFoundError(User, "", sf.Format("get realm: {0} users", realmName))
+	return nil, errors.NewObjectNotFoundError(string(User), "", sf.Format("get realm: {0} users", realmName))
 }
 
 // GetClient function for getting Realm Client by name
@@ -132,7 +135,7 @@ func (mn *FileDataManager) GetClient(realmName string, clientName string) (*data
 			return &c, nil
 		}
 	}
-	return nil, errors.NewObjectNotFoundError(Client, clientName, sf.Format("realm: {0}", realmName))
+	return nil, errors.NewObjectNotFoundError(string(Client), clientName, sf.Format("realm: {0}", realmName))
 }
 
 // GetUser function for getting Realm User by userName
@@ -156,7 +159,7 @@ func (mn *FileDataManager) GetUser(realmName string, userName string) (data.User
 			return u, nil
 		}
 	}
-	return nil, errors.NewObjectNotFoundError(User, userName, sf.Format("realm: {0}", realmName))
+	return nil, errors.NewObjectNotFoundError(string(User), userName, sf.Format("realm: {0}", realmName))
 }
 
 // GetUserById function for getting Realm User by UserId (uuid)
@@ -176,7 +179,7 @@ func (mn *FileDataManager) GetUserById(realmName string, userId uuid.UUID) (data
 			return u, nil
 		}
 	}
-	return nil, errors.NewObjectNotFoundError(User, userId.String(), sf.Format("realm: {0}", realmName))
+	return nil, errors.NewObjectNotFoundError(string(User), userId.String(), sf.Format("realm: {0}", realmName))
 }
 
 // CreateRealm creates new data.Realm in a data store, receive realmData unmarshalled json in a data.Realm
@@ -184,47 +187,63 @@ func (mn *FileDataManager) GetUserById(realmName string, userId uuid.UUID) (data
  *
  */
 func (mn *FileDataManager) CreateRealm(realmData data.Realm) error {
-	return errors.ErrOperationNotSupported
+	return errors.ErrOperationNotImplemented
 }
 
 // CreateClient creates new data.Client in a data store, requires to pass realmName (because client name is not unique), clientData is an unmarshalled json of type data.Client
 func (mn *FileDataManager) CreateClient(realmName string, clientData data.Client) error {
-	return errors.ErrOperationNotSupported
+	return errors.ErrOperationNotImplemented
 }
 
 // CreateUser creates new data.User in a data store within a realm with name = realmName
 func (mn *FileDataManager) CreateUser(realmName string, userData data.User) error {
-	return errors.ErrOperationNotSupported
+	return errors.ErrOperationNotImplemented
 }
 
 // UpdateRealm updates existing data.Realm in a data store within name = realmData, and new data = realmData
 func (mn *FileDataManager) UpdateRealm(realmName string, realmData data.Realm) error {
-	return errors.ErrOperationNotSupported
+	return errors.ErrOperationNotImplemented
 }
 
 // UpdateClient updates existing data.Client in a data store with name = clientName and new data = clientData
 func (mn *FileDataManager) UpdateClient(realmName string, clientName string, clientData data.Client) error {
-	return errors.ErrOperationNotSupported
+	return errors.ErrOperationNotImplemented
 }
 
 // UpdateUser updates existing data.User in a data store with realm name = realName, username = userName and data=userData
 func (mn *FileDataManager) UpdateUser(realmName string, userName string, userData data.User) error {
-	return errors.ErrOperationNotSupported
+	return errors.ErrOperationNotImplemented
 }
 
 // DeleteRealm removes realm from data storage (Should be a CASCADE remove of all related Users and Clients)
 func (mn *FileDataManager) DeleteRealm(realmName string) error {
-	return errors.ErrOperationNotSupported
+	return errors.ErrOperationNotImplemented
 }
 
 // DeleteClient removes client with name = clientName from realm with name = clientName
 func (mn *FileDataManager) DeleteClient(realmName string, clientName string) error {
-	return errors.ErrOperationNotSupported
+	return errors.ErrOperationNotImplemented
 }
 
 // DeleteUser removes data.User from data store by user (userName) and realm (realmName) name respectively
 func (mn *FileDataManager) DeleteUser(realmName string, userName string) error {
-	return errors.ErrOperationNotSupported
+	return errors.ErrOperationNotImplemented
+}
+
+func (mn *FileDataManager) GetUserFederationConfig(realmName string, configName string) (*data.UserFederationServiceConfig, error) {
+	return nil, errors.ErrOperationNotImplemented
+}
+
+func (mn *FileDataManager) CreateUserFederationConfig(realmName string, userFederationConfig data.UserFederationServiceConfig) error {
+	return errors.ErrOperationNotImplemented
+}
+
+func (mn *FileDataManager) UpdateUserFederationConfig(realmName string, configName string, userFederationConfig data.UserFederationServiceConfig) error {
+	return errors.ErrOperationNotImplemented
+}
+
+func (mn *FileDataManager) DeleteUserFederationConfig(realmName string, configName string) error {
+	return errors.ErrOperationNotImplemented
 }
 
 // loadData this function loads data from JSON file (dataFile) to serverData

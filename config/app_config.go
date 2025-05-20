@@ -1,10 +1,8 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
+	gce "github.com/wissance/go-config-extender"
 	"os"
-	"path/filepath"
 )
 
 const (
@@ -20,17 +18,9 @@ type AppConfig struct {
 }
 
 func ReadAppConfig(pathToConfig string) (*AppConfig, error) {
-	absPath, err := filepath.Abs(pathToConfig)
+	cfg, err := gce.LoadJSONConfigWithEnvOverride[AppConfig](pathToConfig)
 	if err != nil {
-		return nil, fmt.Errorf("An error occurred during getting config file abs path: %w", err)
-	}
-	fileData, err := os.ReadFile(absPath)
-	if err != nil {
-		return nil, fmt.Errorf("An error occurred during config file reading: %w", err)
-	}
-	var cfg AppConfig
-	if err = json.Unmarshal(fileData, &cfg); err != nil {
-		return nil, fmt.Errorf("An error occurred during config file unmarshal: %w", err)
+		return nil, err
 	}
 	cfg.Validate()
 	return &cfg, nil

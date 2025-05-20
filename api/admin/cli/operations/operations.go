@@ -3,18 +3,19 @@ package operations
 type ResourceType string
 
 const (
-	RealmResource  ResourceType = "realm"
-	ClientResource              = "client"
-	UserResource                = "user"
+	RealmResource                ResourceType = "realm"
+	ClientResource               ResourceType = "client"
+	UserResource                 ResourceType = "user"
+	UserFederationConfigResource ResourceType = "user_federation"
 )
 
 type OperationType string
 
 const (
 	GetOperation    OperationType = "get"
-	CreateOperation               = "create"
-	DeleteOperation               = "delete"
-	UpdateOperation               = "update"
-	ChangePassword                = "change_password"
-	ResetPassword                 = "reset_password"
+	CreateOperation OperationType = "create"
+	DeleteOperation OperationType = "delete"
+	UpdateOperation OperationType = "update"
+	ChangePassword  OperationType = "change_password"
+	ResetPassword   OperationType = "reset_password"
 )

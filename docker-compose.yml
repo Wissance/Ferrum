@@ -3,19 +3,33 @@ version: '3.9'
 volumes:
   redis_data: {}
   app_data: {}
-  
+  nginx_cfg: {}
+  nginx_certs: {}
+
+networks:
+  wissance_ferrum_eth:
+    driver: bridge
+    ipam:
+      config:
+        - gateway: 10.50.40.1
+          subnet: 10.50.40.0/24
+
+
 services:
   redis:
     container_name: wissance_ferrum_db
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.2
     hostname: redis
     image: "redis/redis-stack:7.2.0-v2"
     env_file:
-      - settings.env
+      - .env
     restart: always
     volumes:
       - redis_data:/data
     environment:
-      REDIS_ARGS: "--user ferrum_db on >FeRRuM000 allkeys allchannels allcommands --user default off --save 20 1"
+      REDIS_ARGS: ${REDIS_ARGS}
     ports:
       - "6379:6379"
       - "8001:8001"
@@ -25,17 +39,24 @@ services:
 
   ferrum:
     container_name: wissance_ferrum_webapi
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.3
+        aliases:
+          - ferrum.dev.local
     hostname: ferrum
     stdin_open: true
     tty: true
     env_file:
-      - settings.env
+      - .env
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - app_data:/data
+      - nginx_cfg:/nginx_cfg
     environment:
+      VIRTUAL_HOST: ferrum.dev.local
       WAIT_HOSTS: redis:6379
     depends_on:
       redis:
@@ -44,3 +65,20 @@ services:
       - "8182:8182"
     expose:
       - "8182"
+
+  nginx-proxy:
+    container_name: wissance_reverse_proxy
+    image: nginxproxy/nginx-proxy
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.4
+    ports:
+      - '80:80'
+    extra_hosts:
+      - ferrum.dev.local:10.50.40.3
+    depends_on:
+      - ferrum
+    volumes:
+      - nginx_cfg:/etc/nginx/
+      - nginx_certs:/etc/ssl/certs
+      - '/var/run/docker.sock:/tmp/docker.sock:ro'
