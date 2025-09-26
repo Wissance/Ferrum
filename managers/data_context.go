@@ -54,7 +54,9 @@ type DataContext interface {
 	DeleteUser(realmName string, userName string) error
 	// DeleteUserFederationConfig removes data.UserFederationServiceConfig from collection
 	DeleteUserFederationConfig(realmName string, configName string) error
-	// SetPassword(realmName string, userName string, password string) error
+	// GetServerSettings returns server settings
+	GetServerSettings() (data.ServerSettings, error)
+	SetServerSettings(settings data.ServerSettings) error
 }
 
 // PrepareContextUsingData is a factory function that creates instance of DataContext

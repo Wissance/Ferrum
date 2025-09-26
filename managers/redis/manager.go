@@ -23,7 +23,7 @@ const (
 	clientKeyTemplate                  = "{0}.{1}_client_{2}"
 	realmUsersKeyTemplate              = "{0}.realm_{1}_users"
 	realmUserFederationServiceTemplate = "{0}.realm_{1}_user_federations"
-	// realmUsersFullDataKeyTemplate = "{0}.realm_{1}_users_full_data"
+	serverSettingsKeyTemplate          = "{0}.server_settings"
 )
 
 type objectType string
@@ -35,6 +35,7 @@ const (
 	RealmUserFederationConfig objectType = " realm user federation config"
 	Client                    objectType = "client"
 	User                      objectType = "user"
+	ServerSettings            objectType = "server settings"
 )
 
 const defaultNamespace = "fe"
