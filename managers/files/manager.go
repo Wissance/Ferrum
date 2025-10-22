@@ -247,13 +247,13 @@ func (mn *FileDataManager) DeleteUserFederationConfig(realmName string, configNa
 }
 
 // GetServerSettings function that returns ServerSettings
-func (mn *FileDataManager) GetServerSettings() (data.ServerSettings, error) {
-	return mn.serverData.ServerSettings, nil
+func (mn *FileDataManager) GetServerSettings() (*data.ServerSettings, error) {
+	return &mn.serverData.ServerSettings, nil
 }
 
 // SetServerSettings function that updates ServerSettings by full new settings replace
-func (mn *FileDataManager) SetServerSettings(settings data.ServerSettings) error {
-	mn.serverData.ServerSettings = settings
+func (mn *FileDataManager) SetServerSettings(settings *data.ServerSettings) error {
+	mn.serverData.ServerSettings = *settings
 	return nil
 }
 
