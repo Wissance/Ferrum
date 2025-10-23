@@ -1,6 +1,9 @@
 package data
 
-import "github.com/wissance/Ferrum/utils/encoding"
+import (
+	"github.com/google/uuid"
+	"github.com/wissance/Ferrum/utils/encoding"
+)
 
 // Realm is a struct that describes typical Realm
 /* It was originally designed to efficiently work in memory with small amount of data therefore it contains relations with Clients and Users
@@ -11,7 +14,7 @@ type Realm struct {
 	Name                   string                        `json:"name"`
 	Clients                []Client                      `json:"clients"`
 	Users                  []interface{}                 `json:"users"`
-	Admins                 []string                      `json:"admins"`
+	Admins                 []uuid.UUID                   `json:"admins"`
 	TokenExpiration        int                           `json:"token_expiration"`
 	RefreshTokenExpiration int                           `json:"refresh_expiration"`
 	UserFederationServices []UserFederationServiceConfig `json:"user_federation_services"`

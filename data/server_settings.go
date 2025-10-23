@@ -7,6 +7,6 @@ type ServerSettings struct {
 	// AllowedHosts is a list of Hosts from which Ferrum could be configured, it allows to use *,
 	// if * is in this list it means that all hosts are allowed
 	AllowedHosts []string `json:"allowed_hosts"`
-	// Prefix before api URL, i.e. if admin api ..., then -> todo(UMV)
-	UrlPrefix string `json:"url_prefix"`
+	// Prefix before admin api URL
+	AdminApiUrlPrefix string `json:"url_prefix"`
 }
