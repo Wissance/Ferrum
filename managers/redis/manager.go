@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	e "errors"
 	"fmt"
 	"strconv"
 
@@ -231,7 +232,7 @@ func getSingleRedisObject[T any](redisClient *redis.Client, ctx context.Context,
 	redisCmd := redisClient.Get(ctx, objKey)
 	if redisCmd.Err() != nil {
 		logger.Warn(sf.Format("An error occurred during fetching {0}: \"{1}\" from Redis server", objName, objKey))
-		if redisCmd.Err() == redis.Nil {
+		if e.Is(redisCmd.Err(), redis.Nil) {
 			return nil, errors.NewObjectNotFoundError(string(objName), objKey, "")
 		}
 		return nil, redisCmd.Err()
