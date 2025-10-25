@@ -24,6 +24,7 @@ func (mn *RedisDataManager) GetServerSettings() (*data.ServerSettings, error) {
 
 // SetServerSettings function that updates ServerSettings by full new settings replace
 /* This function perform all settings update at once
+ * If Admin has no Id it generated in this func
  * Arguments:
  *  - settings - must contain all settings
  * Returns: error (nil if there was no error)
@@ -32,6 +33,9 @@ func (mn *RedisDataManager) SetServerSettings(settings *data.ServerSettings) err
 	if settings == nil {
 		return appErrs.ErrBadData
 	}
+
+	// todo(UMV): check uuid is Empty, if empty -> generate new
+
 	jsonServerSettings, err := json.Marshal(*settings)
 	if err != nil {
 		return appErrs.ErrBadData
