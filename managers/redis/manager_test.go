@@ -1018,6 +1018,17 @@ func TestSetAndGetSystemSettings(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, actualSettings)
 	checkServerSettings(t, settings, *actualSettings)
+
+	settings.AllowedHosts = append(settings.AllowedHosts, "10.1.2.*")
+	settings.Admin.PasswordSalt = "0001113"
+	settings.Admin.PasswordHash = "u77ryrfucb7383yqduicbsai"
+	err = manager.SetServerSettings(&settings)
+	assert.NoError(t, err)
+
+	actualSettings, err = manager.GetServerSettings()
+	assert.NoError(t, err)
+	assert.NotNil(t, actualSettings)
+	checkServerSettings(t, settings, *actualSettings)
 }
 
 func createTestRedisDataManager(t *testing.T) *RedisDataManager {
@@ -1123,4 +1134,11 @@ func checkUserFederationConfig(t *testing.T, expected *data.UserFederationServic
 func checkServerSettings(t *testing.T, expected data.ServerSettings, actual data.ServerSettings) {
 	assert.Equal(t, expected.AdminApiUrlPrefix, actual.AdminApiUrlPrefix)
 	testingutils.CheckStrings(t, expected.AllowedHosts, actual.AllowedHosts, false, true)
+	checkAdmin(t, expected.Admin, actual.Admin)
+}
+
+func checkAdmin(t *testing.T, expected data.AdminUser, actual data.AdminUser) {
+	assert.Equal(t, expected.Username, actual.Username)
+	assert.Equal(t, expected.PasswordSalt, actual.PasswordSalt)
+	assert.Equal(t, expected.PasswordHash, actual.PasswordHash)
 }
