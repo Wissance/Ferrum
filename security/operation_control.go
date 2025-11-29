@@ -23,7 +23,7 @@ const (
 type OperationControl interface {
 	// IsOperationAllowed function that checks whether userId could be used for performing operation
 	// on specified objectType identifying by objectId
-	IsOperationAllowed(objectId string, objectType data.ObjectType,
+	IsOperationAllowed(realmId string, objectId string, objectType data.ObjectType,
 		operation OperationType, userId uuid.UUID) (bool, error)
 }
 
