@@ -3,6 +3,8 @@ package security
 import (
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/data"
+	"github.com/wissance/Ferrum/logging"
+	"github.com/wissance/Ferrum/managers"
 )
 
 type OperationType string
@@ -23,4 +25,10 @@ type OperationControl interface {
 	// on specified objectType identifying by objectId
 	IsOperationAllowed(objectId string, objectType data.ObjectType,
 		operation OperationType, userId uuid.UUID) (bool, error)
+}
+
+func CreateOperationControlService(dataProvider *managers.DataContext,
+	logger *logging.AppLogger) OperationControl {
+	controlService := CreateMatrixBasedOperationControl(dataProvider, logger)
+	return controlService
 }

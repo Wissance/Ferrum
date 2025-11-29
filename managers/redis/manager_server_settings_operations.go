@@ -6,6 +6,7 @@ import (
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	appErrs "github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/utils/uuidtools"
 	sf "github.com/wissance/stringFormatter"
 )
 
@@ -34,7 +35,10 @@ func (mn *RedisDataManager) SetServerSettings(settings *data.ServerSettings) err
 		return appErrs.ErrBadData
 	}
 
-	// todo(UMV): check uuid is Empty, if empty -> generate new
+	// UUID for Admin generating if it is missing
+	if uuidtools.IsUUIDEmpty(&settings.Admin.Id) {
+		settings.Admin.Id = uuidtools.GetOrCreateNewNonEmptyUuid(&settings.Admin.Id)
+	}
 
 	jsonServerSettings, err := json.Marshal(*settings)
 	if err != nil {
