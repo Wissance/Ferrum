@@ -18,5 +18,8 @@ func IsUUIDEmpty(uniqueIdentifier *uuid.UUID) bool {
 }
 
 func GetOrCreateNewNonEmptyUuid(uniqueIdentifier *uuid.UUID) uuid.UUID {
-	return uuid.New()
+	if IsUUIDEmpty(uniqueIdentifier) {
+		return uuid.New()
+	}
+	return *uniqueIdentifier
 }

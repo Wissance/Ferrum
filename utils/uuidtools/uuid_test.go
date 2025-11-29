@@ -31,3 +31,11 @@ func TestIsUUIDEmpty(t *testing.T) {
 		})
 	}
 }
+
+func TestGetOrCreateUUID(t *testing.T) {
+	id := GetOrCreateNewNonEmptyUuid(nil)
+	assert.NotNil(t, id)
+	idCopy := id
+	idCopy = GetOrCreateNewNonEmptyUuid(&idCopy)
+	assert.Equal(t, id, idCopy)
+}
