@@ -10,13 +10,17 @@ import (
 type OperationType string
 
 const (
-	READ       OperationType = "read"
-	DELETE     OperationType = "delete"
-	CREATE     OperationType = "create"
-	UPDATE     OperationType = "update"
-	BLOCK      OperationType = "block"
-	UNBLOCK    OperationType = "unblock"
-	ACTIVATE   OperationType = "activate"
+	READ   OperationType = "read"
+	DELETE OperationType = "delete"
+	CREATE OperationType = "create"
+	UPDATE OperationType = "update"
+	// BLOCK - operation for the blocking access
+	BLOCK OperationType = "block"
+	// UNBLOCK - operation for the unblocking access
+	UNBLOCK OperationType = "unblock"
+	// ACTIVATE - operation for the making some object working, i.e. recently created user
+	ACTIVATE OperationType = "activate"
+	// DEACTIVATE - operation for the making some object non-working, i.e. whole realm, client without delete
 	DEACTIVATE OperationType = "deactivate"
 )
 

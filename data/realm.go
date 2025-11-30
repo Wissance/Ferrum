@@ -15,6 +15,7 @@ type Realm struct {
 	Clients                []Client                      `json:"clients"`
 	Users                  []interface{}                 `json:"users"`
 	Admins                 []uuid.UUID                   `json:"admins"`
+	Owner                  uuid.UUID                     `json:"owner"`
 	TokenExpiration        int                           `json:"token_expiration"`
 	RefreshTokenExpiration int                           `json:"refresh_expiration"`
 	UserFederationServices []UserFederationServiceConfig `json:"user_federation_services"`
