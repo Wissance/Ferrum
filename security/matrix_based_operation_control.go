@@ -30,8 +30,12 @@ type MatrixBasedOperationControl struct {
 }
 
 //CreateMatrixBasedOperationControl a function that creates MatrixBasedOperationControl for check allowed operations
-/*
- *
+/* This function creates Operation checker based on matrix rules, in current version
+ * are using only default rules that could be overwritten in future even for separate realms
+ * Parameters:
+ *   - dataProvider - struct implementing access to persistent objects via managers.DataContext interface
+ *   - logger - logger
+ * Returns: a pointer to struct MatrixBasedOperationControl
  */
 //todo(UMV): allow to override matrix types, now we are using default
 func CreateMatrixBasedOperationControl(dataProvider *managers.DataContext,
@@ -43,6 +47,8 @@ func CreateMatrixBasedOperationControl(dataProvider *managers.DataContext,
 	}
 }
 
+// getDefaultMatrixRules function that constructs default set of rules based on user type, object and operation
+// this function could not cover all the cases
 func getDefaultMatrixRules() map[actorType]matrixItem {
 	return map[actorType]matrixItem{
 		superUser: {Operations: map[OperationType]bool{
