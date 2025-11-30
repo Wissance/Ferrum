@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	appErrs "github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/utils/uuidtools"
 	"io"
 	"net"
 	"net/http"
@@ -142,6 +144,7 @@ func (app *Application) Init() (bool, error) {
 		app.logger.Error(stringFormatter.Format("An error occurred during data providers init: {0}", err.Error()))
 		return false, err
 	}
+	// todo(umv): add init data,
 
 	// init auth defs
 	app.initAuthServerDefs()
@@ -197,6 +200,23 @@ func (app *Application) initDataProviders() error {
 		dataProvider, prepareErr := managers.PrepareContext(&app.appConfig.DataSource, app.logger)
 		app.dataProvider = &dataProvider
 		err = prepareErr
+		if err != nil {
+			return err
+		}
+		return app.initData()
+	}
+	return err
+}
+
+func (app *Application) initData() error {
+	// this function init some required data after managers.DataContext creation
+	settings, err := (*app.dataProvider).GetServerSettings()
+	if err == nil && !uuidtools.IsUUIDEmpty(&settings.Admin.Id) {
+		// nothing to be done here, settings already exists
+		return nil
+	}
+	if errors.As(err, &appErrs.EmptyNotFoundErr) {
+		// ServerSetting were not found, create
 	}
 	return err
 }
