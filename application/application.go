@@ -221,15 +221,19 @@ func (app *Application) initData() error {
 		// ServerSetting were not found, create
 		// this salt is going to be used when you are going to change admin pass
 		salt := encoding.GenerateRandomSalt()
+		passwordEncoder := encoding.NewPasswordJsonEncoder(salt)
 		settings = &data.ServerSettings{
 			AllowedHosts: app.appConfig.Security.AllowedHosts,
 			Admin: data.AdminUser{
 				Id:           uuid.New(),
 				Username:     app.appConfig.Security.Admin.Username,
 				PasswordSalt: salt,
+				PasswordHash: passwordEncoder.GetB64PasswordHash(app.appConfig.Security.Admin.Password),
 			},
 			AdminApiUrlPrefix: app.appConfig.Security.AdminApiUrlPrefix,
 		}
+
+		err = (*app.dataProvider).SetServerSettings(settings)
 	}
 	return err
 }
