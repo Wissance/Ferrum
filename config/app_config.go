@@ -12,9 +12,10 @@ const (
 )
 
 type AppConfig struct {
-	ServerCfg  ServerConfig     `json:"server"`
-	DataSource DataSourceConfig `json:"data_source"`
-	Logging    LoggingConfig    `json:"logging"`
+	ServerCfg  ServerConfig         `json:"server"`
+	DataSource DataSourceConfig     `json:"data_source"`
+	Logging    LoggingConfig        `json:"logging"`
+	Security   GlobalSecurityConfig `json:"security"`
 }
 
 func ReadAppConfig(pathToConfig string) (*AppConfig, error) {

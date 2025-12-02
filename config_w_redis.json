@@ -41,5 +41,13 @@
             "namespace": "ferrum_1",
             "db_number": "0"
         }
+    },
+    "security" : {
+        "allowed_hosts" : ["*"],
+        "admin_api_url_prefix" : "ass123",
+        "admin": {
+            "username": "admin",
+            "password": "#P@55W0RRRD#"
+        }
     }
 }

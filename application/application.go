@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	appErrs "github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/utils/encoding"
 	"github.com/wissance/Ferrum/utils/uuidtools"
 	"io"
 	"net"
@@ -217,6 +219,17 @@ func (app *Application) initData() error {
 	}
 	if errors.As(err, &appErrs.EmptyNotFoundErr) {
 		// ServerSetting were not found, create
+		// this salt is going to be used when you are going to change admin pass
+		salt := encoding.GenerateRandomSalt()
+		settings = &data.ServerSettings{
+			AllowedHosts: app.appConfig.Security.AllowedHosts,
+			Admin: data.AdminUser{
+				Id:           uuid.New(),
+				Username:     app.appConfig.Security.Admin.Username,
+				PasswordSalt: salt,
+			},
+			AdminApiUrlPrefix: app.appConfig.Security.AdminApiUrlPrefix,
+		}
 	}
 	return err
 }
