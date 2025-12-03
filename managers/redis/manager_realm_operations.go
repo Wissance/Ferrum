@@ -274,6 +274,8 @@ func (mn *RedisDataManager) UpdateRealm(realmName string, realmNew data.Realm) e
 			Name:                   realmNew.Name,
 			Clients:                clients,
 			Users:                  usersData,
+			Owner:                  realmNew.Owner,
+			Admins:                 realmNew.Admins,
 			TokenExpiration:        realmNew.TokenExpiration,
 			RefreshTokenExpiration: realmNew.RefreshTokenExpiration,
 		}
@@ -288,6 +290,8 @@ func (mn *RedisDataManager) UpdateRealm(realmName string, realmNew data.Realm) e
 
 	shortRealm := data.Realm{
 		Name:                   realmNew.Name,
+		Owner:                  realmNew.Owner,
+		Admins:                 realmNew.Admins,
 		Clients:                []data.Client{},
 		Users:                  []any{},
 		TokenExpiration:        realmNew.TokenExpiration,

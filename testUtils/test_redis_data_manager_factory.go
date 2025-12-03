@@ -4,11 +4,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/logging"
+	"github.com/wissance/Ferrum/managers"
 	"github.com/wissance/Ferrum/managers/redis"
 	sf "github.com/wissance/stringFormatter"
 )
 
-func CreateTestRedisDataManager(redisUri string, user string, password string) (*redis.RedisDataManager, error) {
+func CreateTestRedisDataManager(redisUri string, user string, password string) (managers.DataContext, *logging.AppLogger, error) {
 	rndNamespace := sf.Format("ferrum_test_{0}", uuid.New().String())
 	dataSourceCfg := config.DataSourceConfig{
 		Type:   config.REDIS,
@@ -27,5 +28,5 @@ func CreateTestRedisDataManager(redisUri string, user string, password string) (
 
 	logger := logging.CreateLogger(&loggerCfg)
 	manager, err := redis.CreateRedisDataManager(&dataSourceCfg, logger)
-	return manager, err
+	return manager, logger, err
 }

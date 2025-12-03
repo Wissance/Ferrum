@@ -2,10 +2,12 @@ package security
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wissance/Ferrum/data"
+	appErrs "github.com/wissance/Ferrum/errors"
 	"github.com/wissance/Ferrum/testUtils"
 	"github.com/wissance/Ferrum/utils/encoding"
 	sf "github.com/wissance/stringFormatter"
@@ -19,26 +21,33 @@ const (
 )
 
 func TestIsOperationAllowedWithRedisDataManager(t *testing.T) {
-	manager, err := testUtils.CreateTestRedisDataManager(testRedisSource, testUser, testUserPassword)
+	manager, logger, err := testUtils.CreateTestRedisDataManager(testRedisSource, testUser, testUserPassword)
 	require.NoError(t, err)
 	// Init data
-	// 1. Create ServerSettings
-	// 2. Create 2 Realms with 2 Client, and 3-4 users
+	// 1. Create ServerSettings if not exists
+	serverSettings, readErr := manager.GetServerSettings()
 	adminUuid, err := uuid.Parse("00000000-0000-0000-0000-000000000001")
-	passwordSalt := "123"
-	encoder := encoding.NewPasswordJsonEncoder(passwordSalt)
-	serverSettings := data.ServerSettings{
-		AllowedHosts:      []string{"*"},
-		AdminApiUrlPrefix: "1234567890",
-		Admin: data.AdminUser{
-			Id:           adminUuid,
-			Username:     "admin",
-			PasswordSalt: passwordSalt,
-			PasswordHash: encoder.GetB64PasswordHash(passwordSalt),
-		},
+	if readErr == nil {
+		adminUuid = serverSettings.Admin.Id
 	}
-	err = manager.SetServerSettings(&serverSettings)
-	require.NoError(t, err)
+	if errors.As(readErr, &appErrs.EmptyNotFoundErr) {
+		// 2. Create 2 Realms with 2 Client, and 3-4 users
+		passwordSalt := "123"
+		encoder := encoding.NewPasswordJsonEncoder(passwordSalt)
+		newServerSettings := data.ServerSettings{
+			AllowedHosts:      []string{"*"},
+			AdminApiUrlPrefix: "1234567890",
+			Admin: data.AdminUser{
+				Id:           adminUuid,
+				Username:     "admin",
+				PasswordSalt: passwordSalt,
+				PasswordHash: encoder.GetB64PasswordHash(passwordSalt),
+			},
+		}
+		serverSettings = &newServerSettings
+		err = manager.SetServerSettings(serverSettings)
+		require.NoError(t, err)
+	}
 
 	realm1 := data.Realm{
 		Name:                   sf.Format("realm1_{0}", uuid.New().String()),
@@ -67,7 +76,7 @@ func TestIsOperationAllowedWithRedisDataManager(t *testing.T) {
 	realm1Users := make([]data.User, 3)
 	for i, v := range realm1UsersId {
 		userId := v
-		userName := sf.Format("test_user_{0}_{1}", i, userId)
+		userName := sf.Format("r1_test_user_{0}", i)
 		jsonTemplate := `{"info":{"sub":"{2}", "name":"{0}", "preferred_username": "{1}"}, "credentials":{"password": "123"}}`
 		jsonStr := sf.Format(jsonTemplate, userName, userName, userId)
 		var rawUser interface{}
@@ -116,7 +125,7 @@ func TestIsOperationAllowedWithRedisDataManager(t *testing.T) {
 	realm2Users := make([]data.User, 3)
 	for i, v := range realm2UsersId {
 		userId := v
-		userName := sf.Format("test_user_{0}_{1}", i, userId)
+		userName := sf.Format("r2_test_user_{0}_{1}", i)
 		jsonTemplate := `{"info":{"sub":"{2}", "name":"{0}", "preferred_username": "{1}"}, "credentials":{"password": "123"}}`
 		jsonStr := sf.Format(jsonTemplate, userName, userName, userId)
 		var rawUser interface{}
@@ -157,6 +166,130 @@ func TestIsOperationAllowedWithRedisDataManager(t *testing.T) {
 	require.NoError(t, err)
 
 	// test data was created - 2 Realms with 2 Clients each and 3 Users
+	testCases := []struct {
+		name                  string
+		realm                 string
+		object                string
+		objectType            data.ObjectType
+		operation             OperationType
+		userId                uuid.UUID
+		expectedAccessGranted bool
+	}{
+		// 1 superUser
+		{
+			name:                  "Update Realm1 with SuperUser",
+			realm:                 realm1.Name,
+			object:                realm1.Name,
+			objectType:            data.REALM,
+			operation:             UPDATE,
+			userId:                adminUuid,
+			expectedAccessGranted: true,
+		},
+		{
+			name:                  "Deactivate Realm2 with SuperUser",
+			realm:                 realm2.Name,
+			object:                realm2.Name,
+			objectType:            data.REALM,
+			operation:             DEACTIVATE,
+			userId:                adminUuid,
+			expectedAccessGranted: true,
+		},
+		{
+			name:                  "Activate Realm2 with SuperUser",
+			realm:                 realm2.Name,
+			object:                realm2.Name,
+			objectType:            data.REALM,
+			operation:             ACTIVATE,
+			userId:                adminUuid,
+			expectedAccessGranted: true,
+		},
+		{
+			name:                  "Delete Realm2 with SuperUser",
+			realm:                 realm2.Name,
+			object:                realm2.Name,
+			objectType:            data.REALM,
+			operation:             DELETE,
+			userId:                adminUuid,
+			expectedAccessGranted: true,
+		},
+		{
+			name:                  "Update Realm1 Client2 with SuperUser",
+			realm:                 realm1.Name,
+			object:                realm1Client2.ID.String(),
+			objectType:            data.CLIENT,
+			operation:             UPDATE,
+			userId:                adminUuid,
+			expectedAccessGranted: true,
+		},
+		{
+			name:  "Create Realm2 new Client with SuperUser",
+			realm: realm2.Name,
+			// no client attempting to create
+			object:                "",
+			objectType:            data.CLIENT,
+			operation:             CREATE,
+			userId:                adminUuid,
+			expectedAccessGranted: true,
+		},
+		// 2 realmOwner
+		// 2.1 own realm
+		{
+			name:                  "Update Realm1 with RealmOwner",
+			realm:                 realm1.Name,
+			object:                realm1.Name,
+			objectType:            data.REALM,
+			operation:             UPDATE,
+			userId:                realm1UsersId[0],
+			expectedAccessGranted: true,
+		},
+		{
+			name:                  "Deactivate Realm1 with RealmOwner",
+			realm:                 realm1.Name,
+			object:                realm1.Name,
+			objectType:            data.REALM,
+			operation:             DEACTIVATE,
+			userId:                realm1UsersId[0],
+			expectedAccessGranted: true,
+		},
+		{
+			name:                  "Activate Realm1 with RealmOwner",
+			realm:                 realm1.Name,
+			object:                realm1.Name,
+			objectType:            data.REALM,
+			operation:             ACTIVATE,
+			userId:                realm1UsersId[0],
+			expectedAccessGranted: true,
+		},
+		{
+			name:                  "Delete Realm1 Client1 with RealmOwner",
+			realm:                 realm1.Name,
+			object:                realm1Client1.ID.String(),
+			objectType:            data.CLIENT,
+			operation:             DELETE,
+			userId:                realm1UsersId[0],
+			expectedAccessGranted: true,
+		},
+		{
+			name:                  "Update Realm1 User2 with RealmOwner",
+			realm:                 realm1.Name,
+			object:                realm1UsersId[2].String(),
+			objectType:            data.USER,
+			operation:             UPDATE,
+			userId:                realm1UsersId[0],
+			expectedAccessGranted: true,
+		},
+	}
+
+	controlCheckService := CreateOperationControlService(&manager, logger)
+
+	for _, tCase := range testCases {
+		t.Run(tCase.name, func(t *testing.T) {
+			actualAccessGranted, checkErr := controlCheckService.IsOperationAllowed(tCase.realm, tCase.object, tCase.objectType,
+				tCase.operation, tCase.userId)
+			assert.NoError(t, checkErr)
+			assert.Equal(t, tCase.expectedAccessGranted, actualAccessGranted)
+		})
+	}
 
 	err = manager.DeleteRealm(realm1.Name)
 	assert.NoError(t, err)

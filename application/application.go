@@ -84,7 +84,7 @@ func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData,
 }
 
 // Start function that starts application
-/* This function must be called after Init it starts application web server either on HTTP or HTTPS 9depends on config Schema value)
+/* This function must be called after Init it starts application web server either on HTTP or HTTPS (depends on config Schema value)
  * Parameters: no
  * Return start result (true if Start was successful) and error (nil if start was successful)
  */
@@ -417,7 +417,7 @@ func (app *Application) getSwaggerAddress() string {
 		return ""
 	}
 	for _, address := range addresses {
-		// check the address type and if it is not a loopback the display it
+		// check the address type and if it is not a loop back the display it
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
 				return ipnet.IP.String()
