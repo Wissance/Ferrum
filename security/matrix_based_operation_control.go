@@ -158,7 +158,8 @@ func (m *MatrixBasedOperationControl) IsOperationAllowed(realmId string, objectI
 				return false, nil
 			}
 			// 2. realmUser could activate themselves by link from e-mail
-			if actor == realmUser && operation == ACTIVATE && objectId != userId.String() {
+			if actor == realmUser && (operation == ACTIVATE || operation == UPDATE) &&
+				objectType != data.USER && objectId != userId.String() {
 				return false, nil
 			}
 
