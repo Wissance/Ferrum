@@ -249,6 +249,7 @@ func main() {
 			var security config.GlobalSecurityConfig
 			if parseErr := json.Unmarshal(value, &security); parseErr != nil {
 				msg := sf.Format("json.Unmarshal failed: {0}", parseErr)
+				//nolint:govet,staticcheck
 				log.Fatalf(msg)
 			}
 			serverSettings, readErr := manager.GetServerSettings()
@@ -269,6 +270,7 @@ func main() {
 
 			if setErr := manager.SetServerSettings(serverSettings); setErr != nil {
 				msg := sf.Format("UpdateUserFederationConfig failed: {0}", setErr)
+				//nolint:govet,staticcheck
 				log.Fatalf(msg)
 			}
 			fmt.Println("Server settings were successfully updated")
