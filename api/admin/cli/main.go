@@ -63,6 +63,7 @@ func main() {
 			resource != operations.UserResource && resource != operations.ServerSettings
 		if isInvalidResource {
 			msg := sf.Format("Non supported resource \"{0}\"", resource)
+			//nolint:govet,staticcheck
 			log.Fatalf(msg)
 		}
 	}
@@ -222,12 +223,12 @@ func main() {
 		case operations.RealmResource:
 			var newRealm data.Realm
 			if parseErr := json.Unmarshal(value, &newRealm); parseErr != nil {
-				parseErrMsg := sf.Format("json.Unmarshal failed: {0}", parseErr.Error())
-				log.Fatalf(parseErrMsg)
+				//nolint:govet
+				log.Fatalf(sf.Format("json.Unmarshal failed: {0}", parseErr.Error()))
 			}
 			if updateErr := manager.UpdateRealm(resourceId, newRealm); updateErr != nil {
-				updateErrMsg := sf.Format("UpdateRealm failed: {0}", updateErr)
-				log.Fatalf(updateErrMsg)
+				//nolint:govet
+				log.Fatalf(sf.Format("UpdateRealm failed: {0}", updateErr))
 			}
 			fmt.Println(sf.Format("Realm: \"{0}\" successfully updated", newRealm.Name))
 		case operations.UserFederationConfigResource:
@@ -238,13 +239,11 @@ func main() {
 			if err := manager.UpdateUserFederationConfig(params, resourceId, userFederationServiceConfig); err != nil {
 				log.Fatalf("UpdateUserFederationConfig failed: %s", err)
 			}
-			fmt.Println(sf.Format("User federation service config: \"{0}\" successfully updated",
-				userFederationServiceConfig.Name, params))
+			fmt.Println(sf.Format("User federation service config: \"{0}\" successfully updated", userFederationServiceConfig.Name, params))
 		case operations.ServerSettings:
 			var security config.GlobalSecurityConfig
 			if parseErr := json.Unmarshal(value, &security); parseErr != nil {
-				msg := sf.Format("json.Unmarshal failed: {0}", parseErr)
-				log.Fatalf(msg)
+				log.Fatalf(sf.Format("json.Unmarshal failed: {0}", parseErr))
 			}
 			serverSettings, readErr := manager.GetServerSettings()
 			var encoder *encoding.PasswordJsonEncoder
@@ -263,8 +262,7 @@ func main() {
 			serverSettings.Admin.PasswordHash = encoder.GetB64PasswordHash(serverSettings.Admin.PasswordSalt)
 
 			if setErr := manager.SetServerSettings(serverSettings); setErr != nil {
-				msg := sf.Format("UpdateUserFederationConfig failed: {0}", setErr)
-				log.Fatalf(msg)
+				log.Fatalf(sf.Format("UpdateUserFederationConfig failed: {0}", setErr))
 			}
 			fmt.Println("Server settings were successfully updated")
 		}
@@ -280,8 +278,7 @@ func main() {
 			if resource == operations.AdminResource {
 				serverSettings, readErr := manager.GetServerSettings()
 				if readErr != nil {
-					msg := sf.Format("There is an error while getting ServerSettings: {0}", readErr.Error())
-					log.Fatalf(msg)
+					log.Fatalf(sf.Format("There is an error while getting ServerSettings: {0}", readErr.Error()))
 				}
 				encoder := encoding.NewPasswordJsonEncoder(serverSettings.Admin.PasswordSalt)
 				serverSettings.Admin.PasswordHash = encoder.GetB64PasswordHash(serverSettings.Admin.PasswordSalt)
