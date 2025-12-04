@@ -243,8 +243,7 @@ func main() {
 			if err := manager.UpdateUserFederationConfig(params, resourceId, userFederationServiceConfig); err != nil {
 				log.Fatalf("UpdateUserFederationConfig failed: %s", err)
 			}
-			fmt.Println(sf.Format("User federation service config: \"{0}\" successfully updated",
-				userFederationServiceConfig.Name, params))
+			fmt.Println(sf.Format("User federation service config: \"{0}\" successfully updated", userFederationServiceConfig.Name, params))
 		case operations.ServerSettings:
 			var security config.GlobalSecurityConfig
 			if parseErr := json.Unmarshal(value, &security); parseErr != nil {
