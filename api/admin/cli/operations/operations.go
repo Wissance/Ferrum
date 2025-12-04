@@ -6,7 +6,9 @@ const (
 	RealmResource                ResourceType = "realm"
 	ClientResource               ResourceType = "client"
 	UserResource                 ResourceType = "user"
+	AdminResource                ResourceType = "admin"
 	UserFederationConfigResource ResourceType = "user_federation"
+	ServerSettings               ResourceType = "server_settings"
 )
 
 type OperationType string

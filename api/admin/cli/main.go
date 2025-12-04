@@ -4,8 +4,12 @@ import (
 	"crypto/rand"
 	"encoding/base32"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
+	"github.com/google/uuid"
+	appErrs "github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/utils/encoding"
 	"log"
 
 	"github.com/wissance/Ferrum/managers"
@@ -215,11 +219,11 @@ func main() {
 
 		case operations.RealmResource:
 			var newRealm data.Realm
-			if err := json.Unmarshal(value, &newRealm); err != nil {
-				log.Fatalf("json.Unmarshal failed: %s", err)
+			if parseErr := json.Unmarshal(value, &newRealm); parseErr != nil {
+				log.Fatalf(sf.Format("json.Unmarshal failed: {0}", parseErr.Error()))
 			}
-			if err := manager.UpdateRealm(resourceId, newRealm); err != nil {
-				log.Fatalf("UpdateRealm failed: %s", err)
+			if updateErr := manager.UpdateRealm(resourceId, newRealm); updateErr != nil {
+				log.Fatalf(sf.Format("UpdateRealm failed: %s", updateErr))
 			}
 			fmt.Println(sf.Format("Realm: \"{0}\" successfully updated", newRealm.Name))
 		case operations.UserFederationConfigResource:
@@ -231,30 +235,67 @@ func main() {
 				log.Fatalf("UpdateUserFederationConfig failed: %s", err)
 			}
 			fmt.Println(sf.Format("User federation service config: \"{0}\" successfully updated", userFederationServiceConfig.Name, params))
-		}
+		case operations.ServerSettings:
+			var security config.GlobalSecurityConfig
+			if parseErr := json.Unmarshal(value, &security); parseErr != nil {
+				log.Fatalf(sf.Format("json.Unmarshal failed: {0}", parseErr))
+			}
+			serverSettings, readErr := manager.GetServerSettings()
 
+			if readErr != nil && errors.As(readErr, &appErrs.EmptyNotFoundErr) {
+				serverSettings = &data.ServerSettings{}
+				salt := encoding.GenerateRandomSalt()
+				serverSettings.AllowedHosts = security.AllowedHosts
+				serverSettings.AdminApiUrlPrefix = security.AdminApiUrlPrefix
+				encoder := encoding.NewPasswordJsonEncoder(salt)
+				serverSettings.Admin.Id, _ = uuid.NewUUID()
+				serverSettings.Admin.Username = security.Admin.Username
+				serverSettings.Admin.PasswordSalt = salt
+				serverSettings.Admin.PasswordHash = encoder.GetB64PasswordHash(salt)
+			}
+			if setErr := manager.SetServerSettings(serverSettings); setErr != nil {
+				log.Fatalf(sf.Format("UpdateUserFederationConfig failed: {0}", setErr))
+			}
+			fmt.Println("Server settings were successfully updated")
+		}
 		return
 	case operations.ChangePassword:
 		switch resource {
+		case operations.AdminResource:
+			fallthrough
 		case operations.UserResource:
 			fallthrough
 		case "":
-			if params == "" {
-				log.Fatalf("Not specified Params")
-			}
-			if resourceId == "" {
-				log.Fatalf("Not specified Resource_id")
-			}
-			// TODO(SIA)  Moving password verification to another location
-			if len(value) < 8 {
-				log.Fatalf("Password length must be greater than 7")
-			}
 			password := string(value)
-			passwordManager := manager.(PasswordManager)
-			if err := passwordManager.SetPassword(params, resourceId, password); err != nil {
-				log.Fatalf("SetPassword failed: %s", err)
+			if resource != operations.AdminResource {
+				serverSettings, readErr := manager.GetServerSettings()
+				if readErr != nil {
+					log.Fatalf(sf.Format("There is an error while getting ServerSettings: {0}", readErr.Error()))
+				}
+				encoder := encoding.NewPasswordJsonEncoder(serverSettings.Admin.PasswordSalt)
+				serverSettings.Admin.PasswordHash = encoder.GetB64PasswordHash(serverSettings.Admin.PasswordSalt)
+				setError := manager.SetServerSettings(serverSettings)
+				if setError != nil {
+					log.Fatalf(sf.Format("SetPassword for Admin failed: {0}", setError.Error()))
+				}
+				fmt.Printf("Admin password successfully changed")
+			} else {
+				if params == "" {
+					log.Fatalf("Not specified Params")
+				}
+				if resourceId == "" {
+					log.Fatalf("Not specified Resource_id")
+				}
+				// TODO(SIA)  Moving password verification to another location
+				if len(value) < 8 {
+					log.Fatalf("Password length must be greater than 7")
+				}
+				passwordManager := manager.(PasswordManager)
+				if setErr := passwordManager.SetPassword(params, resourceId, password); setErr != nil {
+					log.Fatalf("SetPassword failed: %s", err)
+				}
+				fmt.Printf("Password successfully changed")
 			}
-			fmt.Printf("Password successfully changed")
 
 		default:
 			log.Fatalf("Bad Resource")
