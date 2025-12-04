@@ -241,18 +241,21 @@ func main() {
 				log.Fatalf(sf.Format("json.Unmarshal failed: {0}", parseErr))
 			}
 			serverSettings, readErr := manager.GetServerSettings()
-
+			var encoder *encoding.PasswordJsonEncoder
 			if readErr != nil && errors.As(readErr, &appErrs.EmptyNotFoundErr) {
 				serverSettings = &data.ServerSettings{}
 				salt := encoding.GenerateRandomSalt()
-				serverSettings.AllowedHosts = security.AllowedHosts
-				serverSettings.AdminApiUrlPrefix = security.AdminApiUrlPrefix
-				encoder := encoding.NewPasswordJsonEncoder(salt)
+				encoder = encoding.NewPasswordJsonEncoder(salt)
 				serverSettings.Admin.Id, _ = uuid.NewUUID()
-				serverSettings.Admin.Username = security.Admin.Username
 				serverSettings.Admin.PasswordSalt = salt
-				serverSettings.Admin.PasswordHash = encoder.GetB64PasswordHash(salt)
+			} else {
+				encoder = encoding.NewPasswordJsonEncoder(serverSettings.Admin.PasswordSalt)
 			}
+			serverSettings.AllowedHosts = security.AllowedHosts
+			serverSettings.AdminApiUrlPrefix = security.AdminApiUrlPrefix
+			serverSettings.Admin.Username = security.Admin.Username
+			serverSettings.Admin.PasswordHash = encoder.GetB64PasswordHash(serverSettings.Admin.PasswordSalt)
+
 			if setErr := manager.SetServerSettings(serverSettings); setErr != nil {
 				log.Fatalf(sf.Format("UpdateUserFederationConfig failed: {0}", setErr))
 			}

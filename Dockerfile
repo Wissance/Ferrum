@@ -55,4 +55,4 @@ COPY tools ./tools
 
 # TODO(UMV): 2. If we have users, realms and clients do not attempt to insert them
 
-CMD ["/bin/bash", "-c", "./docker_app_runner.sh"]
+CMD ["/bin/bash", "-c", "./tools/docker_app_runner.sh"]
