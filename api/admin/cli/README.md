@@ -6,7 +6,7 @@
 2. Shares same codebase
 3. Use `Ferrum` config file (provides as an argument)
 
-Admin CLI could be build as follows:
+Admin CLI could be built as follows:
 
 ```ps1
 go build -o ferrum-admin.exe ./api/admin/cli
@@ -84,6 +84,11 @@ Update `user_federation` example:
 ./ferrum-admin.exe --resource=user_federation --operation=update --resource_id=test_ldap --value='{\"name\":\"test_ldap\", \"type\":\"ldap\", \"url\":\"ldap://custom_ldap.wissance.com:389\"}' --params=WissanceFerrumDemo
 ```
 
+Update `server_settings` example:
+```ps1
+./ferrum-admin.exe --resource=server_settings --operation=update --value='{\"allowed_hosts\":[\"192.168.*\"], \"admin_api_url_prefix\":\"1q2w3e\", \"admin\": {\"username\":\"sa\", \"password\":\"321\"}}'
+```
+
 Question:
 1. What is using for user identification, because it has `preferred_username`, and `given_name` fields. I've not tested this yet but `preferred_username` must be used as `resource_id`. Here and in all `CRUD` operations that are requires identifier. 
 
@@ -112,7 +117,7 @@ Get `user_federation` example:
 ./ferrum-admin.exe --resource=user_federation --operation=get --resource_id=test_ldap --params=WissanceFerrumDemo
 ```
 
-##### 2.1.1.3 Delete operations
+##### 2.1.1.4 Delete operations
 
 Delete operation requires `--resource_id` and `--params` to be provided.
 
@@ -149,11 +154,20 @@ operation it requires username to be provided via `--resource_id` and a realm na
 ./ferrum-admin.exe --resource=user --operation=reset_password --resource_id=umv --params=WissanceFerrumDemo
 ```
 
-###### 2.1.2.1 User password change
+###### 2.1.2.2 User password change
 
 Password change requires username to be provided via `--resource_id` and a realm name via `--params. New password
 is passing via `--value=`, example:
 
 ```ps1
 ./ferrum-admin.exe --resource=user --operation=change_password --resource_id=umv --value='newPassword' --params=WissanceFerrumDemo
+```
+
+###### 2.1.2.3 Admin password change
+
+Admin password change requires only `--resource=admin`  New password is passing through `--value`
+is passing via `--value=`, example:
+
+```ps1
+./ferrum-admin.exe --resource=admin --operation=change_password --value='1q2w3e4r5t6y7i'
 ```

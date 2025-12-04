@@ -59,9 +59,10 @@ func main() {
 	}
 	// If there is a password change or password collection, it is not necessary to specify Resource
 	if !(operation == operations.ChangePassword || operation == operations.ResetPassword) {
-		isInvalidResource := resource != operations.RealmResource && resource != operations.ClientResource && resource != operations.UserResource
+		isInvalidResource := resource != operations.RealmResource && resource != operations.ClientResource &&
+			resource != operations.UserResource && resource != operations.ServerSettings
 		if isInvalidResource {
-			log.Fatalf("bad Resource \"%s\"", resource)
+			log.Fatalf(sf.Format("Non supported resource \"{0}\"", resource))
 		}
 	}
 	if (resource == operations.ClientResource) || (resource == operations.UserResource) {
@@ -189,7 +190,7 @@ func main() {
 
 		return
 	case operations.UpdateOperation:
-		if resourceId == "" {
+		if resourceId == "" && resource != operations.ServerSettings {
 			log.Fatalf("Not specified Resource_id")
 		}
 		if len(value) == 0 {
@@ -270,7 +271,7 @@ func main() {
 			fallthrough
 		case "":
 			password := string(value)
-			if resource != operations.AdminResource {
+			if resource == operations.AdminResource {
 				serverSettings, readErr := manager.GetServerSettings()
 				if readErr != nil {
 					log.Fatalf(sf.Format("There is an error while getting ServerSettings: {0}", readErr.Error()))
