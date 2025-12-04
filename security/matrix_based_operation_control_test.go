@@ -26,7 +26,7 @@ func TestIsOperationAllowedWithRedisDataManager(t *testing.T) {
 	// Init data
 	// 1. Create ServerSettings if not exists
 	serverSettings, readErr := manager.GetServerSettings()
-	adminUuid, err := uuid.Parse("00000000-0000-0000-0000-000000000001")
+	adminUuid, _ := uuid.Parse("00000000-0000-0000-0000-000000000001")
 	if readErr == nil {
 		adminUuid = serverSettings.Admin.Id
 	}

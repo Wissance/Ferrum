@@ -120,7 +120,6 @@ func (m *MatrixBasedOperationControl) IsOperationAllowed(realmId string, objectI
 
 	if settings != nil {
 		if settings.Admin.Id == userId {
-			actor = superUser
 			// we should check matrix rules, however SuperUser MUST do everything
 			return true, nil
 		} else {

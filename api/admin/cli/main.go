@@ -62,6 +62,7 @@ func main() {
 		isInvalidResource := resource != operations.RealmResource && resource != operations.ClientResource &&
 			resource != operations.UserResource && resource != operations.ServerSettings
 		if isInvalidResource {
+			//nolint:govet
 			log.Fatalf(sf.Format("Non supported resource \"{0}\"", resource))
 		}
 	}
@@ -221,10 +222,12 @@ func main() {
 		case operations.RealmResource:
 			var newRealm data.Realm
 			if parseErr := json.Unmarshal(value, &newRealm); parseErr != nil {
+				//nolint:govet
 				log.Fatalf(sf.Format("json.Unmarshal failed: {0}", parseErr.Error()))
 			}
 			if updateErr := manager.UpdateRealm(resourceId, newRealm); updateErr != nil {
-				log.Fatalf(sf.Format("UpdateRealm failed: %s", updateErr))
+				//nolint:govet
+				log.Fatalf(sf.Format("UpdateRealm failed: {0}", updateErr))
 			}
 			fmt.Println(sf.Format("Realm: \"{0}\" successfully updated", newRealm.Name))
 		case operations.UserFederationConfigResource:
