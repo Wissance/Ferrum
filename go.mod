@@ -19,7 +19,7 @@ require (
 	github.com/ttys3/rotatefilehook v1.0.0
 	github.com/wissance/go-config-extender v1.0.0
 	github.com/wissance/gwuu v1.2.4
-	github.com/wissance/stringFormatter v1.3.0
+	github.com/wissance/stringFormatter v1.6.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 

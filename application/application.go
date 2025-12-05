@@ -280,6 +280,10 @@ func (app *Application) initSwaggerRoutes(router *mux.Router) {
 	router.PathPrefix("/swagger/").Handler(httpSwagger.Handler())
 }
 
+func (app *Application) initSRE() error {
+	return nil
+}
+
 func (app *Application) initAuthServerDefs() {
 	app.authenticationDefs.SupportedGrantTypes = []string{
 		globals.AuthorizationTokenGrantType,

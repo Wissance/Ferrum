@@ -207,8 +207,8 @@ github.com/wissance/go-config-extender v1.0.0/go.mod h1:4Rn3IdkYY2P/J3OlzGF6hOct
 github.com/wissance/gwuu v1.2.4 h1:xn37b+wutKajq3ukOEWL6pj9arcqA3yVFrVGB1uYlTA=
 github.com/wissance/gwuu v1.2.4/go.mod h1:XAcqSL35PCoSg/4WeGOJcDxJgMKLMo0+YW+kxUT0tGw=
 github.com/wissance/stringFormatter v0.2.1/go.mod h1:lnql1aAB1vyG10k8UbRA0Srilb+tNjmtHRs860OmClM=
-github.com/wissance/stringFormatter v1.3.0 h1:BVl9tEvS/JgE2YCE3voaBDe3F4SB8sGrH2E3VUzX3I0=
-github.com/wissance/stringFormatter v1.3.0/go.mod h1:H7Mz15+5i8ypmv6bLknM/uD+U1teUW99PlW0DNCNscA=
+github.com/wissance/stringFormatter v1.6.1 h1:Pf5m2lMi1z256+SgWLj+u4SGqSzix0HP0Z0t4QgMM2I=
+github.com/wissance/stringFormatter v1.6.1/go.mod h1:H7Mz15+5i8ypmv6bLknM/uD+U1teUW99PlW0DNCNscA=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
