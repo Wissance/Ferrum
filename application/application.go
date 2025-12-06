@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	appErrs "github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/sre"
 	"github.com/wissance/Ferrum/utils/encoding"
 	"github.com/wissance/Ferrum/utils/uuidtools"
 	"io"
@@ -15,18 +16,17 @@ import (
 	"path/filepath"
 	"time"
 
-	httpSwagger "github.com/swaggo/http-swagger"
-	"github.com/wissance/Ferrum/globals"
-	"github.com/wissance/Ferrum/swagger"
-
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/wissance/Ferrum/api/rest"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
+	"github.com/wissance/Ferrum/globals"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/Ferrum/managers"
 	"github.com/wissance/Ferrum/services"
+	"github.com/wissance/Ferrum/swagger"
 	r "github.com/wissance/gwuu/api/rest"
 	"github.com/wissance/stringFormatter"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -50,6 +50,7 @@ type Application struct {
 	httpHandler        *http.Handler
 	httpServer         *http.Server
 	shutdownTimeout    time.Duration
+	metricsCollector   *sre.MetricsCollector
 }
 
 // CreateAppWithConfigs creates but not Init new Application as AppRunner
@@ -64,6 +65,7 @@ func CreateAppWithConfigs(configFile string, devMode bool) AppRunner {
 	app.devMode = devMode
 	app.appConfigFile = &configFile
 	app.authenticationDefs = &data.AuthenticationDefs{}
+	app.metricsCollector = sre.CreateMetricsCollector()
 	appRunner := AppRunner(app)
 	return appRunner
 }
@@ -77,7 +79,8 @@ func CreateAppWithConfigs(configFile string, devMode bool) AppRunner {
  * Returns: new Application as AppRunner
  */
 func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte, devMode bool) AppRunner {
-	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData, devMode: devMode}
+	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData, devMode: devMode,
+		metricsCollector: sre.CreateMetricsCollector()}
 	app.authenticationDefs = &data.AuthenticationDefs{}
 	appRunner := AppRunner(app)
 	return appRunner
@@ -250,6 +253,7 @@ func (app *Application) initRestApi() error {
 	}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
+	router.Use(app.metricsCollector.HttpMetricsCollectMiddleware)
 	app.initKeyCloakSimilarRestApiRoutes(router)
 	if app.devMode {
 		app.initSwaggerRoutes(router)
