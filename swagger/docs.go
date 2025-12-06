@@ -142,7 +142,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Basic User:Password as Base64 i.e. Basic dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo=",
+                        "description": "Basic client_id:client_secret as Base64 i.e. Basic V2lzc2FuY2VXZWJEZW1vOmZiNlo0UnNPYWRWeWNRb2VRaU41N3hwdTh3OHcxMTEx",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
@@ -359,7 +359,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Basic User:Password as Base64 i.e. Basic dGVzdC1zZXJ2aWNlLWFwcC1jbGllbnQ6ZmI2WjRSc09hZFZ5Y1FvZVFpTjU3eHB1OHc4d3BsWXo=",
+                        "description": "Basic client_id:client_secret as Base64 i.e. Basic V2lzc2FuY2VXZWJEZW1vOmZiNlo0UnNPYWRWeWNRb2VRaU41N3hwdTh3OHcxMTEx",
                         "name": "Authorization",
                         "in": "header",
                         "required": true

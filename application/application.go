@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	appErrs "github.com/wissance/Ferrum/errors"
 	"github.com/wissance/Ferrum/sre"
 	"github.com/wissance/Ferrum/utils/encoding"
@@ -255,6 +256,7 @@ func (app *Application) initRestApi() error {
 	router.StrictSlash(true)
 	router.Use(app.metricsCollector.HttpMetricsCollectMiddleware)
 	app.initKeyCloakSimilarRestApiRoutes(router)
+	app.initSRERestApiRoutes(router)
 	if app.devMode {
 		app.initSwaggerRoutes(router)
 	}
@@ -284,8 +286,8 @@ func (app *Application) initSwaggerRoutes(router *mux.Router) {
 	router.PathPrefix("/swagger/").Handler(httpSwagger.Handler())
 }
 
-func (app *Application) initSRE() error {
-	return nil
+func (app *Application) initSRERestApiRoutes(router *mux.Router) {
+	app.webApiHandler.HandleFunc(router, "/metrics", promhttp.Handler().ServeHTTP, http.MethodGet)
 }
 
 func (app *Application) initAuthServerDefs() {

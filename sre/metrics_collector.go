@@ -75,10 +75,11 @@ func CreateMetricsCollector() *MetricsCollector {
 // HttpMetricsCollectMiddleware function is using to track all HTTP-requests and collect
 func (mc *MetricsCollector) HttpMetricsCollectMiddleware(next http.Handler) http.Handler {
 	const swaggerPath = "/swagger/"
+	const metricsPath = "/metrics"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		route := mux.CurrentRoute(r)
 		path, _ := route.GetPathTemplate()
-		if strings.Contains(path, swaggerPath) {
+		if strings.Contains(path, swaggerPath) || strings.Contains(path, metricsPath) {
 			next.ServeHTTP(w, r)
 		} else {
 			timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {

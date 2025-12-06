@@ -5,6 +5,7 @@ volumes:
   app_data: {}
   nginx_cfg: {}
   nginx_certs: {}
+  prometheus_cfg: {}
 
 networks:
   wissance_ferrum_eth:
@@ -82,3 +83,35 @@ services:
       - nginx_cfg:/etc/nginx/
       - nginx_certs:/etc/ssl/certs
       - '/var/run/docker.sock:/tmp/docker.sock:ro'
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: wissance_ferrum_prometheus
+    depends_on:
+      ferrum:
+        condition: service_started
+    volumes:
+      - prometheus_cfg:/etc/prometheus/
+    ports:
+      - "9090:9090"
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.10
+        aliases:
+          - prometheus.dev.local
+    hostname: prometheus
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: wissance_ferrum_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.11
+        aliases:
+          - grafana.dev.local
+    hostname: grafana
+    depends_on:
+      - prometheus
