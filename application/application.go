@@ -287,7 +287,8 @@ func (app *Application) initSwaggerRoutes(router *mux.Router) {
 }
 
 func (app *Application) initSRERestApiRoutes(router *mux.Router) {
-	app.webApiHandler.HandleFunc(router, "/metrics", promhttp.Handler().ServeHTTP, http.MethodGet)
+	//app.webApiHandler.HandleFunc(router, "/metrics", promhttp.Handler().ServeHTTP, http.MethodGet)
+	app.webApiHandler.Router.Handle("/metrics", promhttp.Handler())
 }
 
 func (app *Application) initAuthServerDefs() {

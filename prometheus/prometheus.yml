@@ -1,7 +1,10 @@
 global:
-  scrape_interval: 15s
+  scrape_interval: 15s # Set the default scrape interval to 15 seconds.
 
 scrape_configs:
-  - job_name: 'prometheus-go'
+  - job_name: prometheus
     static_configs:
-      - targets: ['host.docker.internal:8182']
+      - targets: ["localhost:9090"]
+  - job_name: ferrum_community_authorization_server
+    static_configs:
+      - targets: ["10.50.40.3:8182"]

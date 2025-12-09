@@ -33,39 +33,39 @@ func CreateMetricsCollector() *MetricsCollector {
 	// 1. HTTP Section
 	mc.HttpRequestsTotalCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "http_requests_total",
-			Help: "Processed HTTP requests count, partitioned by status",
+			Name: "ferrum_http_requests_total",
+			Help: "Processed HTTP to Ferrum WebAPI requests count, partitioned by status",
 		},
 		[]string{pathLabel, statusLabel})
 	prometheus.MustRegister(mc.HttpRequestsTotalCount)
 
 	mc.HttpRequestsErrorCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "http_requests_error_total",
-			Help: "Processed HTTP requests errors count, partitioned by error type",
+			Name: "ferrum_http_requests_error_total",
+			Help: "Processed HTTP requests to Ferrum WebAPI errors count, partitioned by error type",
 		},
 		[]string{pathLabel, errorTypeLabel})
 	prometheus.MustRegister(mc.HttpRequestsErrorCount)
 
 	mc.HttpRequestDurations = prometheus.NewSummary(
 		prometheus.SummaryOpts{
-			Name:       "http_request_durations",
-			Help:       "Http requests latencies in milliseconds",
+			Name:       "ferrum_http_request_durations",
+			Help:       "Http requests to Ferrum WebAPI latencies in milliseconds",
 			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001}})
 	prometheus.MustRegister(mc.HttpRequestDurations)
 	// 2. DataSource section
 	mc.DataSourceRequestsTotalCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "data_source_requests_total",
-			Help: "Processed Data source requests count, partitioned by status",
+			Name: "ferrum_data_source_requests_total",
+			Help: "Processed Ferrum Data source requests count, partitioned by status",
 		},
 		[]string{statusLabel})
 	prometheus.MustRegister(mc.DataSourceRequestsTotalCount)
 
 	mc.DataSourceRequestDurations = prometheus.NewSummary(
 		prometheus.SummaryOpts{
-			Name:       "data_source_request_durations",
-			Help:       "Data source requests latencies in milliseconds",
+			Name:       "ferrum data_source_request_durations",
+			Help:       "Ferrum Data source requests latencies in milliseconds",
 			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001}})
 	prometheus.MustRegister(mc.DataSourceRequestDurations)
 

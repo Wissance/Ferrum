@@ -1,7 +1,6 @@
 FROM golang:1.23-alpine
 VOLUME /app_data
 VOLUME /nginx_cfg
-VOLUME /prometheus_cfg
 
 RUN sed -i 's/https/http/' /etc/apk/repositories
 RUN apk update && apk add --no-cache git && apk add --no-cache bash && apk add --no-cache build-base && apk add --no-cache openssl
@@ -33,7 +32,6 @@ COPY "config_docker_w_redis.json" ./"config_docker_w_redis.json"
 COPY tools/"create_wissance_demo_users_docker.sh" ./"create_wissance_demo_users_docker.sh"
 COPY tools/"docker_app_runner.sh" ./"docker_app_runner.sh"
 COPY docs/nginx/"nginx_docker.conf" /nginx_cfg/"nginx.conf"
-COPY prometheus/"prometheus.yml" /prometheus_cfg/"prometheus.yml"
 COPY swagger ./swagger
 # TODO(UMV): I need to create dhparam directory in VOLUME, there are no other way or i have not found it yet
 # COPY "LICENSE" /nginx_cfg/dhparam/
@@ -50,8 +48,6 @@ RUN go build -o ferrum-admin ./api/admin/cli
 
 # TODO(SIA) Vulnerability
 COPY --from=ghcr.io/ufoscout/docker-compose-wait:latest /wait /wait
-
-#COPY testData ./testData
 COPY tools ./tools
 
 # TODO(UMV): 1. Build config on a Fly (to use props from Env variables)

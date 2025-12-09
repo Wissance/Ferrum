@@ -5,7 +5,12 @@ volumes:
   app_data: {}
   nginx_cfg: {}
   nginx_certs: {}
-  prometheus_cfg: {}
+  prometheus_cfg:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: 'prometheus'
 
 networks:
   wissance_ferrum_eth:
@@ -14,7 +19,6 @@ networks:
       config:
         - gateway: 10.50.40.1
           subnet: 10.50.40.0/24
-
 
 services:
   redis:
@@ -90,7 +94,11 @@ services:
       ferrum:
         condition: service_started
     volumes:
-      - prometheus_cfg:/etc/prometheus/
+      #- ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_cfg:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
     ports:
       - "9090:9090"
     networks:
