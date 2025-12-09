@@ -6,14 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="f2bc4471-ed8e-44f8-95bc-15c82292d6f2" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/application/application.go" beforeDir="false" afterPath="$PROJECT_DIR$/application/application.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/certs/server.crt" beforeDir="false" afterPath="$PROJECT_DIR$/certs/server.crt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/certs/server.key" beforeDir="false" afterPath="$PROJECT_DIR$/certs/server.key" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prometheus/prometheus.yml" beforeDir="false" afterPath="$PROJECT_DIR$/prometheus/prometheus.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sre/metrics_collector.go" beforeDir="false" afterPath="$PROJECT_DIR$/sre/metrics_collector.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
