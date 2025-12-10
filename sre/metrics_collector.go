@@ -11,6 +11,9 @@ import (
 const (
 	pathLabel      = "path"
 	statusLabel    = "status"
+	successStatus  = "success"
+	failureStatus  = "failure"
+	keyLabel       = "key"
 	errorTypeLabel = "error type"
 	clientError    = "client"
 	serverError    = "server"
@@ -25,6 +28,7 @@ type MetricsCollector struct {
 	HttpRequestDurations   prometheus.Summary
 	// Request to dataSource (is not usable for File), cli not produces HttpRequestsCount
 	DataSourceRequestsTotalCount *prometheus.CounterVec
+	DataSourceRequestsErrorCount *prometheus.CounterVec
 	DataSourceRequestDurations   prometheus.Summary
 }
 
@@ -34,7 +38,7 @@ func CreateMetricsCollector() *MetricsCollector {
 	mc.HttpRequestsTotalCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "ferrum_http_requests_total",
-			Help: "Processed HTTP to Ferrum WebAPI requests count, partitioned by status",
+			Help: "Processed HTTP to Ferrum WebAPI requests count, partitioned by path and status",
 		},
 		[]string{pathLabel, statusLabel})
 	prometheus.MustRegister(mc.HttpRequestsTotalCount)
@@ -42,7 +46,7 @@ func CreateMetricsCollector() *MetricsCollector {
 	mc.HttpRequestsErrorCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "ferrum_http_requests_error_total",
-			Help: "Processed HTTP requests to Ferrum WebAPI errors count, partitioned by error type",
+			Help: "Processed HTTP requests to Ferrum WebAPI errors count, partitioned by path and error type",
 		},
 		[]string{pathLabel, errorTypeLabel})
 	prometheus.MustRegister(mc.HttpRequestsErrorCount)
@@ -57,15 +61,24 @@ func CreateMetricsCollector() *MetricsCollector {
 	mc.DataSourceRequestsTotalCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "ferrum_data_source_requests_total",
-			Help: "Processed Ferrum Data source requests count, partitioned by status",
+			Help: "Processed Ferrum Data source requests count, partitioned by key and status",
 		},
-		[]string{statusLabel})
+		[]string{keyLabel, statusLabel})
 	prometheus.MustRegister(mc.DataSourceRequestsTotalCount)
+
+	//todo(UMV): probably will be used in future for error type tracking
+	/*mc.DataSourceRequestsErrorCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "ferrum_data_source_requests_error_total",
+			Help: "Processed Ferrum Data source requests errors count, partitioned by key and status",
+		},
+		[]string{keyLabel, statusLabel})
+	prometheus.MustRegister(mc.DataSourceRequestsTotalCount)*/
 
 	mc.DataSourceRequestDurations = prometheus.NewSummary(
 		prometheus.SummaryOpts{
 			Name:       "ferrum data_source_request_durations",
-			Help:       "Ferrum Data source requests latencies in milliseconds",
+			Help:       "Ferrum Data source requests latencies in microseconds",
 			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001}})
 	prometheus.MustRegister(mc.DataSourceRequestDurations)
 
