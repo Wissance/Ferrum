@@ -55,8 +55,8 @@ func (mn *ObservableDataContext) GetRealm(realmName string) (*data.Realm, error)
  */
 func (mn *ObservableDataContext) GetUsers(realmName string) ([]data.User, error) {
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		ms := v * 1000 // make milliseconds
-		mn.metricsCollector.DataSourceRequestDurations.Observe(ms)
+		us := v * 1000000 // make milliseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
 	u, e := mn.GetUsers(realmName)
 	timer.ObserveDuration()
@@ -76,8 +76,8 @@ func (mn *ObservableDataContext) GetUsers(realmName string) ([]data.User, error)
  */
 func (mn *ObservableDataContext) GetClient(realmName string, clientName string) (*data.Client, error) {
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		ms := v * 1000 // make milliseconds
-		mn.metricsCollector.DataSourceRequestDurations.Observe(ms)
+		us := v * 1000000 // make milliseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
 	c, e := mn.GetClient(realmName, clientName)
 	timer.ObserveDuration()
@@ -97,8 +97,8 @@ func (mn *ObservableDataContext) GetClient(realmName string, clientName string) 
  */
 func (mn *ObservableDataContext) GetUser(realmName string, userName string) (data.User, error) {
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		ms := v * 1000 // make milliseconds
-		mn.metricsCollector.DataSourceRequestDurations.Observe(ms)
+		us := v * 1000000 // make milliseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
 	u, e := mn.GetUser(realmName, userName)
 	timer.ObserveDuration()
@@ -118,8 +118,8 @@ func (mn *ObservableDataContext) GetUser(realmName string, userName string) (dat
  */
 func (mn *ObservableDataContext) GetUserById(realmName string, userId uuid.UUID) (data.User, error) {
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		ms := v * 1000 // make milliseconds
-		mn.metricsCollector.DataSourceRequestDurations.Observe(ms)
+		us := v * 1000000 // make milliseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
 	u, e := mn.GetUserById(realmName, userId)
 	timer.ObserveDuration()
@@ -139,8 +139,8 @@ func (mn *ObservableDataContext) GetUserById(realmName string, userId uuid.UUID)
  */
 func (mn *ObservableDataContext) CreateRealm(realmData data.Realm) error {
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		ms := v * 1000 // make milliseconds
-		mn.metricsCollector.DataSourceRequestDurations.Observe(ms)
+		us := v * 1000000 // make milliseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
 	e := mn.CreateRealm(realmData)
 	timer.ObserveDuration()
@@ -161,8 +161,8 @@ func (mn *ObservableDataContext) CreateRealm(realmData data.Realm) error {
  */
 func (mn *ObservableDataContext) CreateClient(realmName string, clientData data.Client) error {
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		ms := v * 1000 // make milliseconds
-		mn.metricsCollector.DataSourceRequestDurations.Observe(ms)
+		us := v * 1000000 // make milliseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
 	timer.ObserveDuration()
 	e := mn.CreateClient(realmName, clientData)
@@ -182,61 +182,217 @@ func (mn *ObservableDataContext) CreateClient(realmName string, clientData data.
  *   2. DataSourceRequestsTotalCount - count of requests with key and status labels
  */
 func (mn *ObservableDataContext) CreateUser(realmName string, userData data.User) error {
-	return mn.CreateUser(realmName, userData)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make milliseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	e := mn.CreateUser(realmName, userData)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}_{2}_for_realm_{3}", "create", data.USER, userData.GetUsername(), realmName)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return e
 }
 
 // UpdateRealm updates existing data.Realm in a data store within name = realmData, and new data = realmData
 func (mn *ObservableDataContext) UpdateRealm(realmName string, realmData data.Realm) error {
-	return mn.UpdateRealm(realmName, realmData)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	e := mn.UpdateRealm(realmName, realmData)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}_{2}", "update", data.REALM, realmName)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return e
 }
 
 // UpdateClient updates existing data.Client in a data store with name = clientName and new data = clientData
 func (mn *ObservableDataContext) UpdateClient(realmName string, clientName string, clientData data.Client) error {
-	return mn.UpdateClient(realmName, clientName, clientData)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	e := mn.UpdateClient(realmName, clientName, clientData)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}_{2}_for_realm_{3}", "update", data.CLIENT, clientName, realmName)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return e
 }
 
 // UpdateUser updates existing data.User in a data store with realm name = realName, username = userName and data=userData
 func (mn *ObservableDataContext) UpdateUser(realmName string, userName string, userData data.User) error {
-	return mn.UpdateUser(realmName, userName, userData)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	e := mn.UpdateUser(realmName, userName, userData)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}_{2}_for_realm_{3}", "update", data.USER, userName, realmName)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return e
 }
 
 // DeleteRealm removes realm from data storage (Should be a CASCADE remove of all related Users and Clients)
 func (mn *ObservableDataContext) DeleteRealm(realmName string) error {
-	return mn.DeleteRealm(realmName)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	e := mn.DeleteRealm(realmName)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}_{2}", "delete", data.REALM, realmName)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return e
 }
 
 // DeleteClient removes client with name = clientName from realm with name = clientName
 func (mn *ObservableDataContext) DeleteClient(realmName string, clientName string) error {
-	return mn.DeleteClient(realmName, clientName)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	e := mn.DeleteClient(realmName, clientName)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}_{2}_for_realm", "delete", data.REALM, realmName)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return e
 }
 
 // DeleteUser removes data.User from data store by user (userName) and realm (realmName) name respectively
 func (mn *ObservableDataContext) DeleteUser(realmName string, userName string) error {
-	return mn.DeleteUser(realmName, userName)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	e := mn.DeleteUser(realmName, userName)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}_{2}_for_realm", "delete", data.REALM, realmName)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return e
 }
 
 func (mn *ObservableDataContext) GetUserFederationConfig(realmName string, configName string) (*data.UserFederationServiceConfig, error) {
-	return mn.GetUserFederationConfig(realmName, configName)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	c, e := mn.GetUserFederationConfig(realmName, configName)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}_{2}_for_realm", "get", data.USER_FEDERATION_SERVICE_CONFIG, realmName)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return c, e
 }
 
 func (mn *ObservableDataContext) CreateUserFederationConfig(realmName string, userFederationConfig data.UserFederationServiceConfig) error {
-	return mn.CreateUserFederationConfig(realmName, userFederationConfig)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	e := mn.CreateUserFederationConfig(realmName, userFederationConfig)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}_{2}_for_realm", "create", data.USER_FEDERATION_SERVICE_CONFIG, realmName)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return e
 }
 
 func (mn *ObservableDataContext) UpdateUserFederationConfig(realmName string, configName string, userFederationConfig data.UserFederationServiceConfig) error {
-	return mn.UpdateUserFederationConfig(realmName, configName, userFederationConfig)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	e := mn.UpdateUserFederationConfig(realmName, configName, userFederationConfig)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}_{2}_for_realm", "update", data.USER_FEDERATION_SERVICE_CONFIG, realmName)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return e
 }
 
 func (mn *ObservableDataContext) DeleteUserFederationConfig(realmName string, configName string) error {
-	return mn.DeleteUserFederationConfig(realmName, configName)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	e := mn.DeleteUserFederationConfig(realmName, configName)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}_{2}_for_realm", "update", data.USER_FEDERATION_SERVICE_CONFIG, realmName)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return e
 }
 
 // GetServerSettings function that returns ServerSettings
 func (mn *ObservableDataContext) GetServerSettings() (*data.ServerSettings, error) {
-	return mn.GetServerSettings()
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	s, e := mn.GetServerSettings()
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}", "get", data.USER_FEDERATION_SERVICE_CONFIG)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return s, e
 }
 
 // SetServerSettings function that updates ServerSettings by full new settings replace
 func (mn *ObservableDataContext) SetServerSettings(settings *data.ServerSettings) error {
-	return mn.SetServerSettings(settings)
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
+	}))
+	e := mn.SetServerSettings(settings)
+	timer.ObserveDuration()
+	key := sf.Format("{0}_{1}", "set", data.USER_FEDERATION_SERVICE_CONFIG)
+	if e == nil {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
+	} else {
+		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
+	}
+	return e
 }
