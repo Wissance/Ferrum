@@ -445,9 +445,18 @@
       },
       "id": 1,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
+        "displayMode": "gradient",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -455,9 +464,9 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
       },
       "pluginVersion": "12.3.0",
       "targets": [
@@ -467,14 +476,14 @@
             "uid": "cf6r6rqle5s74b"
           },
           "editorMode": "builder",
-          "expr": "ferrum_http_request_durations_count",
+          "expr": "ferrum_data_source_requests_total{instance=\"10.50.40.3:8182\"}",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
       "title": "Ferrum WebAPI Http  Requests",
-      "type": "gauge"
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -511,9 +520,18 @@
       },
       "id": 3,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
+        "displayMode": "gradient",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -521,9 +539,9 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
       },
       "pluginVersion": "12.3.0",
       "targets": [
@@ -536,7 +554,7 @@
         }
       ],
       "title": "Ferrum WebAPI Http Requests Errors",
-      "type": "gauge"
+      "type": "bargauge"
     }
   ],
   "preload": false,
@@ -553,5 +571,5 @@
   "timezone": "browser",
   "title": "Ferrum WebAPI Dashboard",
   "uid": "adf948t",
-  "version": 7
+  "version": 5
 }
