@@ -85,6 +85,14 @@ func CreateMetricsCollector() *MetricsCollector {
 	return &mc
 }
 
+func (mc *MetricsCollector) UnRegisterAllMetrics() {
+	prometheus.Unregister(mc.HttpRequestsTotalCount)
+	prometheus.Unregister(mc.HttpRequestsErrorCount)
+	prometheus.Unregister(mc.HttpRequestDurations)
+	prometheus.Unregister(mc.DataSourceRequestsTotalCount)
+	prometheus.Unregister(mc.DataSourceRequestDurations)
+}
+
 // HttpMetricsCollectMiddleware function is using to track all HTTP-requests and collect
 func (mc *MetricsCollector) HttpMetricsCollectMiddleware(next http.Handler) http.Handler {
 	const swaggerPath = "/swagger/"

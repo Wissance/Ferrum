@@ -174,6 +174,7 @@ func (app *Application) Init() (bool, error) {
 func (app *Application) Stop(ctx context.Context) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, app.shutdownTimeout)
 	defer cancel()
+	app.metricsCollector.UnRegisterAllMetrics()
 	err := app.httpServer.Shutdown(ctx)
 	if err != nil {
 		return false, err
