@@ -11,6 +11,7 @@ import (
 	appErrs "github.com/wissance/Ferrum/errors"
 	"github.com/wissance/Ferrum/utils/encoding"
 	"log"
+	"os"
 
 	"github.com/wissance/Ferrum/managers"
 
@@ -64,7 +65,8 @@ func main() {
 		if isInvalidResource {
 			msg := sf.Format("Non supported resource \"{0}\"", resource)
 			//nolint:govet,staticcheck
-			log.Fatalf(msg)
+			log.Println(msg)
+			os.Exit(-1)
 		}
 	}
 	if (resource == operations.ClientResource) || (resource == operations.UserResource) {
@@ -227,12 +229,14 @@ func main() {
 			if parseErr := json.Unmarshal(value, &newRealm); parseErr != nil {
 				parseErrMsg := sf.Format("json.Unmarshal failed: {0}", parseErr.Error())
 				//nolint:govet,staticcheck
-				log.Fatalf(parseErrMsg)
+				log.Println(parseErrMsg)
+				os.Exit(-1)
 			}
 			if updateErr := manager.UpdateRealm(resourceId, newRealm); updateErr != nil {
 				updateErrMsg := sf.Format("UpdateRealm failed: {0}", updateErr)
 				//nolint:govet,staticcheck
-				log.Fatalf(updateErrMsg)
+				log.Println(updateErrMsg)
+				os.Exit(-1)
 			}
 			fmt.Println(sf.Format("Realm: \"{0}\" successfully updated", newRealm.Name))
 		case operations.UserFederationConfigResource:
@@ -249,7 +253,8 @@ func main() {
 			if parseErr := json.Unmarshal(value, &security); parseErr != nil {
 				msg := sf.Format("json.Unmarshal failed: {0}", parseErr)
 				//nolint:govet,staticcheck
-				log.Fatalf(msg)
+				log.Println(msg)
+				os.Exit(-1)
 			}
 			serverSettings, readErr := manager.GetServerSettings()
 			var encoder *encoding.PasswordJsonEncoder
@@ -270,7 +275,8 @@ func main() {
 			if setErr := manager.SetServerSettings(serverSettings); setErr != nil {
 				msg := sf.Format("UpdateUserFederationConfig failed: {0}", setErr)
 				//nolint:govet,staticcheck
-				log.Fatalf(msg)
+				log.Println(msg)
+				os.Exit(-1)
 			}
 			fmt.Println("Server settings were successfully updated")
 		}
@@ -288,14 +294,17 @@ func main() {
 				if readErr != nil {
 					msg := sf.Format("There is an error while getting ServerSettings: {0}", readErr.Error())
 					//nolint:govet,staticcheck
-					log.Fatalf(msg)
+					log.Println(msg)
+					os.Exit(-1)
 				}
 				encoder := encoding.NewPasswordJsonEncoder(serverSettings.Admin.PasswordSalt)
 				serverSettings.Admin.PasswordHash = encoder.GetB64PasswordHash(serverSettings.Admin.PasswordSalt)
 				setError := manager.SetServerSettings(serverSettings)
 				if setError != nil {
+					msg := sf.Format("SetPassword for Admin failed: {0}", setError.Error())
 					//nolint:govet,staticcheck
-					log.Fatalf(sf.Format("SetPassword for Admin failed: {0}", setError.Error()))
+					log.Println(msg)
+					os.Exit(-1)
 				}
 				fmt.Printf("Admin password successfully changed")
 			} else {

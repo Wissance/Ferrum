@@ -45,7 +45,7 @@ type Application struct {
 	secretKey          []byte
 	serverData         *data.ServerData
 	dataProvider       *managers.DataContext
-	webApiHandler      *r.WebApiHandler
+	webApiHandler      *r.MuxBasedWebApiHandler
 	webApiContext      *rest.WebApiContext
 	logger             *logging.AppLogger
 	httpHandler        *http.Handler
@@ -249,7 +249,7 @@ func (app *Application) initData(dataProvider managers.DataContext) error {
 }
 
 func (app *Application) initRestApi() error {
-	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
+	app.webApiHandler = r.NewMuxBasedWebApiHandler(true, r.AnyOrigin)
 	securityService := services.CreateSecurityService(app.dataProvider, app.logger)
 	serverAddress := stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
 	app.webApiContext = &rest.WebApiContext{
