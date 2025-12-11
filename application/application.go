@@ -194,29 +194,34 @@ func (app *Application) initDataProviders() error {
 	var err error
 	if app.serverData != nil {
 		dataProvider, prepareErr := managers.PrepareContextUsingData(&app.appConfig.DataSource, app.serverData, app.logger)
-		app.dataProvider = &dataProvider
+		observableProvider := sre.CreateObservableDataContext(app.metricsCollector, &dataProvider)
+		app.dataProvider = &observableProvider
 		return prepareErr
 	}
 
 	if app.dataConfigFile != nil {
 		dataProvider, prepareErr := managers.PrepareContextUsingFile(&app.appConfig.DataSource, app.dataConfigFile, app.logger)
-		app.dataProvider = &dataProvider
+		observableProvider := sre.CreateObservableDataContext(app.metricsCollector, &dataProvider)
+		app.dataProvider = &observableProvider
 		err = prepareErr
 	} else {
 		dataProvider, prepareErr := managers.PrepareContext(&app.appConfig.DataSource, app.logger)
-		app.dataProvider = &dataProvider
+		observableProvider := sre.CreateObservableDataContext(app.metricsCollector, &dataProvider)
+		app.dataProvider = &observableProvider
 		err = prepareErr
 		if err != nil {
 			return err
 		}
-		return app.initData()
+		return app.initData(dataProvider)
 	}
 	return err
 }
 
-func (app *Application) initData() error {
+// iniData inits ServerSetting before AppStart
+// we are passing here dataProvider because data provider from app does not have initialized SRE yet
+func (app *Application) initData(dataProvider managers.DataContext) error {
 	// this function init some required data after managers.DataContext creation
-	settings, err := (*app.dataProvider).GetServerSettings()
+	settings, err := dataProvider.GetServerSettings()
 	if err == nil && !uuidtools.IsUUIDEmpty(&settings.Admin.Id) {
 		// nothing to be done here, settings already exists
 		return nil
@@ -237,7 +242,7 @@ func (app *Application) initData() error {
 			AdminApiUrlPrefix: app.appConfig.Security.AdminApiUrlPrefix,
 		}
 
-		err = (*app.dataProvider).SetServerSettings(settings)
+		err = dataProvider.SetServerSettings(settings)
 	}
 	return err
 }

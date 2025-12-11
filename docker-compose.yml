@@ -5,12 +5,14 @@ volumes:
   app_data: {}
   nginx_cfg: {}
   nginx_certs: {}
+  grafana_data: {}
   prometheus_cfg:
     driver: local
     driver_opts:
       type: 'none'
       o: 'bind'
       device: 'prometheus'
+
 
 networks:
   wissance_ferrum_eth:
@@ -94,7 +96,6 @@ services:
       ferrum:
         condition: service_started
     volumes:
-      #- ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_cfg:/etc/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -111,10 +112,13 @@ services:
   grafana:
     image: grafana/grafana-oss:latest
     container_name: wissance_ferrum_grafana
+    volumes:
+      # This maps the internal Grafana data directory to a named Docker volume
+      - grafana_data:/var/lib/grafana
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     networks:
       wissance_ferrum_eth:
         ipv4_address: 10.50.40.11

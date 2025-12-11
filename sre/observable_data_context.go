@@ -29,7 +29,7 @@ func CreateObservableDataContext(metricsCollector *MetricsCollector, dataContext
 
 // IsAvailable this function we do not observe yet
 func (mn *ObservableDataContext) IsAvailable() bool {
-	return mn.IsAvailable()
+	return (*mn.dataContext).IsAvailable()
 }
 
 // GetRealm function for Observe (SRE) getting realm operation
@@ -42,7 +42,7 @@ func (mn *ObservableDataContext) GetRealm(realmName string) (*data.Realm, error)
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	r, e := mn.GetRealm(realmName)
+	r, e := (*mn.dataContext).GetRealm(realmName)
 	timer.ObserveDuration()
 	key := sf.Format(realmKeyLabelTemplate, "get", data.REALM, realmName)
 	if e == nil {
@@ -58,12 +58,12 @@ func (mn *ObservableDataContext) GetRealm(realmName string) (*data.Realm, error)
  *   1. DataSource requests duration - DataSourceRequestDurations in us
  *   2. DataSourceRequestsTotalCount - count of requests with key and status labels
  */
-func (mn *ObservableDataContext) GetUsers(realmName string) ([]data.User, error) {
+/*func (mn *ObservableDataContext) GetUsers(realmName string) ([]data.User, error) {
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	u, e := mn.GetUsers(realmName)
+	u, e := (*mn.dataContext).GetUsers(realmName)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelateResourceKeyWithoutId, "getmany", data.USER, realmName)
 	if e == nil {
@@ -72,7 +72,7 @@ func (mn *ObservableDataContext) GetUsers(realmName string) ([]data.User, error)
 		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, failureStatus).Inc()
 	}
 	return u, e
-}
+}*/
 
 // GetClient function for getting Realm Client by name
 /* Function that wraps managers.DataContext GetClient with getting the following metrics:
@@ -84,7 +84,7 @@ func (mn *ObservableDataContext) GetClient(realmName string, clientName string) 
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	c, e := mn.GetClient(realmName, clientName)
+	c, e := (*mn.dataContext).GetClient(realmName, clientName)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "get", data.CLIENT, clientName, realmName)
 	if e == nil {
@@ -105,7 +105,7 @@ func (mn *ObservableDataContext) GetUser(realmName string, userName string) (dat
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	u, e := mn.GetUser(realmName, userName)
+	u, e := (*mn.dataContext).GetUser(realmName, userName)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "get", data.USER, userName, realmName)
 	if e == nil {
@@ -126,7 +126,7 @@ func (mn *ObservableDataContext) GetUserById(realmName string, userId uuid.UUID)
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	u, e := mn.GetUserById(realmName, userId)
+	u, e := (*mn.dataContext).GetUserById(realmName, userId)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "get", data.USER, userId.String(), realmName)
 	if e == nil {
@@ -147,7 +147,7 @@ func (mn *ObservableDataContext) CreateRealm(realmData data.Realm) error {
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.CreateRealm(realmData)
+	e := (*mn.dataContext).CreateRealm(realmData)
 	timer.ObserveDuration()
 	key := sf.Format(realmKeyLabelTemplate, "create", data.REALM, realmData.Name)
 	if e == nil {
@@ -170,7 +170,7 @@ func (mn *ObservableDataContext) CreateClient(realmName string, clientData data.
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
 	timer.ObserveDuration()
-	e := mn.CreateClient(realmName, clientData)
+	e := (*mn.dataContext).CreateClient(realmName, clientData)
 	key := sf.Format(realmRelatedKeyLabelTemplate, "create", data.CLIENT, clientData.Name, realmName)
 	if e == nil {
 		mn.metricsCollector.DataSourceRequestsTotalCount.WithLabelValues(key, successStatus).Inc()
@@ -191,7 +191,7 @@ func (mn *ObservableDataContext) CreateUser(realmName string, userData data.User
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.CreateUser(realmName, userData)
+	e := (*mn.dataContext).CreateUser(realmName, userData)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "create", data.USER, userData.GetUsername(), realmName)
 	if e == nil {
@@ -212,7 +212,7 @@ func (mn *ObservableDataContext) UpdateRealm(realmName string, realmData data.Re
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.UpdateRealm(realmName, realmData)
+	e := (*mn.dataContext).UpdateRealm(realmName, realmData)
 	timer.ObserveDuration()
 	key := sf.Format(realmKeyLabelTemplate, "update", data.REALM, realmName)
 	if e == nil {
@@ -233,7 +233,7 @@ func (mn *ObservableDataContext) UpdateClient(realmName string, clientName strin
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.UpdateClient(realmName, clientName, clientData)
+	e := (*mn.dataContext).UpdateClient(realmName, clientName, clientData)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "update", data.CLIENT, clientName, realmName)
 	if e == nil {
@@ -254,7 +254,7 @@ func (mn *ObservableDataContext) UpdateUser(realmName string, userName string, u
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.UpdateUser(realmName, userName, userData)
+	e := (*mn.dataContext).UpdateUser(realmName, userName, userData)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "update", data.USER, userName, realmName)
 	if e == nil {
@@ -275,7 +275,7 @@ func (mn *ObservableDataContext) DeleteRealm(realmName string) error {
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.DeleteRealm(realmName)
+	e := (*mn.dataContext).DeleteRealm(realmName)
 	timer.ObserveDuration()
 	key := sf.Format(realmKeyLabelTemplate, "delete", data.REALM, realmName)
 	if e == nil {
@@ -296,7 +296,7 @@ func (mn *ObservableDataContext) DeleteClient(realmName string, clientName strin
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.DeleteClient(realmName, clientName)
+	e := (*mn.dataContext).DeleteClient(realmName, clientName)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "delete", data.CLIENT, clientName, realmName)
 	if e == nil {
@@ -317,7 +317,7 @@ func (mn *ObservableDataContext) DeleteUser(realmName string, userName string) e
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.DeleteUser(realmName, userName)
+	e := (*mn.dataContext).DeleteUser(realmName, userName)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "delete", data.USER, userName, realmName)
 	if e == nil {
@@ -338,7 +338,7 @@ func (mn *ObservableDataContext) GetUserFederationConfig(realmName string, confi
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	c, e := mn.GetUserFederationConfig(realmName, configName)
+	c, e := (*mn.dataContext).GetUserFederationConfig(realmName, configName)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "get", data.USER_FEDERATION_SERVICE_CONFIG, configName, realmName)
 	if e == nil {
@@ -359,7 +359,7 @@ func (mn *ObservableDataContext) CreateUserFederationConfig(realmName string, us
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.CreateUserFederationConfig(realmName, userFederationConfig)
+	e := (*mn.dataContext).CreateUserFederationConfig(realmName, userFederationConfig)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "create", data.USER_FEDERATION_SERVICE_CONFIG, userFederationConfig.Name, realmName)
 	if e == nil {
@@ -380,7 +380,7 @@ func (mn *ObservableDataContext) UpdateUserFederationConfig(realmName string, co
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.UpdateUserFederationConfig(realmName, configName, userFederationConfig)
+	e := (*mn.dataContext).UpdateUserFederationConfig(realmName, configName, userFederationConfig)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "update", data.USER_FEDERATION_SERVICE_CONFIG, configName, realmName)
 	if e == nil {
@@ -401,7 +401,7 @@ func (mn *ObservableDataContext) DeleteUserFederationConfig(realmName string, co
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.DeleteUserFederationConfig(realmName, configName)
+	e := (*mn.dataContext).DeleteUserFederationConfig(realmName, configName)
 	timer.ObserveDuration()
 	key := sf.Format(realmRelatedKeyLabelTemplate, "delete", data.USER_FEDERATION_SERVICE_CONFIG, configName, realmName)
 	if e == nil {
@@ -422,7 +422,7 @@ func (mn *ObservableDataContext) GetServerSettings() (*data.ServerSettings, erro
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	s, e := mn.GetServerSettings()
+	s, e := (*mn.dataContext).GetServerSettings()
 	timer.ObserveDuration()
 	key := sf.Format(realmLessKeyLabelTemplate, "get", data.USER_FEDERATION_SERVICE_CONFIG)
 	if e == nil {
@@ -443,7 +443,7 @@ func (mn *ObservableDataContext) SetServerSettings(settings *data.ServerSettings
 		us := v * 1000000 // make microseconds
 		mn.metricsCollector.DataSourceRequestDurations.Observe(us)
 	}))
-	e := mn.SetServerSettings(settings)
+	e := (*mn.dataContext).SetServerSettings(settings)
 	timer.ObserveDuration()
 	key := sf.Format(realmLessKeyLabelTemplate, "set", data.USER_FEDERATION_SERVICE_CONFIG)
 	if e == nil {
