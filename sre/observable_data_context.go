@@ -9,7 +9,6 @@ import (
 )
 
 const realmKeyLabelTemplate = "{0}_{1}_{2}"
-const realmRelateResourceKeyWithoutId = "{0}_{1}_for_realm_{2}"
 const realmRelatedKeyLabelTemplate = "{0}_{1}_{2}_for_realm_{3}"
 const realmLessKeyLabelTemplate = "{0}_{1}"
 

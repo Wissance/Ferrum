@@ -59,7 +59,8 @@ func main() {
 		log.Fatalf("bad Operation \"%s\"", operation)
 	}
 	// If there is a password change or password collection, it is not necessary to specify Resource
-	if !(operation == operations.ChangePassword || operation == operations.ResetPassword) {
+
+	if operation != operations.ChangePassword && operation != operations.ResetPassword {
 		isInvalidResource := resource != operations.RealmResource && resource != operations.ClientResource &&
 			resource != operations.UserResource && resource != operations.ServerSettings
 		if isInvalidResource {

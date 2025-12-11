@@ -116,7 +116,7 @@ func (m *MatrixBasedOperationControl) IsOperationAllowed(realmId string, objectI
 		m.logger.Warn(appErr.SecuritySettingsAreNil)
 	}
 
-	var actor actorType = realmUser
+	var actor actorType
 
 	if settings != nil {
 		if settings.Admin.Id == userId {

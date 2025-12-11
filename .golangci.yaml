@@ -1,76 +1,85 @@
+version: "2"
 run:
-  # timeout for analysis, e.g. 30s, 5m, default is 1m
-  timeout: 30m
-
+  go: "1.24"
   modules-download-mode: readonly
-
-  go: '1.24'
-
 output:
-  # colored-line-number|line-number|json|tab|checkstyle|code-climate|junit-xml|github-actions
-  # default is "colored-line-number"
-  formats: code-climate
-
+  formats:
+    code-climate:
+      path: stdout
 linters:
-  enable-all: false
   disable:
-    - exhaustruct
-    - gofumpt
-    - testpackage
     - depguard
-    - tagliatelle
+    - exhaustruct
     - ireturn
+    - tagliatelle
+    - testpackage
     - varnamelen
     - wrapcheck
-
-linters-settings:
-  stylecheck:
-    # Select the Go version to target. The default is '1.13'.
-    # https://staticcheck.io/docs/options#checks
-    checks: [ "all", "-ST1000" ]
-  funlen:
-    lines: 100
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/wissance/Ferrum)
-  gocyclo:
-    min-complexity: 5
-  varnamelen:
-    ignore-names:
-      - id
-    ignore-decls:
-      - ok bool
-  wrapcheck:
-    ignorePackageGlobs:
-      - google.golang.org/grpc/status
-      - github.com/pkg/errors
-      - golang.org/x/sync/errgroup
-  gosec:
-    excludes:
-      - G204
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - containedctx
-        - gocyclo
-        - cyclop
-        - funlen
-        - goerr113
-        - varnamelen
-        - staticcheck
-        - maintidx
-        - lll
-        - paralleltest
-        - dupl
-        - typecheck
-        - wsl
-        - govet
-    - path: main\.go
-      linters:
-        - gochecknoglobals
-        - lll
-        - funlen
+  settings:
+    funlen:
+      lines: 100
+    gocyclo:
+      min-complexity: 5
+    gosec:
+      excludes:
+        - G204
+    staticcheck:
+      checks:
+        - all
+        - -ST1000
+        - -ST1003
+    varnamelen:
+      ignore-names:
+        - id
+      ignore-decls:
+        - ok bool
+    wrapcheck:
+      ignore-package-globs:
+        - google.golang.org/grpc/status
+        - github.com/pkg/errors
+        - golang.org/x/sync/errgroup
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - containedctx
+          - cyclop
+          - dupl
+          - err113
+          - funlen
+          - gocyclo
+          - govet
+          - lll
+          - maintidx
+          - paralleltest
+          - staticcheck
+          - varnamelen
+          - wsl
+        path: _test\.go
+      - linters:
+          - funlen
+          - gochecknoglobals
+          - lll
+        path: main\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/wissance/Ferrum)
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

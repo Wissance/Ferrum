@@ -118,7 +118,7 @@ func (app *Application) Init() (bool, error) {
 		// init logger
 		cfg, err := config.ReadAppConfig(*app.appConfigFile)
 		if err != nil {
-			return false, fmt.Errorf("An error occurred during reading app config file: %w", err)
+			return false, fmt.Errorf("an error occurred during reading app config file: %w", err)
 		}
 		app.appConfig = cfg
 		app.logger = logging.CreateLogger(&app.appConfig.Logging)
