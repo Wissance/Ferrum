@@ -1,18 +1,31 @@
 # Ferrum
 
-Ferrum is a **better** Authorization Server, this is a Community version.
+`Ferrum` (`Ferrum Community Authorization Server`) is a **better** Authorization Server, this is a Community version.
 
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/wissance/Ferrum?style=plastic) 
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/Ferrum?style=plastic) 
 ![GitHub issues](https://img.shields.io/github/issues/wissance/Ferrum?style=plastic)
 ![GitHub Release Date](https://img.shields.io/github/release-date/wissance/Ferrum) 
-![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.1/total?style=plastic)
+![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.3.alpha1/total?style=plastic)
+[![Wissance.WebApiToolkit CI](https://github.com/Wissance/Ferrum/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Wissance/Ferrum/actions/workflows/ci.yml)
 
 ![Ferrum: A better Auth Server](/img/ferrum_cover.png)
 
+## 0. Why Ferrum
+
+* :white_check_mark: Simple configuration and start
+* :sparkles: `Keycloak-compatible API`
+* :boom: Can be **embedded** inside any application or used as a *standalone* application
+* :film_strip: Can be simply install absolutely with no dependent services to single board computer with low resources, requires `40-50 Mb` of `RAM` under low load (10-100 users)
+* :stars: fast (there are no performance test yet, but they will be written during the `0.9.3` version) with aim to be serving up to `10K users on a single node`.
+* :heavy_check_mark: `Ferrum` is widely covered by unit and integration tests every push on `develop` or `master` runs tests and static analyze check with linters.
+* :desktop_computer: `metrics` allow to control all HTTP-requests duration and those part related to data storage access with count three groups by request time - `p50`, `p90` and `p99` also metrics count total amount of requests and errors during requests handling.
+* :microscope: during to modular parts and interface usage, `Ferrum` could be used with any type of persistent storage 
+
 ## 1. Communication
 
-* Discord channel : https://discord.gg/9RYNYu2Mxq
+* [Discord channel](https://discord.gg/9RYNYu2Mxq)
+* [Telegram channel](t.me/ferrum_community_authserver)
 
 ## 2. General info
 
@@ -21,11 +34,11 @@ Ferrum is a **better** Authorization Server, this is a Community version.
 
 Today we are having **following features**:
 
-1. Issue new tokens.
-2. Refresh tokens.
+1. `Issue` new `tokens`.
+2. `Refresh tokens`.
 2. Control user sessions (token expiration).
-3. Get UserInfo.
-4. Token Introspect.
+3. Get `UserInfo`.
+4. Token `Introspect`.
 4. Managed from external code (`Start` and `Stop`) making them an ***ideal candidate*** for using in ***integration
    tests*** for WEB API services that uses `Keycloak` as authorization server;
 5. Ability to use different data storage:
@@ -49,6 +62,8 @@ First of all build is simple run `go build` from application root directory. Add
 to generate self signed certificates - run `go generate` from command line
 
 If you don't specify the name of executable (by passing -o {execName} to go build) than name of executable = name of project
+
+For running static analyze check use command `golangci-lint run`
 
 ### 3.2 Run application as Standalone
 
@@ -192,6 +207,22 @@ Since version `0.9.1` it is possible to use `CLI Admin` [See](api/admin/cli/READ
 4. Run admin interface providing a valid config `ferrum-admin --config=config_docker_w_redis.json ...`, see picture
 
 ![Use CLI Admin from docker](/img/additional/cli_from_docker.png)
+
+### 5.2 Observability (SRE)
+
+For checking application state, we could query the `~/metrics` endpoint (i.e., for local instance full `URL` - `http://127.0.0.1/metrics`). But starting with `0.9.3` were added `prometheus` and `grafana` to be running simultaneously with `Ferrum` using `docker-compose`. `Grafana` model could be found [here](/prometheus/grafana_ferrum_dashboard_model.json). It requires only replacing the Prometheus ID.
+
+`Grafana` model allows us to observe the following:
+
+1. `HTTP-request` duration with calculation average requests duration.
+2. The total number of `HTTP-request` and requests ended with `4xx` and `5xx` status codes.
+3. Data source operation duration to see where it could be the bottleneck and observe `CLI` admin interface too.
+4. Resident memory consumption
+5. `CPU` in % consumption
+6. Number of goroutines used by Go
+
+Screenshot with grafana dashboard:
+![Grafana dashboard](/img/additional/sre_grafana_example.png)
 
 ## 6. Contributors
 
