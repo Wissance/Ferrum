@@ -47,7 +47,7 @@ def main():
         print ("********* Ferrum perf test data generation failed ********")
 
 def make_create_realm_cmd(realm_number:int, app_config:str) -> tuple[str, str]:
-    realm_create_template = "./ferrum-admin --config={0} --resource=realm --operation=create --value=--value=\'{{\"name\": \"{1}\", \"user_federation_services\":[], \"token_expiration\": 600, \"refresh_expiration\": 300 }}\'"
+    realm_create_template = "./ferrum-admin --config={0} --resource=realm --operation=create --value=\'{{\"name\": \"{1}\", \"user_federation_services\":[], \"token_expiration\": 600, \"refresh_expiration\": 300 }}\'"
     realm = str.format("realm_{0}", realm_number)
     realm_create_cmd = realm_create_template.format(app_config, realm)
     return realm, realm_create_cmd
@@ -61,7 +61,7 @@ def make_create_client_cmd(realm:str, client_number:int, app_config:str, client_
 
 def make_create_user_cmd(realm:str, user_number:int, app_config:str, password:str) -> tuple[str, str]:
     username = str.format("u{0}",user_number)
-    user_create_template = "./ferrum-admin --config={0} --resource=user --operation=create --value=\'{{\"info\": {{\"sub\": \"{1}\", \"email_verified\": true, \"roles\": [\"admin\"], \"name\": \"{2}\", \"preferred_username\": \"{3}\", \"given_name\": \"{4}\", \"family_name\": \"{5}\"}}, \"credentials\": {{\"password\": \"{6}\"}}\' --params=\"{7}\""
+    user_create_template = "./ferrum-admin --config={0} --resource=user --operation=create --value=\'{{\"info\": {{\"sub\": \"{1}\", \"email_verified\": true, \"roles\": [\"admin\"], \"name\": \"{2}\", \"preferred_username\": \"{3}\", \"given_name\": \"{4}\", \"family_name\": \"{5}\"}}, \"credentials\": {{\"password\": \"{6}\"}} }}\' --params=\"{7}\""
     name = str.format("user_{0}_in_{1}", user_number, realm)
     sub = str.format("00000000-0000-0000-0000-{0:012d}", user_number)
     user_create_cmd = user_create_template.format(app_config, sub, name, username, name, name, password, realm)
