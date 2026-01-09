@@ -43,7 +43,7 @@ export default function () {
     let getTokenResponse = getAccessToken(ferrumBaseUrl, realm, clientId, clientSecret, user, userPassword)
     // check status
     check(getTokenResponse, {
-        'status is 200': (r) => r.status === 200,
+        'Get access token status is 200': (r) => r.status === 200,
     });
     const responseBody = JSON.parse(getTokenResponse.body);
     let accessToken = responseBody.access_token
@@ -51,6 +51,12 @@ export default function () {
     for (let i = 0; i < iterationNum; i++) {
         let pause = getRandomInt(10, 40)
         sleep(pause)
+        let getUserInfoResponse = getUserInfo(ferrumBaseUrl, realm, accessToken)
+        check(getUserInfoResponse, {
+            'Get userinfo status is 200': (r) => r.status === 200,
+        });
+        const userInfoResponseBody = JSON.parse(getUserInfoResponse.body);
+        // todo(umv) : check username here
     }
 
 };
@@ -59,7 +65,7 @@ export default function () {
  * baseUrl is part protocol://host:port
  * */
 function getAccessToken(baseUrl, realm, clientId, secret, username, password) {
-    const url = baseUrl+"/auth/realms/" + realm + "/protocol/openid-connect/token"; // A service that echoes the request
+    const url = baseUrl+"/auth/realms/" + realm + "/protocol/openid-connect/token";
 
     var payload = {
         "client_id": clientId,
@@ -81,11 +87,19 @@ function getAccessToken(baseUrl, realm, clientId, secret, username, password) {
     return http.post(url, payload, params);
 }
 
-/*
- *
+/* This function get userInfo from Ferrum
+ * baseUrl is part protocol://host:port
  * */
 function getUserInfo(baseUrl, realm, accessToken) {
+    const url = baseUrl+"/auth/realms/" + realm + "/protocol/openid-connect/userinfo";
 
+    let params = {
+        headers: {
+            "Authorization": "Bearer " + accessToken,
+        },
+    };
+
+    return http.get(url, params);
 }
 
 function getRandomInt(min, max) {

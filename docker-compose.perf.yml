@@ -1,0 +1,159 @@
+version: '3.9'
+
+volumes:
+  redis_data: {}
+  app_data: {}
+  k6_tools_data: {}
+  nginx_cfg: {}
+  nginx_certs: {}
+  grafana_data: {}
+  prometheus_cfg:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: 'prometheus'
+
+
+networks:
+  wissance_ferrum_eth:
+    driver: bridge
+    ipam:
+      config:
+        - gateway: 10.50.40.1
+          subnet: 10.50.40.0/24
+
+services:
+  redis:
+    container_name: wissance_ferrum_db
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.2
+    hostname: redis
+    image: "redis/redis-stack:7.2.0-v2"
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - redis_data:/data
+    environment:
+      REDIS_ARGS: ${REDIS_ARGS}
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    expose:
+      - "6379"
+      - "8001"
+
+  ferrum:
+    container_name: wissance_ferrum_webapi
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.3
+        aliases:
+          - ferrum.dev.local
+    hostname: ferrum
+    stdin_open: true
+    tty: true
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - app_data:/data
+      - nginx_cfg:/nginx_cfg
+    environment:
+      VIRTUAL_HOST: ferrum.dev.local
+      WAIT_HOSTS: redis:6379
+      FERRUM_DATA_INIT_SCRIPT: "r100_u100_demo_data.sh"
+    depends_on:
+      redis:
+        condition: service_started
+    ports:
+      - "8182:8182"
+    expose:
+      - "8182"
+
+  nginx-proxy:
+    container_name: wissance_reverse_proxy
+    image: nginxproxy/nginx-proxy
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.4
+    ports:
+      - '80:80'
+    extra_hosts:
+      - ferrum.dev.local:10.50.40.3
+    depends_on:
+      - ferrum
+    volumes:
+      - nginx_cfg:/etc/nginx/
+      - nginx_certs:/etc/ssl/certs
+      - '/var/run/docker.sock:/tmp/docker.sock:ro'
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: wissance_ferrum_prometheus
+    depends_on:
+      ferrum:
+        condition: service_started
+    volumes:
+      - prometheus_cfg:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.10
+        aliases:
+          - prometheus.dev.local
+    hostname: prometheus
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: wissance_ferrum_grafana
+    volumes:
+      # This maps the internal Grafana data directory to a named Docker volume
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.11
+        aliases:
+          - grafana.dev.local
+    hostname: grafana
+    depends_on:
+      - prometheus
+  influxdb:
+    container_name: wissance_ferrum_influxdb
+    image: influxdb:latest
+    hostname: influxdb
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.12
+        aliases:
+          - influxdb.dev.local
+    ports:
+      - "8086:8086"
+    environment:
+      - INFLUXDB_DB=k6
+  k6:
+    image: grafana/k6:latest
+    networks:
+      wissance_ferrum_eth:
+        ipv4_address: 10.50.40.20
+        aliases:
+          - influxdb.dev.local
+    ports:
+      - "6565:6565"
+    environment:
+      - K6_OUT=influxdb=http://influxdb:8086/k6
+    volumes:
+      - k6_tools_data:/tools
+    depends_on:
+      - influxdb
