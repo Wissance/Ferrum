@@ -35,7 +35,7 @@ def main():
                 f.write(client_cmd)
                 f.write("\n")
                 #todo(umv) :create users
-                for u in range(1, users_per_realm_number):
+                for u in range(1, users_per_realm_number + 1):
                     username, user_cmd = make_create_user_cmd(realm, user_number, default_config, default_password)
                     user_number+=1
                     f.write(user_cmd)

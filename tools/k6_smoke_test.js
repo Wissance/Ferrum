@@ -1,5 +1,6 @@
 import http from 'k6/http';
 import { check } from "k6";
+import { sleep } from 'k6';
 export let options = {
     stages: [
         // Ramp-up from 1 to 10 VUs in 15s
@@ -35,10 +36,13 @@ export default function () {
     // 1. Get random realm (1-100) && user (1-100)
     let randomRealm = getRandomInt(1, 100)
     let realm = "realm_" + randomRealm
+    console.log("Using Realm is: " + realm)
     let randomUserRel = getRandomInt(1, 100)
-    let absUser = randomRealm * 100 + randomUserRel
+    let absUser = (randomRealm - 1) * 100 + randomUserRel
     let user = "u" + absUser
+    console.log("Using User is: " + user)
     let clientId = "client_" + randomRealm
+    console.log("Using Client is: " + clientId)
     // 2. Get Access Token
     let getTokenResponse = getAccessToken(ferrumBaseUrl, realm, clientId, clientSecret, user, userPassword)
     // check status
@@ -49,7 +53,7 @@ export default function () {
     let accessToken = responseBody.access_token
     // 3. Iterations over userInfo
     for (let i = 0; i < iterationNum; i++) {
-        let pause = getRandomInt(10, 40)
+        let pause = getRandomInt(1, 4)
         sleep(pause)
         let getUserInfoResponse = getUserInfo(ferrumBaseUrl, realm, accessToken)
         check(getUserInfoResponse, {
@@ -68,12 +72,12 @@ function getAccessToken(baseUrl, realm, clientId, secret, username, password) {
     const url = baseUrl+"/auth/realms/" + realm + "/protocol/openid-connect/token";
 
     var payload = {
-        "client_id": clientId,
-        "client_secret" : secret,
-        "username": username,
-        "password": password,
-        "grant_type": "password",
-        "scope": "profile"
+        client_id: clientId,
+        client_secret : secret,
+        username: username,
+        password: password,
+        grant_type: "password",
+        scope: "profile"
     };
 
     // k6 automatically handles the encoding and sets the header,
@@ -106,4 +110,10 @@ function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pad(n, width, z) {
+    z = z || '0';
+    n = n + '';
+    return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
