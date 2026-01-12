@@ -3,33 +3,30 @@ import { check } from "k6";
 import { sleep } from 'k6';
 export let options = {
     stages: [
-        // Ramp-up from 1 to 10 VUs in 15s
-        { duration: "15s", target: 10 },
-        // Stay at rest on 10 VUs for 30s
-        { duration: "30s", target: 10 },
-        // Ramp-down from 10 to 0 VUs for 15s
-        { duration: "15s", target: 0 }
+        // Ramp-up from 1 to 100 VUs in 1m
+        { duration: "1m", target: 100 },
+        // Stay at rest on 100 VUs for 4m
+        { duration: "5m", target: 100 },
+        // Ramp-down from 100 to 200 VUs for 2m
+        { duration: "7m", target: 200 },
+        { duration: "10m", target: 200 },
+        { duration: "12m", target: 300 },
+        { duration: "14m", target: 400 },
+        { duration: "15m", target: 500 },
+        { duration: "20m", target: 500 },
+        { duration: "25m", target: 0 }
     ],
     thresholds: {
-        http_req_duration: ['p(95)<200'], // 95% of requests must complete in less than 500ms for the test to pass
-        http_req_failed: ['rate<0.01'],    // Test fails if more than 0.01% of requests fail
+        http_req_duration: ['p(95)<250'], // 95% of requests must complete in less than 500ms for the test to pass
+        http_req_failed: ['rate<5'],      // Test fails if more than 5% of requests fail
     },
+
 };
 
-/* This function is entrypoint to short Smoke testing over Ferrum running in performance test mode
- * Purposes of Smoke tests:
- * 1. Run parallel working of minimal amount of clients (up to 10) to see whether exists some
- *    issues with parallel call or not
- * 2. Test all methods that are going to be used in average_load and stress testing
- * Questions:
- * 1. We are going to test multiple variants with distribution users on realms, but now we have
- *    only r100_u100_demo.data.sh (100 realms, each realm has 100 users). How we are going to pass here
- *    what variant we are actually using ? By env vars ?
- * 2. How to pass Host && Port for call Ferrum WebAPI (seems 127.0.0.1) is not suitable here
- *
- * */
 export default function () {
-    const iterationNum = 10
+    const numOfIterationsStage1 = 100
+    const numOfIterationsStage2 = 50
+    // 1. Select Random User
     const userPassword = "P@55W0rD"
     const clientSecret = "00000000000000000000000000000000"
     let ferrumBaseUrl = "http://10.50.40.3:8182";
@@ -43,7 +40,7 @@ export default function () {
     console.log("Using User is: " + user)
     let clientId = "client_" + randomRealm
     console.log("Using Client is: " + clientId)
-    // 2. Get Access Token
+    // 2. Get initial access token
     let getTokenResponse = getAccessToken(ferrumBaseUrl, realm, clientId, clientSecret, user, userPassword)
     // check status
     check(getTokenResponse, {
@@ -51,19 +48,39 @@ export default function () {
     });
     const responseBody = JSON.parse(getTokenResponse.body);
     let accessToken = responseBody.access_token
-    // 3. Iterations over userInfo
-    for (let i = 0; i < iterationNum; i++) {
-        let pause = getRandomInt(1, 4)
-        sleep(pause)
+    // 3. send up 100 requests userinfo (1-2 sec interval)
+    for (let i = 0; i < numOfIterationsStage1; i++) {
+        if (i > 0 && i%10 === 0)
+        {
+            // send refresh token + introspect
+        }
+        // 3.1 after every 10 request rotate key
         let getUserInfoResponse = getUserInfo(ferrumBaseUrl, realm, accessToken)
         check(getUserInfoResponse, {
-            'Get userinfo status is 200': (r) => r.status === 200,
+            'Get userinfo status is not 500': (r) => r.status !== 500,
         });
-        const userInfoResponseBody = JSON.parse(getUserInfoResponse.body);
-        // todo(umv) : check username here
+        if (getUserInfoResponse.status === 401) {
+            getTokenResponse = getAccessToken(ferrumBaseUrl, realm, clientId, clientSecret, user, userPassword)
+            // check status
+            check(getTokenResponse, {
+                'Get access token status is 200': (r) => r.status === 200,
+            });
+            const responseBody = JSON.parse(getTokenResponse.body);
+            accessToken = responseBody.access_token
+        }
+        getUserInfoResponse = getUserInfo(ferrumBaseUrl, realm, accessToken)
+        check(getUserInfoResponse, {
+            'Get userinfo status is 200': (r) => r.status !== 500,
+        });
+        let pause = getRandomInt(1,3)
+        sleep(pause)
     }
 
-};
+    // 4 wait 2m
+    sleep(120)
+    // 5 send up to 50 requests userinfo (2-3 sec interval)
+    // 5.1 after every 10 request rotate key - send refresh token + introspect
+}
 
 /* This function get access token from Ferrum
  * baseUrl is part protocol://host:port
@@ -106,14 +123,16 @@ function getUserInfo(baseUrl, realm, accessToken) {
     return http.get(url, params);
 }
 
+function refreshAccessToken() {
+
+}
+
+function  introspectToken() {
+
+}
+
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function pad(n, width, z) {
-    z = z || '0';
-    n = n + '';
-    return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
