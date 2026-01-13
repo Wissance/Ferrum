@@ -15,8 +15,8 @@ const (
 	failureStatus  = "failure"
 	keyLabel       = "key"
 	errorTypeLabel = "error type"
-	clientError    = "client"
-	serverError    = "server"
+	// clientError    = "client"
+	serverError = "server"
 )
 
 // MetricsCollector is a struct that collects of metrics that is using for application observability
@@ -112,12 +112,16 @@ func (mc *MetricsCollector) HttpMetricsCollectMiddleware(next http.Handler) http
 			timer.ObserveDuration()
 			// collect request count
 			mc.HttpRequestsTotalCount.WithLabelValues(path, http.StatusText(lrw.StatusCode)).Inc()
-			if lrw.StatusCode >= 400 {
+			// todo(UMV): temporary client errors were off
+			/*if lrw.StatusCode >= 400 {
 				if lrw.StatusCode < 500 {
 					mc.HttpRequestsErrorCount.WithLabelValues(path, clientError).Inc()
 				} else {
 					mc.HttpRequestsErrorCount.WithLabelValues(path, serverError).Inc()
 				}
+			}*/
+			if lrw.StatusCode >= 500 {
+				mc.HttpRequestsErrorCount.WithLabelValues(path, serverError).Inc()
 			}
 		}
 	})

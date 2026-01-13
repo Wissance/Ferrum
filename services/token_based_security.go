@@ -18,7 +18,7 @@ import (
 type TokenBasedSecurityService struct {
 	DataProvider *managers.DataContext
 	UserSessions map[string][]data.UserSession
-	mutex        *sync.Mutex
+	mutex        *sync.RWMutex
 	logger       *logging.AppLogger
 }
 
@@ -30,7 +30,7 @@ type TokenBasedSecurityService struct {
  * Returns instance of TokenBasedSecurityService as SecurityService
  */
 func CreateSecurityService(dataProvider *managers.DataContext, logger *logging.AppLogger) SecurityService {
-	pwdSecService := &TokenBasedSecurityService{DataProvider: dataProvider, mutex: &sync.Mutex{},
+	pwdSecService := &TokenBasedSecurityService{DataProvider: dataProvider, mutex: &sync.RWMutex{},
 		UserSessions: map[string][]data.UserSession{}, logger: logger}
 	secService := SecurityService(pwdSecService)
 	return secService
@@ -133,7 +133,9 @@ func (service *TokenBasedSecurityService) GetCurrentUserById(realmName string, u
  * Returns: identifier of session
  */
 func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, userId uuid.UUID, duration int, refresh int) uuid.UUID {
+	service.mutex.RLock()
 	realmSessions, ok := service.UserSessions[realm]
+	service.mutex.RUnlock()
 	sessionId := uuid.New()
 	// if there are no realm sessions ...
 	if !ok {
@@ -143,27 +145,35 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 			Expired:        started.Add(time.Second * time.Duration(duration)),
 			RefreshExpired: started.Add(time.Second * time.Duration(refresh)),
 		}
+		service.mutex.Lock()
 		service.UserSessions[realm] = append(realmSessions, userSession)
+		service.mutex.Unlock()
 		return sessionId
 	}
 	// realm session exists, we should find and update Expired values OR add new
+	// todo(UMV): could be an issue with map concurrent write
+	service.mutex.RLock()
 	for i, s := range realmSessions {
 		if s.UserId == userId {
 			realmSessions[i].Expired = time.Now().Add(time.Second * time.Duration(duration))
 			realmSessions[i].RefreshExpired = time.Now().Add(time.Second * time.Duration(refresh))
 			// todo(UMV): could be an issue with map concurrent write
+			service.mutex.RUnlock()
 			service.mutex.Lock()
 			service.UserSessions[realm] = realmSessions
 			service.mutex.Unlock()
 			return s.Id
 		}
 	}
+	service.mutex.RUnlock()
 	// such session does not exist, adding
 	userSession := data.UserSession{
 		Id: sessionId, UserId: userId, Started: time.Now(),
 		Expired: time.Now().Add(time.Second * time.Duration(duration)),
 	}
+	service.mutex.Lock()
 	service.UserSessions[realm] = append(realmSessions, userSession)
+	service.mutex.Unlock()
 	return userSession.Id
 }
 
@@ -177,20 +187,26 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
  * Returns nothing
  */
 func (service *TokenBasedSecurityService) AssignTokens(realm string, userId uuid.UUID, accessToken *string, refreshToken *string) {
+	service.mutex.RLock()
 	realmSessions, ok := service.UserSessions[realm]
+	shouldUnlock := true
 	if ok {
-		// index := -1
 		for i, s := range realmSessions {
 			if s.UserId == userId {
+				shouldUnlock = false
+				service.mutex.RUnlock()
+				service.mutex.Lock()
 				realmSessions[i].JwtAccessToken = *accessToken
 				realmSessions[i].JwtRefreshToken = *refreshToken
 				// todo(UMV): this is a known issue with map concurrent write
-				service.mutex.Lock()
 				service.UserSessions[realm] = realmSessions
 				service.mutex.Unlock()
 				break
 			}
 		}
+	}
+	if shouldUnlock {
+		service.mutex.RUnlock()
 	}
 }
 
@@ -202,15 +218,19 @@ func (service *TokenBasedSecurityService) AssignTokens(realm string, userId uuid
  * Returns data.UserSession if found or nil
  */
 func (service *TokenBasedSecurityService) GetSession(realm string, userId uuid.UUID) *data.UserSession {
+	service.mutex.RLock()
 	realmSessions, ok := service.UserSessions[realm]
 	if !ok {
+		service.mutex.RUnlock()
 		return nil
 	}
 	for _, s := range realmSessions {
 		if s.UserId == userId {
+			service.mutex.RUnlock()
 			return &s
 		}
 	}
+	service.mutex.RUnlock()
 	return nil
 }
 
@@ -222,15 +242,20 @@ func (service *TokenBasedSecurityService) GetSession(realm string, userId uuid.U
  * Returns data.UserSession if found or nil
  */
 func (service *TokenBasedSecurityService) GetSessionByAccessToken(realm string, token *string) *data.UserSession {
+	service.mutex.RLock()
 	realmSessions, ok := service.UserSessions[realm]
 	if !ok {
+		service.mutex.RUnlock()
 		return nil
 	}
+
 	for _, s := range realmSessions {
 		if s.JwtAccessToken == *token {
+			service.mutex.RUnlock()
 			return &s
 		}
 	}
+	service.mutex.RUnlock()
 	return nil
 }
 
@@ -242,15 +267,20 @@ func (service *TokenBasedSecurityService) GetSessionByAccessToken(realm string, 
  * Returns data.UserSession if found or nil
  */
 func (service *TokenBasedSecurityService) GetSessionByRefreshToken(realm string, token *string) *data.UserSession {
+	service.mutex.RLock()
 	realmSessions, ok := service.UserSessions[realm]
 	if !ok {
+		service.mutex.RUnlock()
 		return nil
 	}
+
 	for _, s := range realmSessions {
 		if s.JwtRefreshToken == *token {
+			service.mutex.RUnlock()
 			return &s
 		}
 	}
+	service.mutex.RUnlock()
 	return nil
 }
 
