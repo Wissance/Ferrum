@@ -76,11 +76,6 @@ export default function () {
         let pause = getRandomInt(1,3)
         sleep(pause)
     }
-
-    // 4 wait 2m
-    // sleep(120)
-    // 5 send up to 50 requests userinfo (2-3 sec interval)
-    // 5.1 after every 10 request rotate key - send refresh token + introspect
 }
 
 function geUserInfoCheck(baseUrl, realm, clientId, secret, username, password, accessToken) {
