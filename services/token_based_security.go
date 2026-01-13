@@ -1,6 +1,7 @@
 package services
 
 import (
+	"sync"
 	"time"
 
 	sf "github.com/wissance/stringFormatter"
@@ -17,6 +18,7 @@ import (
 type TokenBasedSecurityService struct {
 	DataProvider *managers.DataContext
 	UserSessions map[string][]data.UserSession
+	mutex        *sync.Mutex
 	logger       *logging.AppLogger
 }
 
@@ -28,7 +30,8 @@ type TokenBasedSecurityService struct {
  * Returns instance of TokenBasedSecurityService as SecurityService
  */
 func CreateSecurityService(dataProvider *managers.DataContext, logger *logging.AppLogger) SecurityService {
-	pwdSecService := &TokenBasedSecurityService{DataProvider: dataProvider, UserSessions: map[string][]data.UserSession{}, logger: logger}
+	pwdSecService := &TokenBasedSecurityService{DataProvider: dataProvider, mutex: &sync.Mutex{},
+		UserSessions: map[string][]data.UserSession{}, logger: logger}
 	secService := SecurityService(pwdSecService)
 	return secService
 }
@@ -148,7 +151,10 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 		if s.UserId == userId {
 			realmSessions[i].Expired = time.Now().Add(time.Second * time.Duration(duration))
 			realmSessions[i].RefreshExpired = time.Now().Add(time.Second * time.Duration(refresh))
+			// todo(UMV): could be an issue with map concurrent write
+			service.mutex.Lock()
 			service.UserSessions[realm] = realmSessions
+			service.mutex.Unlock()
 			return s.Id
 		}
 	}
@@ -178,7 +184,10 @@ func (service *TokenBasedSecurityService) AssignTokens(realm string, userId uuid
 			if s.UserId == userId {
 				realmSessions[i].JwtAccessToken = *accessToken
 				realmSessions[i].JwtRefreshToken = *refreshToken
+				// todo(UMV): this is a known issue with map concurrent write
+				service.mutex.Lock()
 				service.UserSessions[realm] = realmSessions
+				service.mutex.Unlock()
 				break
 			}
 		}
