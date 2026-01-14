@@ -127,10 +127,10 @@ Perfomance test running automatically with `K6` included in separate [docker-com
 
 Result of running avg load - 10 ms average response time, `p99` (99% of requests) duration around `20 ms`, maximum RAM usage during this test is `130 Mb` and takes `2 CPU Cores`, see results below:
 
-![Grafana during avg test](/img/additional/ck6_500users_avg_loading.png)
+![Grafana during avg test](/img/additional/k6_500users_avg_loading.png)
 
 And Summary of result from the K6 window:
-![K6 avg load summary](/img/additional/ck6_500users_avg_loading_res.png)
+![K6 avg load summary](/img/additional/k6_500users_avg_loading_res.png)
 
 
 ## 5. Configure
