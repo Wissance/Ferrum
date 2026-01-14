@@ -244,7 +244,75 @@ For checking application state, we could query the `~/metrics` endpoint (i.e., f
 Screenshot with grafana dashboard:
 ![Grafana dashboard](/img/additional/sre_grafana_example.png)
 
-## 7. Contributors
+## 7. Changes
+
+Brief info about changes in releases.
+
+### 7.1 Changes in 0.0.1
+
+Features:
+* `Keycloak` compatible HTTP-endpoints to issue a new `token` and to get `userinfo`
+
+### 7.2 Changes in 0.1.0
+
+Features:
+* documentation (`readme.md` file)
+* integration tests
+
+### 7.3 Changes in 0.1.1
+
+Features:
+* fixed modules names
+
+### 7.4 Changes in 0.1.2
+
+Features:
+* changed module names to make it available to embed `Ferrum` in an other applications
+
+### 7.5 Changes in 0.1.3
+
+Features:
+* `Keycloak` compatible HTTP-endpoint for token introspect
+
+### 7.6 Changes in 0.1.4
+
+Features:
+* removed `/` therefore it is possible to interact with `Ferrum` using `go-cloak` package
+
+### 7.7 Changes in 0.9.0
+
+Features
+* logging
+* implemented token refresh
+* better docs
+
+### 7.8 Changes in 0.9.1
+
+Features:
+* `docker` && `docker-compose` for app running
+* admin `CLI` `API`
+* `Redis` as a production data storage
+
+### 7.9 Changes in 0.9.2
+
+Features:
+* admin cli added to docker
+* test on `Redis` data manger
+* used different config to run locally and in docker
+* newer `Keycloak` versions support
+* checked stability if `Redis` is down, `Ferrum` does not crushes and wait until `Redis` is ready
+* `swagger` (`-devmode` option in cmd line) and `Keycloak` compatible HTTP endpoint `openid-configuration`
+* support for federated user (without full providers impl, just preliminary)
+* store password as a hashes
+
+### 7.10 Changes in 0.9.3.rc1
+
+* created `service admin account` and server settings
+* created rules of matrix to check allowed operations with domain objects based on current user
+* added `SRE metrics` to check `Ferrum` state with `Grafana` dashboard
+* added automatic tests with `K6` and checked performance with `~20ms` on request with 500 users simultaneously.
+
+## 8. Contributors
 
 <a href="https://github.com/Wissance/Ferrum/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=Wissance/Ferrum" />
