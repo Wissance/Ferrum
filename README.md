@@ -1,33 +1,37 @@
 # Ferrum
 
-`Ferrum` (`Ferrum Community Authorization Server`) is a **better** Authorization Server, this is a Community version.
+`Ferrum` (`Ferrum Community Authorization Server`) is a Authorization Server that is
+* :comet:fast, 
+* :fire:low resource consumption, 
+* :heavy_check_mark:fully tested including performance testing
 
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/wissance/Ferrum?style=plastic) 
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/Ferrum?style=plastic) 
 ![GitHub issues](https://img.shields.io/github/issues/wissance/Ferrum?style=plastic)
 ![GitHub Release Date](https://img.shields.io/github/release-date/wissance/Ferrum) 
-![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.3.alpha1/total?style=plastic)
+![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.3.rc1/total?style=plastic)
 [![Wissance.WebApiToolkit CI](https://github.com/Wissance/Ferrum/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Wissance/Ferrum/actions/workflows/ci.yml)
 
 ![Ferrum: A better Auth Server](/img/ferrum_cover.png)
 
-## 0. Why Ferrum
+## 1. Why Ferrum
 
-* :white_check_mark: Simple configuration and start
+### 1.1 Main Ferrum advantages:
+* :white_check_mark: Simple configuration and start either as a **native app** or an `docker` containerized app;
 * :sparkles: `Keycloak-compatible API`
 * :boom: Can be **embedded** inside any application or used as a *standalone* application
-* :film_strip: Can be simply install absolutely with no dependent services to single board computer with low resources, requires `40-50 Mb` of `RAM` under low load (10-100 users)
-* :stars: fast (there are no performance test yet, but they will be written during the `0.9.3` version) with aim to be serving up to `10K users on a single node`.
-* :heavy_check_mark: `Ferrum` is widely covered by unit and integration tests every push on `develop` or `master` runs tests and static analyze check with linters.
+* :film_strip: Can be simply install absolutely with no dependent services to single board computer with `low resource usage`, requires `40-50 Mb` of `RAM` with up to `100 - 200 users`;
+* :stars: *fast* (there are no performance test yet, but they will be written during the `0.9.3` version) with aim to be serving up to `10K users on a single node`, `0.9.3.rc1` `K6` automated performance tests shows **500 users** simultaneous work with `~20ms 99% of requests` with < `130 Mb of RAM`  and `2 CPU Cores` usage;
+* :heavy_check_mark: `Ferrum` is widely covered by unit and integration tests every push on `develop` or `master` runs tests and static analyze check with `linters`.
 * :desktop_computer: `metrics` allow to control all HTTP-requests duration and those part related to data storage access with count three groups by request time - `p50`, `p90` and `p99` also metrics count total amount of requests and errors during requests handling.
 * :microscope: during to modular parts and interface usage, `Ferrum` could be used with any type of persistent storage 
 
-## 1. Communication
+## 2. Communication
 
 * [Discord channel](https://discord.gg/9RYNYu2Mxq)
 * [Telegram channel](t.me/ferrum_community_authserver)
 
-## 2. General info
+## 3. General info
 
 `Ferrum` is `OpenId-Connect` Authorization server written on GO. It has Data Contract similar to
 `Keycloak` server (**minimal `Keycloak`** and we'll grow to full-fledged `KeyCloak` analog).
@@ -54,9 +58,9 @@ it has `endpoints` SIMILAR to `Keycloak`, at present time we are having followin
 2. Get UserInfo `GET  ~/auth/realms/{realm}/protocol/openid-connect/userinfo`
 3. Introspect tokens `POST ~/auth/realms/{realm}/protocol/openid-connect/token/introspect`
 
-## 3. How to use
+## 4. How to use
 
-### 3.1 Build
+### 4.1 Build
 
 First of all build is simple run `go build` from application root directory. Additionally it is possible
 to generate self signed certificates - run `go generate` from command line
@@ -65,7 +69,7 @@ If you don't specify the name of executable (by passing -o {execName} to go buil
 
 For running static analyze check use command `golangci-lint run`
 
-### 3.2 Run application as Standalone
+### 4.2 Run application as Standalone
 
 Run is simple (`Ferrum` starts with default config - `config.json`):
 ```ps1
@@ -78,7 +82,7 @@ To run `Ferrum` with selected config i.e. `config_w_redis.json` :
 ./Ferrum --config ./config_w_redis.json
 ```
 
-### 3.3 Run application in docker
+### 4.3 Run application in docker
 
 It is possible to start app in docker with already installed `REDIS` and with initial data (see python
 data insert script):
@@ -87,7 +91,7 @@ data insert script):
     docker-compose up --build 
 ```
 
-### 3.4 Run with direct configuration && data pass from code (embedding Authorization server in you applications)
+### 4.4 Run with direct configuration && data pass from code (embedding Authorization server in you applications)
 
 There are 2 ways to use `Ferrum`:
 1. Start with config file (described above)
@@ -105,7 +109,10 @@ There are 2 ways to use `Ferrum`:
 	app.Stop()
    ```
 
-### Test
+### 4.5 Testing
+
+### 4.5.1 Functional testing
+
 At present moment we have 2 fully integration tests, and number of them continues to grow. To run test execute from cmd:
 ```ps1
 go test
@@ -113,9 +120,22 @@ go test
 For running Manager tests on `Redis` you must have redis on `127.0.0.1:6379` with `ferrum_db` / `FeRRuM000` `auth` `user+password`
 pair, it is possible to start docker_compose and test on compose `ferrum_db` container 
 
-## 4. Configure
+### 4.5.2 Performance testing
+Perfomance test running automatically with `K6` included in separate [docker-compose](./docker-compose.perf) running with powershell script - `start_docker_perftests.ps1`. `K6` tests itself located in `tools folder` started with prefix `k6`:
+* `k6_smoke_test.js` - small load with 10 users with 1 min duration;
+* `k6_average_load_test.js` - average load with up to 500 users running ~ `1 hour`
 
-### 4.1 Server configuration
+Result of running avg load - 10 ms average response time, `p99` (99% of requests) duration around `20 ms`, maximum RAM usage during this test is `130 Mb` and takes `2 CPU Cores`, see results below:
+
+![Grafana during avg test](/img/additional/ck6_500users_avg_loading.png)
+
+And Summary of result from the K6 window:
+![K6 avg load summary](/img/additional/ck6_500users_avg_loading_res.png)
+
+
+## 5. Configure
+
+### 5.1 Server configuration
 
 Configuration splitted onto several sections:
 
@@ -135,7 +155,7 @@ Configuration splitted onto several sections:
       - key file that is using for `JWT` tokens generation (`access_token` && `refresh_token`), 
         name `keyfile` (without extensions).
 
-### 4.2 Configure user data as you wish
+### 5.2 Configure user data as you wish
 
 Users does not have any specific structure, you could add whatever you want, but for compatibility
 with keycloak and for ability to check password minimal user looks like:
@@ -155,7 +175,7 @@ with keycloak and for ability to check password minimal user looks like:
 in this minimal user example you could expand `info` structure as you want, `credentials` is a service structure,
 there are NO SENSES in modifying it.
 
-### 4.3 Server embedding into application (use from code)
+### 5.3 Server embedding into application (use from code)
 
 Minimal full example of how to use coud be found in `application_test.go`, here is a minimal snippet:
 
@@ -195,11 +215,11 @@ if err != nil {
 app.Stop()
 ```
 
-## 5. Server administer
+## 6. Server administer
 
 Since version `0.9.1` it is possible to use `CLI Admin` [See](api/admin/cli/README.md)
 
-### 5.1 Use CLI admin in a docker
+### 6.1 Use CLI admin in a docker
 
 1. Run docker compose - `docker compose up --build`
 2. List running containers - `docker ps -a`
@@ -208,7 +228,7 @@ Since version `0.9.1` it is possible to use `CLI Admin` [See](api/admin/cli/READ
 
 ![Use CLI Admin from docker](/img/additional/cli_from_docker.png)
 
-### 5.2 Observability (SRE)
+### 6.2 Observability (SRE)
 
 For checking application state, we could query the `~/metrics` endpoint (i.e., for local instance full `URL` - `http://127.0.0.1/metrics`). But starting with `0.9.3` were added `prometheus` and `grafana` to be running simultaneously with `Ferrum` using `docker-compose`. `Grafana` model could be found [here](/prometheus/grafana_ferrum_dashboard_model.json). It requires only replacing the Prometheus ID.
 
@@ -224,7 +244,7 @@ For checking application state, we could query the `~/metrics` endpoint (i.e., f
 Screenshot with grafana dashboard:
 ![Grafana dashboard](/img/additional/sre_grafana_example.png)
 
-## 6. Contributors
+## 7. Contributors
 
 <a href="https://github.com/Wissance/Ferrum/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=Wissance/Ferrum" />
