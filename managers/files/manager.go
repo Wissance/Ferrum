@@ -246,6 +246,17 @@ func (mn *FileDataManager) DeleteUserFederationConfig(realmName string, configNa
 	return errors.ErrOperationNotImplemented
 }
 
+// GetServerSettings function that returns ServerSettings
+func (mn *FileDataManager) GetServerSettings() (*data.ServerSettings, error) {
+	return &mn.serverData.ServerSettings, nil
+}
+
+// SetServerSettings function that updates ServerSettings by full new settings replace
+func (mn *FileDataManager) SetServerSettings(settings *data.ServerSettings) error {
+	mn.serverData.ServerSettings = *settings
+	return nil
+}
+
 // loadData this function loads data from JSON file (dataFile) to serverData
 func (mn *FileDataManager) loadData() error {
 	rawData, err := os.ReadFile(mn.dataFile)

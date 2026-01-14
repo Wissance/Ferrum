@@ -15,7 +15,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5.2.0
         with:
-          go-version: '1.21'
+          go-version: '1.24'
       - name: Build
         run: go version && go build -v ./...
 
@@ -27,7 +27,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5.2.0
         with:
-          go-version: '1.21'
+          go-version: '1.24'
       - name: Build
         run: go version && go build -v ./...
 
@@ -39,7 +39,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5.2.0
         with:
-          go-version: '1.21'
+          go-version: '1.24'
       - name: Set up Redis Stack server
         run: docker compose up -d redis
       - name: Get Redis logs
@@ -70,9 +70,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5.2.0
         with:
-          go-version: '1.21'
+          go-version: '1.24'
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6.1.0
         with:
-          version: v1.63.4
-          args: --timeout 3m --config .golangci.yaml
+          version: v2.7.2
+          args: --timeout 5m --config .golangci.yaml

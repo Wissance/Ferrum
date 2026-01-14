@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	SourceISEmpty error = errors.New("field source (path to file or conn str to db) is empty")
+	ErrSourceEmpty error = errors.New("field source (path to file or conn str to db) is empty")
 )
 
 // DataSourceConfig represent source where we can get
@@ -56,7 +56,7 @@ type DataSourceConfig struct {
 
 func (cfg *DataSourceConfig) Validate() error {
 	if len(cfg.Source) == 0 {
-		return SourceISEmpty
+		return ErrSourceEmpty
 
 	}
 	if cfg.Type == MONGODB {

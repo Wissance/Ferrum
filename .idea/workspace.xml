@@ -6,14 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="f2bc4471-ed8e-44f8-95bc-15c82292d6f2" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/admin/cli/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/api/admin/cli/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/managers/data_context.go" beforeDir="false" afterPath="$PROJECT_DIR$/managers/data_context.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/managers/errors_managers/errors_managers.go" beforeDir="false" afterPath="$PROJECT_DIR$/errors/data_operations_errors.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/managers/file_data_manager/file_data_manager.go" beforeDir="false" afterPath="$PROJECT_DIR$/managers/files/file_data_manager.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/managers/redis_data_manager/client.go" beforeDir="false" afterPath="$PROJECT_DIR$/managers/redis/client.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/managers/redis_data_manager/realm.go" beforeDir="false" afterPath="$PROJECT_DIR$/managers/redis/realm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/managers/redis_data_manager/redis_data_manager.go" beforeDir="false" afterPath="$PROJECT_DIR$/managers/redis/redis_data_manager.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/managers/redis_data_manager/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/managers/redis/user.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/certs/server.crt" beforeDir="false" afterPath="$PROJECT_DIR$/certs/server.crt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/certs/server.key" beforeDir="false" afterPath="$PROJECT_DIR$/certs/server.key" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,39 +33,50 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.format.on.save.advertiser.fired&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
-    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/mushakov/projects/soar&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;go.sdk&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultGoTemplateProperty": "Go File",
+    "Go Build.go build github.com/wissance/Ferrum.executor": "Debug",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.go.format.on.save.advertiser.fired": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "git-widget-placeholder": "feature/76__prometheus__metrics",
+    "go.import.settings.migrated": "true",
+    "go.sdk.automatically.set": "true",
+    "last_opened_file_path": "C:/Users/mushakov/projects/soar",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "go.sdk"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="E:\Projects\Wissance\Ferrum" />
       <recent name="C:\Users\mushakov\projects\Ferrum\errors" />
       <recent name="C:\Users\mushakov\projects\Ferrum\managers\redis" />
       <recent name="C:\Users\mushakov\projects\Ferrum\managers\files" />
       <recent name="C:\Users\mushakov\projects\Ferrum\managers\" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Go Build.go build github.com/wissance/Ferrum">
     <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="Ferrum" />
       <working_directory value="$PROJECT_DIR$" />
       <kind value="FILE" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go build github.com/wissance/Ferrum" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="Ferrum" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/wissance/Ferrum" />
+      <directory value="$PROJECT_DIR$" />
       <method v="2" />
     </configuration>
     <configuration default="true" type="GoTestRunConfiguration" factoryName="Go Test">
@@ -94,6 +99,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Build.go build github.com/wissance/Ferrum" />
         <item itemvalue="Go Test.go test Ferrum" />
       </list>
     </recent_temporary>

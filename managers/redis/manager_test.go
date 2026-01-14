@@ -3,6 +3,7 @@ package redis
 import (
 	"encoding/json"
 	"errors"
+	"github.com/wissance/gwuu/testingutils"
 	"testing"
 
 	"github.com/google/uuid"
@@ -999,6 +1000,37 @@ func TestDeleteUserFederationServiceConfigSuccessfully(t *testing.T) {
 	}
 }
 
+func TestSetAndGetSystemSettings(t *testing.T) {
+	manager := createTestRedisDataManager(t)
+	settings := data.ServerSettings{
+		Admin: data.AdminUser{
+			Username:     "admin",
+			PasswordHash: "11112222",
+			PasswordSalt: "333",
+		},
+		AdminApiUrlPrefix: "aer23jiop19",
+		AllowedHosts:      []string{"127.0.0.1", "192.168.156.*"},
+	}
+	err := manager.SetServerSettings(&settings)
+	assert.NoError(t, err)
+
+	actualSettings, err := manager.GetServerSettings()
+	assert.NoError(t, err)
+	assert.NotNil(t, actualSettings)
+	checkServerSettings(t, settings, *actualSettings)
+
+	settings.AllowedHosts = append(settings.AllowedHosts, "10.1.2.*")
+	settings.Admin.PasswordSalt = "0001113"
+	settings.Admin.PasswordHash = "u77ryrfucb7383yqduicbsai"
+	err = manager.SetServerSettings(&settings)
+	assert.NoError(t, err)
+
+	actualSettings, err = manager.GetServerSettings()
+	assert.NoError(t, err)
+	assert.NotNil(t, actualSettings)
+	checkServerSettings(t, settings, *actualSettings)
+}
+
 func createTestRedisDataManager(t *testing.T) *RedisDataManager {
 	rndNamespace := sf.Format("ferrum_test_{0}", uuid.New().String())
 	dataSourceCfg := config.DataSourceConfig{
@@ -1097,4 +1129,16 @@ func checkUserFederationConfig(t *testing.T, expected *data.UserFederationServic
 	assert.Equal(t, expected.EntryPoint, actual.EntryPoint)
 	assert.Equal(t, expected.SysUser, actual.SysUser)
 	assert.Equal(t, expected.SysPassword, actual.SysPassword)
+}
+
+func checkServerSettings(t *testing.T, expected data.ServerSettings, actual data.ServerSettings) {
+	assert.Equal(t, expected.AdminApiUrlPrefix, actual.AdminApiUrlPrefix)
+	testingutils.CheckStrings(t, expected.AllowedHosts, actual.AllowedHosts, false, true)
+	checkAdmin(t, expected.Admin, actual.Admin)
+}
+
+func checkAdmin(t *testing.T, expected data.AdminUser, actual data.AdminUser) {
+	assert.Equal(t, expected.Username, actual.Username)
+	assert.Equal(t, expected.PasswordSalt, actual.PasswordSalt)
+	assert.Equal(t, expected.PasswordHash, actual.PasswordHash)
 }

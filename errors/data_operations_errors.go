@@ -14,6 +14,7 @@ var (
 	ErrOperationNotSupported   = errors.New("manager operation is not supported yet (temporarily or permanent)")
 	ErrOperationNotImplemented = errors.New("manager operation is not implemented yet (wait for future releases)")
 	ErrDataSourceNotAvailable  = DataProviderNotAvailable{}
+	ErrBadData                 = errors.New("operation can't be performed, bad data")
 )
 
 type ObjectAlreadyExistsError struct {

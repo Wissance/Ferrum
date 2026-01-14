@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	e "errors"
 	"fmt"
 	"strconv"
 
@@ -23,7 +24,7 @@ const (
 	clientKeyTemplate                  = "{0}.{1}_client_{2}"
 	realmUsersKeyTemplate              = "{0}.realm_{1}_users"
 	realmUserFederationServiceTemplate = "{0}.realm_{1}_user_federations"
-	// realmUsersFullDataKeyTemplate = "{0}.realm_{1}_users_full_data"
+	serverSettingsKeyTemplate          = "{0}.server_settings"
 )
 
 type objectType string
@@ -35,6 +36,7 @@ const (
 	RealmUserFederationConfig objectType = " realm user federation config"
 	Client                    objectType = "client"
 	User                      objectType = "user"
+	ServerSettings            objectType = "server settings"
 )
 
 const defaultNamespace = "fe"
@@ -230,7 +232,7 @@ func getSingleRedisObject[T any](redisClient *redis.Client, ctx context.Context,
 	redisCmd := redisClient.Get(ctx, objKey)
 	if redisCmd.Err() != nil {
 		logger.Warn(sf.Format("An error occurred during fetching {0}: \"{1}\" from Redis server", objName, objKey))
-		if redisCmd.Err() == redis.Nil {
+		if e.Is(redisCmd.Err(), redis.Nil) {
 			return nil, errors.NewObjectNotFoundError(string(objName), objKey, "")
 		}
 		return nil, redisCmd.Err()

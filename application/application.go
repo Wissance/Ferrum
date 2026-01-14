@@ -4,6 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	appErrs "github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/sre"
+	"github.com/wissance/Ferrum/utils/encoding"
+	"github.com/wissance/Ferrum/utils/uuidtools"
 	"io"
 	"net"
 	"net/http"
@@ -11,18 +17,17 @@ import (
 	"path/filepath"
 	"time"
 
-	httpSwagger "github.com/swaggo/http-swagger"
-	"github.com/wissance/Ferrum/globals"
-	"github.com/wissance/Ferrum/swagger"
-
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/wissance/Ferrum/api/rest"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
+	"github.com/wissance/Ferrum/globals"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/Ferrum/managers"
 	"github.com/wissance/Ferrum/services"
+	"github.com/wissance/Ferrum/swagger"
 	r "github.com/wissance/gwuu/api/rest"
 	"github.com/wissance/stringFormatter"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -40,12 +45,13 @@ type Application struct {
 	secretKey          []byte
 	serverData         *data.ServerData
 	dataProvider       *managers.DataContext
-	webApiHandler      *r.WebApiHandler
+	webApiHandler      *r.MuxBasedWebApiHandler
 	webApiContext      *rest.WebApiContext
 	logger             *logging.AppLogger
 	httpHandler        *http.Handler
 	httpServer         *http.Server
 	shutdownTimeout    time.Duration
+	metricsCollector   *sre.MetricsCollector
 }
 
 // CreateAppWithConfigs creates but not Init new Application as AppRunner
@@ -60,6 +66,7 @@ func CreateAppWithConfigs(configFile string, devMode bool) AppRunner {
 	app.devMode = devMode
 	app.appConfigFile = &configFile
 	app.authenticationDefs = &data.AuthenticationDefs{}
+	app.metricsCollector = sre.CreateMetricsCollector()
 	appRunner := AppRunner(app)
 	return appRunner
 }
@@ -73,14 +80,15 @@ func CreateAppWithConfigs(configFile string, devMode bool) AppRunner {
  * Returns: new Application as AppRunner
  */
 func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte, devMode bool) AppRunner {
-	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData, devMode: devMode}
+	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData, devMode: devMode,
+		metricsCollector: sre.CreateMetricsCollector()}
 	app.authenticationDefs = &data.AuthenticationDefs{}
 	appRunner := AppRunner(app)
 	return appRunner
 }
 
 // Start function that starts application
-/* This function must be called after Init it starts application web server either on HTTP or HTTPS 9depends on config Schema value)
+/* This function must be called after Init it starts application web server either on HTTP or HTTPS (depends on config Schema value)
  * Parameters: no
  * Return start result (true if Start was successful) and error (nil if start was successful)
  */
@@ -110,7 +118,7 @@ func (app *Application) Init() (bool, error) {
 		// init logger
 		cfg, err := config.ReadAppConfig(*app.appConfigFile)
 		if err != nil {
-			return false, fmt.Errorf("An error occurred during reading app config file: %w", err)
+			return false, fmt.Errorf("an error occurred during reading app config file: %w", err)
 		}
 		app.appConfig = cfg
 		app.logger = logging.CreateLogger(&app.appConfig.Logging)
@@ -142,6 +150,7 @@ func (app *Application) Init() (bool, error) {
 		app.logger.Error(stringFormatter.Format("An error occurred during data providers init: {0}", err.Error()))
 		return false, err
 	}
+	// todo(umv): add init data,
 
 	// init auth defs
 	app.initAuthServerDefs()
@@ -165,6 +174,7 @@ func (app *Application) Init() (bool, error) {
 func (app *Application) Stop(ctx context.Context) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, app.shutdownTimeout)
 	defer cancel()
+	app.metricsCollector.UnRegisterAllMetrics()
 	err := app.httpServer.Shutdown(ctx)
 	if err != nil {
 		return false, err
@@ -185,24 +195,61 @@ func (app *Application) initDataProviders() error {
 	var err error
 	if app.serverData != nil {
 		dataProvider, prepareErr := managers.PrepareContextUsingData(&app.appConfig.DataSource, app.serverData, app.logger)
-		app.dataProvider = &dataProvider
+		observableProvider := sre.CreateObservableDataContext(app.metricsCollector, &dataProvider)
+		app.dataProvider = &observableProvider
 		return prepareErr
 	}
 
 	if app.dataConfigFile != nil {
 		dataProvider, prepareErr := managers.PrepareContextUsingFile(&app.appConfig.DataSource, app.dataConfigFile, app.logger)
-		app.dataProvider = &dataProvider
+		observableProvider := sre.CreateObservableDataContext(app.metricsCollector, &dataProvider)
+		app.dataProvider = &observableProvider
 		err = prepareErr
 	} else {
 		dataProvider, prepareErr := managers.PrepareContext(&app.appConfig.DataSource, app.logger)
-		app.dataProvider = &dataProvider
+		observableProvider := sre.CreateObservableDataContext(app.metricsCollector, &dataProvider)
+		app.dataProvider = &observableProvider
 		err = prepareErr
+		if err != nil {
+			return err
+		}
+		return app.initData(dataProvider)
+	}
+	return err
+}
+
+// iniData inits ServerSetting before AppStart
+// we are passing here dataProvider because data provider from app does not have initialized SRE yet
+func (app *Application) initData(dataProvider managers.DataContext) error {
+	// this function init some required data after managers.DataContext creation
+	settings, err := dataProvider.GetServerSettings()
+	if err == nil && !uuidtools.IsUUIDEmpty(&settings.Admin.Id) {
+		// nothing to be done here, settings already exists
+		return nil
+	}
+	if errors.As(err, &appErrs.EmptyNotFoundErr) {
+		// ServerSetting were not found, create
+		// this salt is going to be used when you are going to change admin pass
+		salt := encoding.GenerateRandomSalt()
+		passwordEncoder := encoding.NewPasswordJsonEncoder(salt)
+		settings = &data.ServerSettings{
+			AllowedHosts: app.appConfig.Security.AllowedHosts,
+			Admin: data.AdminUser{
+				Id:           uuid.New(),
+				Username:     app.appConfig.Security.Admin.Username,
+				PasswordSalt: salt,
+				PasswordHash: passwordEncoder.GetB64PasswordHash(app.appConfig.Security.Admin.Password),
+			},
+			AdminApiUrlPrefix: app.appConfig.Security.AdminApiUrlPrefix,
+		}
+
+		err = dataProvider.SetServerSettings(settings)
 	}
 	return err
 }
 
 func (app *Application) initRestApi() error {
-	app.webApiHandler = r.NewWebApiHandler(true, r.AnyOrigin)
+	app.webApiHandler = r.NewMuxBasedWebApiHandler(true, r.AnyOrigin)
 	securityService := services.CreateSecurityService(app.dataProvider, app.logger)
 	serverAddress := stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
 	app.webApiContext = &rest.WebApiContext{
@@ -213,7 +260,9 @@ func (app *Application) initRestApi() error {
 	}
 	router := app.webApiHandler.Router
 	router.StrictSlash(true)
+	router.Use(app.metricsCollector.HttpMetricsCollectMiddleware)
 	app.initKeyCloakSimilarRestApiRoutes(router)
+	app.initSRERestApiRoutes(router)
 	if app.devMode {
 		app.initSwaggerRoutes(router)
 	}
@@ -241,6 +290,11 @@ func (app *Application) initSwaggerRoutes(router *mux.Router) {
 	swagger.SwaggerInfo.Host = stringFormatter.Format("{0}:{1}", address, app.appConfig.ServerCfg.Port)
 
 	router.PathPrefix("/swagger/").Handler(httpSwagger.Handler())
+}
+
+func (app *Application) initSRERestApiRoutes(router *mux.Router) {
+	//app.webApiHandler.HandleFunc(router, "/metrics", promhttp.Handler().ServeHTTP, http.MethodGet)
+	app.webApiHandler.Router.Handle("/metrics", promhttp.Handler())
 }
 
 func (app *Application) initAuthServerDefs() {
@@ -380,7 +434,7 @@ func (app *Application) getSwaggerAddress() string {
 		return ""
 	}
 	for _, address := range addresses {
-		// check the address type and if it is not a loopback the display it
+		// check the address type and if it is not a loop back the display it
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
 				return ipnet.IP.String()
