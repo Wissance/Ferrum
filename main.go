@@ -50,11 +50,13 @@ func main() {
 	logger.Info("Application was successfully initialized")
 
 	res, err := app.Start()
-	if !res {
+	if err != nil {
 		msg := stringFormatter.Format("An error occurred during starting application, error is: {0}", err.Error())
 		fmt.Println(msg)
 	} else {
-		logger.Info("Application was successfully started")
+		logger.InfoMsgOnly(ferrumMfImgAscii)
+		logger.InfoMsgOnly(ferrumCommunityEditionAscii)
+		logger.Info(stringFormatter.Format("Application of version {0} was successfully started", ferrumVersion))
 	}
 
 	// this goroutine handles OS signals and generate signal to stop the app
