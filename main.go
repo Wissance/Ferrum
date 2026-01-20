@@ -49,7 +49,7 @@ func main() {
 	logger := app.GetLogger()
 	logger.Info("Application was successfully initialized")
 
-	//nolint:ineffassign
+	//nolint:ineffassign,staticcheck
 	res, err := app.Start()
 	if err != nil {
 		msg := stringFormatter.Format("An error occurred during starting application, error is: {0}", err.Error())
