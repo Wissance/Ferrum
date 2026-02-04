@@ -57,6 +57,7 @@ func main() {
 	} else {
 		logger.InfoMsgOnly(ferrumMfImgAscii)
 		logger.InfoMsgOnly(ferrumCommunityEditionAscii)
+		logger.InfoMsgOnly(ferrumManufacturerAscii)
 		logger.Info(stringFormatter.Format("Application of version {0} was successfully started", ferrumVersion))
 	}
 
