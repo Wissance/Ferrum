@@ -44,6 +44,8 @@ type Application struct {
 	authenticationDefs *data.AuthenticationDefs
 	secretKey          []byte
 	serverData         *data.ServerData
+	ctx                context.Context
+	cancelFunc         context.CancelFunc
 	dataProvider       *managers.DataContext
 	webApiHandler      *r.MuxBasedWebApiHandler
 	webApiContext      *rest.WebApiContext
@@ -61,10 +63,13 @@ type Application struct {
  *     - devMode - developer mode (for showing some non production info = swagger, ...)
  * Returns: new Application as AppRunner
  */
-func CreateAppWithConfigs(configFile string, devMode bool) AppRunner {
+func CreateAppWithConfigs(configFile string, devMode bool, ctx context.Context) AppRunner {
 	app := &Application{}
+	contextWithCancel, cancelFunc := context.WithCancel(ctx)
 	app.devMode = devMode
 	app.appConfigFile = &configFile
+	app.ctx = contextWithCancel
+	app.cancelFunc = cancelFunc
 	app.authenticationDefs = &data.AuthenticationDefs{}
 	app.metricsCollector = sre.CreateMetricsCollector()
 	appRunner := AppRunner(app)
@@ -79,8 +84,11 @@ func CreateAppWithConfigs(configFile string, devMode bool) AppRunner {
  *     - secretKey  - secret key that is using for signing JWT
  * Returns: new Application as AppRunner
  */
-func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, secretKey []byte, devMode bool) AppRunner {
-	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData, devMode: devMode,
+func CreateAppWithData(appConfig *config.AppConfig, serverData *data.ServerData, ctx context.Context,
+	secretKey []byte, devMode bool) AppRunner {
+	contextWithCancel, cancelFunc := context.WithCancel(ctx)
+	app := &Application{appConfig: appConfig, secretKey: secretKey, serverData: serverData,
+		ctx: contextWithCancel, cancelFunc: cancelFunc, devMode: devMode,
 		metricsCollector: sre.CreateMetricsCollector()}
 	app.authenticationDefs = &data.AuthenticationDefs{}
 	appRunner := AppRunner(app)
@@ -171,11 +179,12 @@ func (app *Application) Init() (bool, error) {
  * Parameters : no
  * Returns result of app stop and error
  */
-func (app *Application) Stop(ctx context.Context) (bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, app.shutdownTimeout)
+func (app *Application) Stop() (bool, error) {
+	ctxWithTimeout, cancel := context.WithTimeout(app.ctx, app.shutdownTimeout)
 	defer cancel()
 	app.metricsCollector.UnRegisterAllMetrics()
-	err := app.httpServer.Shutdown(ctx)
+	err := app.httpServer.Shutdown(ctxWithTimeout)
+	app.cancelFunc()
 	if err != nil {
 		return false, err
 	}
@@ -250,7 +259,7 @@ func (app *Application) initData(dataProvider managers.DataContext) error {
 
 func (app *Application) initRestApi() error {
 	app.webApiHandler = r.NewMuxBasedWebApiHandler(true, r.AnyOrigin)
-	securityService := services.CreateSecurityService(app.dataProvider, app.logger)
+	securityService := services.CreateSecurityService(app.dataProvider, app.logger, app.ctx)
 	serverAddress := stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
 	app.webApiContext = &rest.WebApiContext{
 		Address: serverAddress, Schema: string(app.appConfig.ServerCfg.Schema),

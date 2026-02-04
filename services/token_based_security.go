@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -14,12 +15,15 @@ import (
 	"github.com/wissance/Ferrum/managers"
 )
 
+const cleanUpPeriod = 5
+
 // TokenBasedSecurityService structure that implements SecurityService
 type TokenBasedSecurityService struct {
 	DataProvider *managers.DataContext
 	UserSessions map[string][]data.UserSession
 	mutex        *sync.RWMutex
 	logger       *logging.AppLogger
+	ctx          context.Context
 }
 
 // CreateSecurityService creates instance of TokenBasedSecurityService as SecurityService
@@ -29,10 +33,11 @@ type TokenBasedSecurityService struct {
  *    - logger - logger service
  * Returns instance of TokenBasedSecurityService as SecurityService
  */
-func CreateSecurityService(dataProvider *managers.DataContext, logger *logging.AppLogger) SecurityService {
+func CreateSecurityService(dataProvider *managers.DataContext, logger *logging.AppLogger, ctx context.Context) SecurityService {
 	pwdSecService := &TokenBasedSecurityService{DataProvider: dataProvider, mutex: &sync.RWMutex{},
-		UserSessions: map[string][]data.UserSession{}, logger: logger}
+		UserSessions: map[string][]data.UserSession{}, logger: logger, ctx: ctx}
 	secService := SecurityService(pwdSecService)
+	go pwdSecService.resourceCleanup()
 	return secService
 }
 
@@ -298,4 +303,57 @@ func (service *TokenBasedSecurityService) CheckSessionAndRefreshExpired(realm st
 	}
 	current := time.Now().In(time.UTC)
 	return s.Expired.In(time.UTC).Before(current), s.RefreshExpired.In(time.UTC).Before(current)
+}
+
+func (service *TokenBasedSecurityService) resourceCleanup() {
+	ticker := time.NewTicker(cleanUpPeriod * time.Minute)
+	realms := service.getRealmsWithSessions()
+	realmIndex := 0
+	for {
+		select {
+		case <-service.ctx.Done():
+			return
+		case <-ticker.C:
+			if len(realms) == 0 {
+				realms = service.getRealmsWithSessions()
+			} else {
+				if realmIndex == len(realms) {
+					realms = service.getRealmsWithSessions()
+					realmIndex = 0
+				} else {
+					realm := realms[realmIndex]
+					realmIndex += 1
+					service.removeOutdatedSessions(realm)
+				}
+			}
+		}
+	}
+}
+
+func (service *TokenBasedSecurityService) removeOutdatedSessions(realm string) {
+	service.mutex.Lock()
+	shouldUpdate := false
+	itemsToKeep := make([]data.UserSession, len(service.UserSessions[realm]))
+	now := time.Now().In(time.UTC)
+	for _, v := range service.UserSessions[realm] {
+		if v.Expired.In(time.UTC).Before(now) && v.RefreshExpired.In(time.UTC).Before(now) {
+			shouldUpdate = true
+		} else {
+			itemsToKeep = append(itemsToKeep, v)
+		}
+	}
+	if shouldUpdate {
+		service.UserSessions[realm] = itemsToKeep
+	}
+	service.mutex.Unlock()
+}
+
+func (service *TokenBasedSecurityService) getRealmsWithSessions() []string {
+	service.mutex.RLock()
+	realmsWithSessions := make([]string, len(service.UserSessions))
+	for k, _ := range service.UserSessions {
+		realmsWithSessions = append(realmsWithSessions, k)
+	}
+	service.mutex.RUnlock()
+	return realmsWithSessions
 }

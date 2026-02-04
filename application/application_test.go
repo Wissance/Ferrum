@@ -93,7 +93,7 @@ func TestApplicationOnHttps(t *testing.T) {
 
 func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseUrl string) {
 	ctx := context.Background()
-	app := CreateAppWithData(appConfig, &testServerData, testKey, true)
+	app := CreateAppWithData(appConfig, &testServerData, ctx, testKey, true)
 	res, err := app.Init()
 	assert.True(t, res)
 	assert.Nil(t, err)
@@ -166,7 +166,7 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	response = refreshToken(t, baseUrl, realm, testClient1, testClient1Secret, token.RefreshToken)
 	assert.Equal(t, response.Status, "200 OK")
 
-	res, err = app.Stop(ctx)
+	res, err = app.Stop()
 	assert.True(t, res)
 	assert.Nil(t, err)
 }

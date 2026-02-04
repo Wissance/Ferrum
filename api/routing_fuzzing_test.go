@@ -186,9 +186,9 @@ func FuzzTestGetUserInfoWithWrongToken(f *testing.F) {
 
 func initApp(t *testing.T) application.AppRunner {
 	t.Helper()
-	app := application.CreateAppWithData(&httpAppConfig, &testServerData, testKey, true)
+	app := application.CreateAppWithData(&httpAppConfig, &testServerData, context.Background(), testKey, true)
 	t.Cleanup(func() {
-		_, err := app.Stop(context.Background())
+		_, err := app.Stop()
 		require.NoError(t, err)
 	})
 	res, err := app.Init()
