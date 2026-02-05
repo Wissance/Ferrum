@@ -24,8 +24,8 @@ export let options = {
 };
 
 export default function () {
-    const numOfIterationsStage1 = 100
-    const numOfIterationsStage2 = 50
+    const numOfIterationsStage1 = 1000
+    const numOfIterationsStage2 = 200
     // 1. Select Random User
     const userPassword = "P@55W0rD"
     const clientSecret = "00000000000000000000000000000000"
@@ -34,13 +34,19 @@ export default function () {
     let randomRealm = getRandomInt(1, 100)
     let realm = "realm_" + randomRealm
     console.log("Using Realm is: " + realm)
-    let randomUserRel = getRandomInt(1, 100)
+    let randomUserRel = getRandomInt(1, 1000)
     let absUser = (randomRealm - 1) * 100 + randomUserRel
     let user = "u" + absUser
     console.log("Using User is: " + user)
     let clientId = "client_" + randomRealm
     console.log("Using Client is: " + clientId)
-    // 2. Get initial access token
+    runTestExchangeCycle(numOfIterationsStage1, ferrumBaseUrl, realm, clientId, clientSecret, user, userPassword)
+    let pause = getRandomInt(10,30)
+    sleep(pause)
+    runTestExchangeCycle(numOfIterationsStage2, ferrumBaseUrl, realm, clientId, clientSecret, user, userPassword)
+}
+
+function runTestExchangeCycle(numberOfIterations, ferrumBaseUrl, realm, clientId, clientSecret, user, userPassword) {
     let getTokenResponse = getAccessToken(ferrumBaseUrl, realm, clientId, clientSecret, user, userPassword)
     // check status
     check(getTokenResponse, {
@@ -50,7 +56,7 @@ export default function () {
     let accessToken = responseBody.access_token;
     let refreshToken = responseBody.refresh_token;
     // 3. send up 100 requests userinfo (1-2 sec interval)
-    for (let i = 0; i < numOfIterationsStage1; i++) {
+    for (let i = 0; i < numOfIterationsStage; i++) {
         if (i > 0 && i%10 === 0)
         {
             // send refresh token
