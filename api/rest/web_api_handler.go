@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/base64"
 	e "errors"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
 	"time"
@@ -31,14 +32,15 @@ import (
 // @Failure 404 {string} dto.ErrorDetails
 // @Router /auth/realms/{realm}/protocol/openid-connect/token [post]
 // @Router /realms/{realm}/protocol/openid-connect/token [post]
-func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request *http.Request) {
+func (wCtx *WebApiContext) IssueNewToken(c *gin.Context) {
 	/* For issue new token user should send POST request of type x-www-from-urlencoded with following pairs key=value
 	 * grant_type=password (password only supported), client_id (data.Client name), if client is Confidential also client_secret,
 	 * scope=profile email, username and password
 	 * For refreshing existing token user should send POST request of type x-www-from-urlencoded with following
 	 * pairs key=value client_id, client_secret (if data.Client is Confidential), grant_type=refresh_token and refresh_token itself
 	 */
-	beforeHandle(&respWriter)
+	w := c.Writer
+	beforeHandle(&w)
 	var result interface{}
 	status := http.StatusOK
 
@@ -48,7 +50,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 		wCtx.Logger.Debug(sf.Format("New token issue: is invalid realmName: '{0}'", realm))
 		status = http.StatusBadRequest
 		result = dto.ErrorDetails{Msg: sf.Format(errors.InvalidRealm, realm)}
-		afterHandle(&respWriter, status, &result)
+		afterHandle(&w, status, &result)
 		return
 	}
 	realmPtr, realmReadErr := (*wCtx.DataProvider).GetRealm(realm)
@@ -70,14 +72,14 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 		}
 	} else {
 		tokenGenerationData := dto.TokenGenerationData{}
-		err := request.ParseForm()
+		err := c.Request.ParseForm()
 		if err != nil {
 			status = http.StatusBadRequest
 			wCtx.Logger.Debug("New token issue: body is bad (unable to unmarshal to dto.TokenGenerationData)")
 			result = dto.ErrorDetails{Msg: errors.BadBodyForTokenGenerationMsg}
 		} else {
 			decoder := schema.NewDecoder()
-			err = decoder.Decode(&tokenGenerationData, request.PostForm)
+			err = decoder.Decode(&tokenGenerationData, c.Request.PostForm)
 			if err != nil {
 				// todo (UMV): log events
 				status = http.StatusBadRequest
@@ -164,7 +166,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 		}
 	}
 
-	afterHandle(&respWriter, status, &result)
+	afterHandle(&w, status, &result)
 }
 
 // GetUserInfo this function is a Http Request Handler that is responsible for getting public data.UserInfo
@@ -181,7 +183,7 @@ func (wCtx *WebApiContext) IssueNewToken(respWriter http.ResponseWriter, request
 // @Failure 404 {string} dto.ErrorDetails
 // @Router /auth/realms/{realm}/protocol/openid-connect/userinfo [get]
 // @Router /realms/{realm}/protocol/openid-connect/userinfo [get]
-func (wCtx *WebApiContext) GetUserInfo(respWriter http.ResponseWriter, request *http.Request) {
+func (wCtx *WebApiContext) GetUserInfo(c *gin.Context) {
 	/* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
 	 */
 	beforeHandle(&respWriter)
@@ -364,7 +366,7 @@ func (wCtx *WebApiContext) Introspect(respWriter http.ResponseWriter, request *h
 // @Failure 404 {string} dto.ErrorDetails
 // @Router /auth/realms/{realm}/.well-known/openid-configuration [get]
 // @Router /realms/{realm}/.well-known/openid-configuration [get]
-func (wCtx *WebApiContext) GetOpenIdConfiguration(respWriter http.ResponseWriter, request *http.Request) {
+func (wCtx *WebApiContext) GetOpenIdConfiguration(c *gin.Context) {
 	/* This function return public data.User , user must provide Authorization HTTP Header with value Bearer {access_token}
 	 */
 	beforeHandle(&respWriter)

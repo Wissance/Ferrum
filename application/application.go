@@ -4,33 +4,32 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/gorilla/handlers"
+	httpSwagger "github.com/swaggo/http-swagger"
+	"github.com/wissance/Ferrum/api/rest"
+	"github.com/wissance/Ferrum/api/rest/metrics"
+	"github.com/wissance/Ferrum/config"
+	"github.com/wissance/Ferrum/data"
 	appErrs "github.com/wissance/Ferrum/errors"
+	"github.com/wissance/Ferrum/globals"
+	"github.com/wissance/Ferrum/logging"
+	"github.com/wissance/Ferrum/managers"
+	"github.com/wissance/Ferrum/services"
 	"github.com/wissance/Ferrum/sre"
+	"github.com/wissance/Ferrum/swagger"
 	"github.com/wissance/Ferrum/utils/encoding"
 	"github.com/wissance/Ferrum/utils/uuidtools"
+	r "github.com/wissance/gwuu/api/rest"
+	"github.com/wissance/stringFormatter"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
-
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
-	httpSwagger "github.com/swaggo/http-swagger"
-	"github.com/wissance/Ferrum/api/rest"
-	"github.com/wissance/Ferrum/config"
-	"github.com/wissance/Ferrum/data"
-	"github.com/wissance/Ferrum/globals"
-	"github.com/wissance/Ferrum/logging"
-	"github.com/wissance/Ferrum/managers"
-	"github.com/wissance/Ferrum/services"
-	"github.com/wissance/Ferrum/swagger"
-	r "github.com/wissance/gwuu/api/rest"
-	"github.com/wissance/stringFormatter"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 const ferrumSwaggerAddressEnvVariable = "FERRUM_SWAGGER_EXT_ADDRESS"
@@ -47,7 +46,7 @@ type Application struct {
 	ctx                context.Context
 	cancelFunc         context.CancelFunc
 	dataProvider       *managers.DataContext
-	webApiHandler      *r.MuxBasedWebApiHandler
+	webApiHandler      *r.GinBasedWebApiHandler
 	webApiContext      *rest.WebApiContext
 	logger             *logging.AppLogger
 	httpHandler        *http.Handler
@@ -258,7 +257,7 @@ func (app *Application) initData(dataProvider managers.DataContext) error {
 }
 
 func (app *Application) initRestApi() error {
-	app.webApiHandler = r.NewMuxBasedWebApiHandler(true, r.AnyOrigin)
+	app.webApiHandler = r.NewGinBasedWebApiHandler(true, r.AnyOrigin)
 	securityService := services.CreateSecurityService(app.dataProvider, app.logger, app.ctx)
 	serverAddress := stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
 	app.webApiContext = &rest.WebApiContext{
@@ -268,12 +267,13 @@ func (app *Application) initRestApi() error {
 		TokenGenerator: &services.JwtGenerator{SignKey: app.secretKey, Logger: app.logger}, Logger: app.logger,
 	}
 	router := app.webApiHandler.Router
-	router.StrictSlash(true)
-	router.Use(app.metricsCollector.HttpMetricsCollectMiddleware)
-	app.initKeyCloakSimilarRestApiRoutes(router)
-	app.initSRERestApiRoutes(router)
+	router.RedirectTrailingSlash = true
+	router.Use(app.metricsCollector.HttpMetricsCollectMiddleware())
+	rootRoutesGroup := router.Group("/")
+	app.initKeyCloakSimilarRestApiRoutes(rootRoutesGroup)
+	app.initSRERestApiRoutes(rootRoutesGroup)
 	if app.devMode {
-		app.initSwaggerRoutes(router)
+		app.initSwaggerRoutes(rootRoutesGroup)
 	}
 	// Setting up listener for logging
 	appenderIndex := app.logger.GetAppenderIndex(config.RollingFile, app.appConfig.Logging.Appenders)
@@ -287,9 +287,9 @@ func (app *Application) initRestApi() error {
 	return nil
 }
 
-func (app *Application) initSwaggerRoutes(router *mux.Router) {
+func (app *Application) initSwaggerRoutes(router *gin.RouterGroup) {
 	// Swagger docs router and config
-	swagger.SwaggerInfo.Version = "v0.9"
+	swagger.SwaggerInfo.Version = "v0.9.3"
 	swagger.SwaggerInfo.Title = "Ferrum Authorization Server"
 	swagger.SwaggerInfo.Description = "Ferrum a better Authorization server compatible by API with a KeyCloak"
 	address := app.getSwaggerAddress()
@@ -298,12 +298,13 @@ func (app *Application) initSwaggerRoutes(router *mux.Router) {
 	}
 	swagger.SwaggerInfo.Host = stringFormatter.Format("{0}:{1}", address, app.appConfig.ServerCfg.Port)
 
-	router.PathPrefix("/swagger/").Handler(httpSwagger.Handler())
+	app.webApiHandler.GET(router, "/swagger", func(ctx *gin.Context) {
+		httpSwagger.Handler()
+	})
 }
 
-func (app *Application) initSRERestApiRoutes(router *mux.Router) {
-	//app.webApiHandler.HandleFunc(router, "/metrics", promhttp.Handler().ServeHTTP, http.MethodGet)
-	app.webApiHandler.Router.Handle("/metrics", promhttp.Handler())
+func (app *Application) initSRERestApiRoutes(router *gin.RouterGroup) {
+	app.webApiHandler.GET(router, "/metrics", metrics.GetPrometheusHandler())
 }
 
 func (app *Application) initAuthServerDefs() {
@@ -341,19 +342,19 @@ func (app *Application) initAuthServerDefs() {
 	}
 }
 
-func (app *Application) initKeyCloakSimilarRestApiRoutes(router *mux.Router) {
+func (app *Application) initKeyCloakSimilarRestApiRoutes(router *gin.RouterGroup) {
 	// 1. Introspect endpoint - /auth/realms/{realm}/protocol/openid-connect/introspect
-	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/token/introspect", app.webApiContext.Introspect, http.MethodPost)
-	app.webApiHandler.HandleFunc(router, "/realms/{realm}/protocol/openid-connect/token/introspect", app.webApiContext.Introspect, http.MethodPost)
+	app.webApiHandler.POST(router, "/auth/realms/{realm}/protocol/openid-connect/token/introspect", app.webApiContext.Introspect)
+	app.webApiHandler.POST(router, "/realms/{realm}/protocol/openid-connect/token/introspect", app.webApiContext.Introspect)
 	// 2. Generate token endpoint - /auth/realms/{realm}/protocol/openid-connect/token
-	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/token", app.webApiContext.IssueNewToken, http.MethodPost)
-	app.webApiHandler.HandleFunc(router, "/realms/{realm}/protocol/openid-connect/token", app.webApiContext.IssueNewToken, http.MethodPost)
+	app.webApiHandler.POST(router, "/auth/realms/{realm}/protocol/openid-connect/token", app.webApiContext.IssueNewToken)
+	app.webApiHandler.POST(router, "/realms/{realm}/protocol/openid-connect/token", app.webApiContext.IssueNewToken)
 	// 3. Get userinfo endpoint - /auth/realms/SOAR/protocol/openid-connect/userinfo
-	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/protocol/openid-connect/userinfo", app.webApiContext.GetUserInfo, http.MethodGet)
-	app.webApiHandler.HandleFunc(router, "/realms/{realm}/protocol/openid-connect/userinfo", app.webApiContext.GetUserInfo, http.MethodGet)
+	app.webApiHandler.GET(router, "/auth/realms/{realm}/protocol/openid-connect/userinfo", app.webApiContext.GetUserInfo)
+	app.webApiHandler.GET(router, "/realms/{realm}/protocol/openid-connect/userinfo", app.webApiContext.GetUserInfo)
 	// 4. OpenId Configuration endpoint
-	app.webApiHandler.HandleFunc(router, "/auth/realms/{realm}/.well-known/openid-configuration", app.webApiContext.GetOpenIdConfiguration, http.MethodGet)
-	app.webApiHandler.HandleFunc(router, "/realms/{realm}/.well-known/openid-configuration", app.webApiContext.GetOpenIdConfiguration, http.MethodGet)
+	app.webApiHandler.GET(router, "/auth/realms/{realm}/.well-known/openid-configuration", app.webApiContext.GetOpenIdConfiguration)
+	app.webApiHandler.GET(router, "/realms/{realm}/.well-known/openid-configuration", app.webApiContext.GetOpenIdConfiguration)
 }
 
 func (app *Application) startWebService() error {
@@ -406,10 +407,10 @@ func (app *Application) readKey() []byte {
 	return fileData
 }
 
-func (app *Application) createHttpLoggingHandler(index int, router *mux.Router) *http.Handler {
+func (app *Application) createHttpLoggingHandler(index int, router *gin.Engine) *http.Handler {
 	var resultRouter http.Handler = router
-
 	destination := app.appConfig.Logging.Appenders[index].Destination
+
 	lumberjackWriter := lumberjack.Logger{
 		Filename:   string(destination.File),
 		MaxSize:    destination.MaxSize,

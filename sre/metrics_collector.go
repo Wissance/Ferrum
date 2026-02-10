@@ -1,9 +1,8 @@
 package sre
 
 import (
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/wissance/Ferrum/utils/httputils"
 	"net/http"
 	"strings"
 )
@@ -94,24 +93,23 @@ func (mc *MetricsCollector) UnRegisterAllMetrics() {
 }
 
 // HttpMetricsCollectMiddleware function is using to track all HTTP-requests and collect
-func (mc *MetricsCollector) HttpMetricsCollectMiddleware(next http.Handler) http.Handler {
+func (mc *MetricsCollector) HttpMetricsCollectMiddleware() gin.HandlerFunc {
 	const swaggerPath = "/swagger/"
 	const metricsPath = "/metrics"
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		route := mux.CurrentRoute(r)
-		path, _ := route.GetPathTemplate()
+	return func(c *gin.Context) {
+		path := c.FullPath()
 		if strings.Contains(path, swaggerPath) || strings.Contains(path, metricsPath) {
-			next.ServeHTTP(w, r)
+			c.Next()
 		} else {
 			timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
 				ms := v * 1000 // make milliseconds
 				mc.HttpRequestDurations.Observe(ms)
 			}))
-			lrw := httputils.NewLoggingResponseWriter(w)
-			next.ServeHTTP(lrw, r)
+			c.Next()
 			timer.ObserveDuration()
 			// collect request count
-			mc.HttpRequestsTotalCount.WithLabelValues(path, http.StatusText(lrw.StatusCode)).Inc()
+			statusCode := c.Writer.Status()
+			mc.HttpRequestsTotalCount.WithLabelValues(path, http.StatusText(statusCode)).Inc()
 			// todo(UMV): temporary client errors were off
 			/*if lrw.StatusCode >= 400 {
 				if lrw.StatusCode < 500 {
@@ -120,9 +118,9 @@ func (mc *MetricsCollector) HttpMetricsCollectMiddleware(next http.Handler) http
 					mc.HttpRequestsErrorCount.WithLabelValues(path, serverError).Inc()
 				}
 			}*/
-			if lrw.StatusCode >= 500 {
+			if statusCode >= 500 {
 				mc.HttpRequestsErrorCount.WithLabelValues(path, serverError).Inc()
 			}
 		}
-	})
+	}
 }
