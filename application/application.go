@@ -343,18 +343,18 @@ func (app *Application) initAuthServerDefs() {
 }
 
 func (app *Application) initKeyCloakSimilarRestApiRoutes(router *gin.RouterGroup) {
-	// 1. Introspect endpoint - /auth/realms/{realm}/protocol/openid-connect/introspect
-	app.webApiHandler.POST(router, "/auth/realms/{realm}/protocol/openid-connect/token/introspect", app.webApiContext.Introspect)
-	app.webApiHandler.POST(router, "/realms/{realm}/protocol/openid-connect/token/introspect", app.webApiContext.Introspect)
-	// 2. Generate token endpoint - /auth/realms/{realm}/protocol/openid-connect/token
-	app.webApiHandler.POST(router, "/auth/realms/{realm}/protocol/openid-connect/token", app.webApiContext.IssueNewToken)
-	app.webApiHandler.POST(router, "/realms/{realm}/protocol/openid-connect/token", app.webApiContext.IssueNewToken)
-	// 3. Get userinfo endpoint - /auth/realms/SOAR/protocol/openid-connect/userinfo
-	app.webApiHandler.GET(router, "/auth/realms/{realm}/protocol/openid-connect/userinfo", app.webApiContext.GetUserInfo)
-	app.webApiHandler.GET(router, "/realms/{realm}/protocol/openid-connect/userinfo", app.webApiContext.GetUserInfo)
+	// 1. Introspect endpoint - /auth/realms/:realm/protocol/openid-connect/introspect
+	app.webApiHandler.POST(router, "/auth/realms/:realm/protocol/openid-connect/token/introspect", app.webApiContext.Introspect)
+	app.webApiHandler.POST(router, "/realms/:realm/protocol/openid-connect/token/introspect", app.webApiContext.Introspect)
+	// 2. Generate token endpoint - /auth/realms/:realm/protocol/openid-connect/token
+	app.webApiHandler.POST(router, "/auth/realms/:realm/protocol/openid-connect/token", app.webApiContext.IssueNewToken)
+	app.webApiHandler.POST(router, "/realms/:realm/protocol/openid-connect/token", app.webApiContext.IssueNewToken)
+	// 3. Get userinfo endpoint - /auth/realms/:realm/protocol/openid-connect/userinfo
+	app.webApiHandler.GET(router, "/auth/realms/:realm/protocol/openid-connect/userinfo", app.webApiContext.GetUserInfo)
+	app.webApiHandler.GET(router, "/realms/:realm/protocol/openid-connect/userinfo", app.webApiContext.GetUserInfo)
 	// 4. OpenId Configuration endpoint
-	app.webApiHandler.GET(router, "/auth/realms/{realm}/.well-known/openid-configuration", app.webApiContext.GetOpenIdConfiguration)
-	app.webApiHandler.GET(router, "/realms/{realm}/.well-known/openid-configuration", app.webApiContext.GetOpenIdConfiguration)
+	app.webApiHandler.GET(router, "/auth/realms/:realm/.well-known/openid-configuration", app.webApiContext.GetOpenIdConfiguration)
+	app.webApiHandler.GET(router, "/realms/:realm/.well-known/openid-configuration", app.webApiContext.GetOpenIdConfiguration)
 }
 
 func (app *Application) startWebService() error {
