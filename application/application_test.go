@@ -83,13 +83,15 @@ var httpsAppConfig = config.AppConfig{
 
 func TestApplicationOnHttp(t *testing.T) {
 	serverAddress := stringFormatter.Format("{0}:{1}", httpAppConfig.ServerCfg.Address, httpAppConfig.ServerCfg.Port)
-	testRunCommonTestCycleImpl(t, &httpAppConfig, stringFormatter.Format("{0}://{1}", httpAppConfig.ServerCfg.Schema, serverAddress))
+	fullBaseUrl := stringFormatter.Format("{0}://{1}", httpAppConfig.ServerCfg.Schema, serverAddress)
+	testRunCommonTestCycleImpl(t, &httpAppConfig, fullBaseUrl)
 }
 
 func TestApplicationOnHttps(t *testing.T) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	serverAddress := stringFormatter.Format("{0}:{1}", httpsAppConfig.ServerCfg.Address, httpsAppConfig.ServerCfg.Port)
-	testRunCommonTestCycleImpl(t, &httpsAppConfig, stringFormatter.Format("{0}://{1}", httpsAppConfig.ServerCfg.Schema, serverAddress))
+	fullBaseUrl := stringFormatter.Format("{0}://{1}", httpsAppConfig.ServerCfg.Schema, serverAddress)
+	testRunCommonTestCycleImpl(t, &httpsAppConfig, fullBaseUrl)
 }
 
 func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseUrl string) {
@@ -166,7 +168,8 @@ func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseU
 	token = getDataFromResponse[dto.Token](t, response)
 	response = refreshToken(t, baseUrl, realm, testClient1, testClient1Secret, token.RefreshToken)
 	assert.Equal(t, response.Status, "200 OK")
-
+	// 8. Get Metrics
+	checkGetMetrics(t, baseUrl)
 	res, err = app.Stop()
 	assert.True(t, res)
 	assert.Nil(t, err)
@@ -230,6 +233,20 @@ func getUserInfo(t *testing.T, baseUrl string, realm string, token string, expec
 	err = json.Unmarshal(responseBody, &result)
 	assert.Nil(t, err)
 	return result
+}
+
+func checkGetMetrics(t *testing.T, baseUrl string) {
+	metricsUrlTemplate := "{0}/metrics"
+	metricsUrl := stringFormatter.Format(metricsUrlTemplate, baseUrl)
+	client := http.Client{}
+	request, err := http.NewRequest("GET", metricsUrl, nil)
+	assert.NoError(t, err)
+	response, err := client.Do(request)
+	require.Nil(t, err)
+	assert.Equal(t, "200 OK", response.Status)
+	responseBody, err := io.ReadAll(response.Body)
+	assert.Nil(t, err)
+	assert.True(t, len(responseBody) > 0)
 }
 
 func checkIntrospectToken(t *testing.T, baseUrl string, realm string, token string, clientId string, clientSecret string, expectedStatus string) map[string]interface{} {
