@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/gorilla/handlers"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/wissance/Ferrum/api/rest"
 	"github.com/wissance/Ferrum/api/rest/metrics"
@@ -283,7 +282,7 @@ func (app *Application) initRestApi() error {
 		app.httpHandler = &resultRouter
 		return nil
 	}
-	app.httpHandler = app.createHttpLoggingHandler(appenderIndex, router)
+	app.createHttpLoggingHandler(appenderIndex)
 	return nil
 }
 
@@ -407,8 +406,7 @@ func (app *Application) readKey() []byte {
 	return fileData
 }
 
-func (app *Application) createHttpLoggingHandler(index int, router *gin.Engine) *http.Handler {
-	var resultRouter http.Handler = router
+func (app *Application) createHttpLoggingHandler(index int) {
 	destination := app.appConfig.Logging.Appenders[index].Destination
 
 	lumberjackWriter := lumberjack.Logger{
@@ -423,12 +421,13 @@ func (app *Application) createHttpLoggingHandler(index int, router *gin.Engine) 
 	if app.appConfig.Logging.LogHTTP {
 		if app.appConfig.Logging.ConsoleOutHTTP {
 			writer := io.MultiWriter(&lumberjackWriter, os.Stdout)
-			resultRouter = handlers.LoggingHandler(writer, router)
+			gin.DefaultWriter = writer
+			gin.DefaultErrorWriter = writer
 		} else {
-			resultRouter = handlers.LoggingHandler(&lumberjackWriter, router)
+			gin.DefaultWriter = &lumberjackWriter
+			gin.DefaultErrorWriter = &lumberjackWriter
 		}
 	}
-	return &resultRouter
 }
 
 func (app *Application) getSwaggerAddress() string {
