@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/dto"
@@ -218,11 +219,11 @@ func getUserInfo(t *testing.T, baseUrl string, realm string, token string, expec
 	userInfoUrl := stringFormatter.Format(userInfoUrlTemplate, baseUrl, realm)
 	client := http.Client{}
 	request, err := http.NewRequest("GET", userInfoUrl, nil)
+	require.Nil(t, err)
 	request.Header.Set("Authorization", "Bearer "+token)
-	assert.Nil(t, err)
 	response, err := client.Do(request)
+	require.Nil(t, err)
 	assert.Equal(t, expectedStatus, response.Status)
-	assert.Nil(t, err)
 	responseBody, err := io.ReadAll(response.Body)
 	assert.Nil(t, err)
 	var result map[string]interface{}

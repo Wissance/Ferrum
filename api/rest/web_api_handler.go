@@ -203,33 +203,37 @@ func (wCtx *WebApiContext) GetUserInfo(c *gin.Context) {
 			}
 		}
 	} else {
-		// Just get access token,  find user + session
-		authorization := c.GetHeader(authorizationHeader)
-		parts := strings.Split(authorization, " ")
-		if parts[0] != string(BearerToken) {
-			wCtx.Logger.Debug("Get userinfo: expected only Bearer authorization yet")
-			status = http.StatusBadRequest
-			result = dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
-		} else if len(parts) < 2 {
-			wCtx.Logger.Debug("Get userinfo: token not provided")
-			status = http.StatusBadRequest
-			result = dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
-
+		// Just get access token, find user + session
+		authorization, ok := c.Request.Header[authorizationHeader]
+		if !ok {
+			status = http.StatusUnauthorized
 		} else {
-			session := (*wCtx.Security).GetSessionByAccessToken(realm, &parts[1])
-			if session == nil {
-				wCtx.Logger.Debug("Get userinfo: invalid token")
-				status = http.StatusUnauthorized
-				result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
+			parts := strings.Split(authorization[0], " ")
+			if parts[0] != string(BearerToken) {
+				wCtx.Logger.Debug("Get userinfo: expected only Bearer authorization yet")
+				status = http.StatusBadRequest
+				result = dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
+			} else if len(parts) < 2 {
+				wCtx.Logger.Debug("Get userinfo: token not provided")
+				status = http.StatusBadRequest
+				result = dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
+
 			} else {
-				if session.Expired.Before(time.Now()) {
+				session := (*wCtx.Security).GetSessionByAccessToken(realm, &parts[1])
+				if session == nil {
+					wCtx.Logger.Debug("Get userinfo: invalid token")
 					status = http.StatusUnauthorized
-					wCtx.Logger.Debug("Get userinfo: token expired")
 					result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
 				} else {
-					user, _ := (*wCtx.DataProvider).GetUserById(realmPtr.Name, session.UserId)
-					if user != nil {
-						result = user.GetUserInfo()
+					if session.Expired.Before(time.Now()) {
+						status = http.StatusUnauthorized
+						wCtx.Logger.Debug("Get userinfo: token expired")
+						result = dto.ErrorDetails{Msg: errors.InvalidTokenMsg, Description: errors.InvalidTokenDesc}
+					} else {
+						user, _ := (*wCtx.DataProvider).GetUserById(realmPtr.Name, session.UserId)
+						if user != nil {
+							result = user.GetUserInfo()
+						}
 					}
 				}
 			}
