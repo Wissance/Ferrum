@@ -295,8 +295,14 @@ func (wCtx *WebApiContext) Introspect(c *gin.Context) {
 		afterHandle(&w, status, &result)
 		return
 	}
-	authorization := c.GetHeader(authorizationHeader)
-	parts := strings.Split(authorization, " ")
+	authorization, ok := c.Request.Header[authorizationHeader]
+	if !ok {
+		status := http.StatusUnauthorized
+		result := dto.ErrorDetails{Msg: errors.InvalidRequestMsg, Description: errors.InvalidRequestDesc}
+		afterHandle(&w, status, &result)
+		return
+	}
+	parts := strings.Split(authorization[0], " ")
 	if parts[0] != "Basic" {
 		status := http.StatusBadRequest
 		wCtx.Logger.Debug(sf.Format("Introspect: Basic value not provided in Authorization header value - \"{0}\"", parts[0]))
