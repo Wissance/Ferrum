@@ -274,6 +274,8 @@ func (app *Application) initRestApi() error {
 	if app.devMode {
 		app.initSwaggerRoutes(rootRoutesGroup)
 	}
+	routerHandler := router.Handler()
+	app.httpHandler = &routerHandler
 	// Setting up listener for logging
 	appenderIndex := app.logger.GetAppenderIndex(config.RollingFile, app.appConfig.Logging.Appenders)
 	if appenderIndex == -1 {

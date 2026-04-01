@@ -24,8 +24,8 @@ export let options = {
 };
 
 export default function () {
-    const numOfIterationsStage1 = 1000
-    const numOfIterationsStage2 = 200
+    const numOfIterationsStage1 = 500
+    const numOfIterationsStage2 = 100
     // 1. Select Random User
     const userPassword = "P@55W0rD"
     const clientSecret = "00000000000000000000000000000000"

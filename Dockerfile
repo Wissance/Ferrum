@@ -28,6 +28,7 @@ COPY "go.mod" ./"go.mod"
 COPY "go.sum" ./"go.sum"
 COPY keyfile ./keyfile
 COPY "main.go" ./"main.go"
+COPY "main_defs.go" ./"main_defs.go"
 COPY "config_docker_w_redis.json" ./"config_docker_w_redis.json"
 COPY tools/"create_wissance_demo_users_docker.sh" ./"create_wissance_demo_users_docker.sh"
 COPY tools/"docker_app_runner.sh" ./"docker_app_runner.sh"
