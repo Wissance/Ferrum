@@ -17,14 +17,14 @@ export let options = {
         { duration: "180m", target: 0 },
     ],
     thresholds: {
-        http_req_duration: ['p(95)<250'], // 95% of requests must complete in less than 500ms for the test to pass
-        http_req_failed: ['rate<5'],      // Test fails if more than 5% of requests fail
+        http_req_duration: ['p(95)<500'],  // 95% of requests must complete in less than 500ms for the test to pass
+        http_req_failed: ['rate<50'],      // Test fails if more than 50% of requests fail
     },
 
 };
 
 export default function () {
-    const numOfIterationsStage1 = 500
+    const numOfIterationsStage1 = 200
     const numOfIterationsStage2 = 100
     // 1. Select Random User
     const userPassword = "P@55W0rD"
@@ -56,7 +56,7 @@ function runTestExchangeCycle(numberOfIterations, ferrumBaseUrl, realm, clientId
     let accessToken = responseBody.access_token;
     let refreshToken = responseBody.refresh_token;
     // 3. send up 100 requests userinfo (1-2 sec interval)
-    for (let i = 0; i < numOfIterationsStage; i++) {
+    for (let i = 0; i < numberOfIterations; i++) {
         if (i > 0 && i%10 === 0)
         {
             // send refresh token

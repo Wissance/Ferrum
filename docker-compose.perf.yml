@@ -184,7 +184,7 @@ services:
       #- K6_OUT=influxdb=http://admin:admin123456@influxdb:8086/k6
     volumes:
       #- ./tools/k6_smoke_test.js:/k6_smoke_test.js
-      - ./tools/k6_average_load_test.js:/k6_high_load_test.js
+      - ./tools/k6_high_load_test.js:/k6_high_load_test.js
     depends_on:
       influxdb:
         condition: service_started
