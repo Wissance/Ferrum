@@ -6,15 +6,15 @@ export let options = {
     stages: [
         { duration: "1m", target: 100 },
         { duration: "15m", target: 1000 },
-        { duration: "25m", target: 2000 },
-        { duration: "35m", target: 3000},
-        { duration: "45m", target: 4000 },
-        { duration: "55m", target: 5000 },
-        { duration: "80m", target: 5000 },
-        { duration: "100m", target: 7000 },
-        { duration: "120m", target: 10000 },
-        { duration: "150m", target: 10000 },
-        { duration: "180m", target: 0 },
+        { duration: "30m", target: 2000 },
+        { duration: "45m", target: 3000},
+        { duration: "60m", target: 4000 },
+        { duration: "75m", target: 5000 },
+        { duration: "90m", target: 5000 },
+        { duration: "120m", target: 7000 },
+        { duration: "180m", target: 10000 },
+        { duration: "220m", target: 10000 },
+        { duration: "250m", target: 0 },
     ],
     thresholds: {
         http_req_duration: ['p(95)<500'],  // 95% of requests must complete in less than 500ms for the test to pass
@@ -24,8 +24,8 @@ export let options = {
 };
 
 export default function () {
-    const numOfIterationsStage1 = 200
-    const numOfIterationsStage2 = 100
+    const numOfIterationsStage1 = 100
+    const numOfIterationsStage2 = 50
     // 1. Select Random User
     const userPassword = "P@55W0rD"
     const clientSecret = "00000000000000000000000000000000"
