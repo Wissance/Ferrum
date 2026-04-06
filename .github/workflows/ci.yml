@@ -45,7 +45,14 @@ jobs:
       - name: Get Redis logs
         run: docker logs $(docker ps -aqf "name=wissance_ferrum_db")
       - name: Test all
-        run: go version && go mod tidy && go test -v ./...
+        run: go version && go mod tidy && go test -v -covermode=count -coverprofile=coverage.out ./...
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # If your repo is private, uncomment the next line and set the secret
+          # coveralls-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
+          path-to-lcov: coverage.out
   
   #all-tests-windows:
   #  name: Run all tests on windows
