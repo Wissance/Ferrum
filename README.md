@@ -1,7 +1,7 @@
 # Ferrum
 
 `Ferrum` (`Ferrum Community Authorization Server`) is a Authorization Server that is
-* :comet:fast, 
+* :comet:fast, [see](#452-performance-testing)
 * :fire:low resource consumption, 
 * :heavy_check_mark:fully tested including performance testing
 
@@ -9,10 +9,10 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/Ferrum?style=plastic) 
 ![GitHub issues](https://img.shields.io/github/issues/wissance/Ferrum?style=plastic)
 ![GitHub Release Date](https://img.shields.io/github/release-date/wissance/Ferrum) 
-![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.3.rc1/total?style=plastic)
+![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.3.rc2/total?style=plastic)
 [![Wissance.WebApiToolkit CI](https://github.com/Wissance/Ferrum/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Wissance/Ferrum/actions/workflows/ci.yml)
 
-![Ferrum: A better Auth Server](/img/ferrum_cover.png)
+![Ferrum: A better Auth Server](./img/ferrum_cover.png)
 
 ## 1. Why Ferrum
 
@@ -121,16 +121,21 @@ For running Manager tests on `Redis` you must have redis on `127.0.0.1:6379` wit
 pair, it is possible to start docker_compose and test on compose `ferrum_db` container 
 
 ### 4.5.2 Performance testing
-Perfomance test running automatically with `K6` included in separate [docker-compose](./docker-compose.perf) running with powershell script - `start_docker_perftests.ps1`. `K6` tests itself located in `tools folder` started with prefix `k6`:
+Performance test running automatically with `K6` included in separate [docker-compose](./docker-compose.perf) running with powershell script - `start_docker_perftests.ps1`. `K6` tests itself located in `tools folder` started with prefix `k6`:
 * `k6_smoke_test.js` - small load with 10 users with 1 min duration;
 * `k6_average_load_test.js` - average load with up to 500 users running ~ `1 hour`
+* `k6_high_load_test.js` - high load up to 10000 users ~`1 day`
 
-Result of running avg load - 10 ms average response time, `p99` (99% of requests) duration around `20 ms`, maximum RAM usage during this test is `130 Mb` and takes `2 CPU Cores`, see results below:
+Result of running `avg load` - 10 ms average response time, `p99` (99% of requests) duration around `20 ms`, maximum RAM usage during this test is `130 Mb` and takes `2 CPU Cores`, see results below:
 
-![Grafana during avg test](/img/additional/k6_500users_avg_loading.png)
+![Grafana during avg test](./img/additional/k6_500users_avg_loading.png)
 
 And Summary of result from the K6 window:
-![K6 avg load summary](/img/additional/k6_500users_avg_loading_res.png)
+![K6 avg load summary](./img/additional/k6_500users_avg_loading_res.png)
+
+Result of running `high load` - ~3500 users and 5000 RPS gives `~400Mb` usage and `8 CPU Cores` with `p95` ~70-80 ms, see:
+
+![Grafana during high perf test](./img/additional/K6_3500users_high_load.png)
 
 
 ## 5. Configure
@@ -226,7 +231,7 @@ Since version `0.9.1` it is possible to use `CLI Admin` [See](api/admin/cli/READ
 3. Attach to running container using listed hash `docker exec -it 060cfb8dd84c sh`
 4. Run admin interface providing a valid config `ferrum-admin --config=config_docker_w_redis.json ...`, see picture
 
-![Use CLI Admin from docker](/img/additional/cli_from_docker.png)
+![Use CLI Admin from docker](./img/additional/cli_from_docker.png)
 
 ### 6.2 Observability (SRE)
 
@@ -240,9 +245,10 @@ For checking application state, we could query the `~/metrics` endpoint (i.e., f
 4. Resident memory consumption
 5. `CPU` in % consumption
 6. Number of goroutines used by Go
+7. `RPS`
 
 Screenshot with grafana dashboard:
-![Grafana dashboard](/img/additional/sre_grafana_example.png)
+![Grafana dashboard](./img/additional/sre_grafana_example.png)
 
 ## 7. Changes
 
@@ -311,6 +317,11 @@ Features:
 * created rules of matrix to check allowed operations with domain objects based on current user
 * added `SRE metrics` to check `Ferrum` state with `Grafana` dashboard
 * added automatic tests with `K6` and checked performance with `~20ms` on request with 500 users simultaneously.
+
+### 7.11 Changes in 0.9.3.rc2
+
+* switched from `gorilla/mux` to `gin-gonic/gin`
+* confirmed that `Ferrum` could handle `~3500 users with 5000 RPS`
 
 ## 8. Contributors
 

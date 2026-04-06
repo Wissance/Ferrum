@@ -4,7 +4,7 @@ import (
 	"unicode"
 )
 
-// Checks that the string consists of allowed characters.
+// Validate function that checks that whether a string consists of allowed characters or not
 func Validate(str string) bool {
 	if str == "" {
 		return false

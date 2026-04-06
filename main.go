@@ -40,7 +40,7 @@ func main() {
 
 	ctx := context.Background()
 
-	app := application.CreateAppWithConfigs(*configFile, *devMode)
+	app := application.CreateAppWithConfigs(*configFile, *devMode, ctx)
 	_, initErr := app.Init()
 	if initErr != nil {
 		fmt.Printf("An error occurred during app init, terminating the app: %s\n", initErr)
@@ -49,12 +49,16 @@ func main() {
 	logger := app.GetLogger()
 	logger.Info("Application was successfully initialized")
 
+	//nolint:ineffassign,staticcheck
 	res, err := app.Start()
-	if !res {
+	if err != nil {
 		msg := stringFormatter.Format("An error occurred during starting application, error is: {0}", err.Error())
 		fmt.Println(msg)
 	} else {
-		logger.Info("Application was successfully started")
+		logger.InfoMsgOnly(ferrumMfImgAscii)
+		logger.InfoMsgOnly(ferrumCommunityEditionAscii)
+		logger.InfoMsgOnly(ferrumManufacturerAscii)
+		logger.Info(stringFormatter.Format("Application of version {0} was successfully started", ferrumVersion))
 	}
 
 	// this goroutine handles OS signals and generate signal to stop the app
@@ -67,7 +71,7 @@ func main() {
 	// server was started in separate goroutine, main thread is waiting for signal to stop
 	<-done
 
-	res, err = app.Stop(ctx)
+	res, err = app.Stop()
 	if !res {
 		msg := stringFormatter.Format("An error occurred during stopping application, error is: {0}", err.Error())
 		fmt.Println(msg)

@@ -38,6 +38,10 @@ func CreateLogger(cfg *config.LoggingConfig) *AppLogger {
 	return &AppLogger{loggerCfg: cfg, logger: log.New()}
 }
 
+func (l *AppLogger) InfoMsgOnly(message string) {
+	l.logger.Info(message)
+}
+
 func (l *AppLogger) Info(message string) {
 	l.logger.WithFields(log.Fields{"location": l.getLocation()}).Info(message)
 }

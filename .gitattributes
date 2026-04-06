@@ -1,1 +1,4 @@
 *.sh        text eol=lf   # linux line-endings
+tools/r100_u100_demo_data.shdat linguist-generated=true
+*.shdat linguist-generated=true
+*.sh linguist-generated=true
