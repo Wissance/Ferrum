@@ -351,7 +351,7 @@ func (service *TokenBasedSecurityService) removeOutdatedSessions(realm string) {
 func (service *TokenBasedSecurityService) getRealmsWithSessions() []string {
 	service.mutex.RLock()
 	realmsWithSessions := make([]string, len(service.UserSessions))
-	for k, _ := range service.UserSessions {
+	for k := range service.UserSessions {
 		realmsWithSessions = append(realmsWithSessions, k)
 	}
 	service.mutex.RUnlock()
