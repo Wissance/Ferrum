@@ -19,6 +19,7 @@ parser.add_argument(output_dir_arg, help="Generating file", required=True, type=
 
 # UMV: DON'T end with .sh, use .shdat as ext
 # example - ./gen_users_for_perm_tests --realms=100 --realm_users=100 --output=../tools/r100_u100_demo_data.shdat
+# example - ./gen_users_for_perm_tests --realms=100 --realm_users=1000 --output=../tools/r100_u1000_demo_data.shdat
 def main():
     print ("********* Ferrum perf test data generation started ********")
     try:

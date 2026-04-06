@@ -1,7 +1,7 @@
 try
 {
    cp .env.perftests .env
-   docker-compose -f docker-compose.perf.yml  up --build
+   docker-compose -f docker-compose.perf.yml up -d --build
 }
 finally
 {
