@@ -9,8 +9,10 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/Ferrum?style=plastic) 
 ![GitHub issues](https://img.shields.io/github/issues/wissance/Ferrum?style=plastic)
 ![GitHub Release Date](https://img.shields.io/github/release-date/wissance/Ferrum) 
-![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/Ferrum/v0.9.3.rc2/total?style=plastic)
-[![Wissance.WebApiToolkit CI](https://github.com/Wissance/Ferrum/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Wissance/Ferrum/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/wissance/stringFormatter)](https://goreportcard.com/report/github.com/wissance/Ferrum)
+[![Wissance.Ferrum CI](https://github.com/Wissance/Ferrum/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Wissance/Ferrum/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/wissance/stringFormatter)](https://goreportcard.com/report/github.com/wissance/Ferrum)
+[![Coverage Status](https://coveralls.io/repos/github/Wissance/Ferrum/badge.svg?branch=master)](https://coveralls.io/github/Wissance/Ferrum?branch=master)
 
 ![Ferrum: A better Auth Server](./img/ferrum_cover.png)
 
@@ -182,24 +184,40 @@ there are NO SENSES in modifying it.
 
 ### 5.3 Server embedding into application (use from code)
 
-Minimal full example of how to use coud be found in `application_test.go`, here is a minimal snippet:
+Minimal full example of how to use could be found in `application_test.go`, here is a minimal snippet:
 
 ```go
-var testKey = []byte("qwerty1234567890")
-var testServerData = data.ServerData{
-	Realms: []data.Realm{
-		{Name: "testrealm1", TokenExpiration: 10, RefreshTokenExpiration: 5,
-			Clients: []data.Client{
-				{Name: "testclient1", Type: data.Confidential, Auth: data.Authentication{Type: data.ClientIdAndSecrets,
-					Value: "fb6Z4RsOadVycQoeQiN57xpu8w8wplYz"}},
-			}, Users: []interface{}{
-				map[string]interface{}{"info": map[string]interface{}{"sub": "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
-					"name": "vano", "preferred_username": "vano",
-					"given_name": "vano ivanov", "family_name": "ivanov", "email_verified": true},
-					"credentials": map[string]interface{}{"password": "1234567890"}},
-			}},
-	},
-}
+var (
+	testSalt           = "salt"
+	encoder            = encoding.NewPasswordJsonEncoder(testSalt)
+	testHashedPassword = encoder.GetB64PasswordHash("1234567890")
+	testKey            = []byte("qwerty1234567890")
+	testServerData     = data.ServerData{
+		Realms: []data.Realm{
+			{
+				Name: testRealm1, TokenExpiration: testAccessTokenExpiration, RefreshTokenExpiration: testRefreshTokenExpiration,
+				Clients: []data.Client{
+					{Name: testClient1, Type: data.Confidential, Auth: data.Authentication{
+						Type:  data.ClientIdAndSecrets,
+						Value: testClient1Secret,
+					}},
+				},
+				Users: []interface{}{
+					map[string]interface{}{
+						"info": map[string]interface{}{
+							"sub":  "667ff6a7-3f6b-449b-a217-6fc5d9ac0723",
+							"name": "vano", "preferred_username": "vano",
+							"given_name": "vano ivanov", "family_name": "ivanov", "email_verified": true,
+						},
+						"credentials": map[string]interface{}{"password": testHashedPassword},
+					},
+				},
+				PasswordSalt: testSalt,
+			},
+		},
+	}
+)
+
 var httpsAppConfig = config.AppConfig{ServerCfg: config.ServerConfig{Schema: config.HTTPS, Address: "127.0.0.1", Port: 8672,
 	Security: config.SecurityConfig{KeyFile: "./certs/server.key", CertificateFile: "./certs/server.crt"}}}
 	
@@ -235,7 +253,7 @@ Since version `0.9.1` it is possible to use `CLI Admin` [See](api/admin/cli/READ
 
 ### 6.2 Observability (SRE)
 
-For checking application state, we could query the `~/metrics` endpoint (i.e., for local instance full `URL` - `http://127.0.0.1/metrics`). But starting with `0.9.3` were added `prometheus` and `grafana` to be running simultaneously with `Ferrum` using `docker-compose`. `Grafana` model could be found [here](/prometheus/grafana_ferrum_dashboard_model.json). It requires only replacing the Prometheus ID.
+For checking application state, we could query the `~/metrics` endpoint (i.e., for local instance full `URL` - `http://127.0.0.1/metrics`). But starting with `0.9.3.rc1` were added `prometheus` and `grafana` to be running simultaneously with `Ferrum` using `docker-compose`. `Grafana` model could be found [here](/prometheus/grafana_ferrum_dashboard_model.json). It requires only replacing the Prometheus ID.
 
 `Grafana` model allows us to observe the following:
 
