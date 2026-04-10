@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
@@ -80,8 +81,8 @@ func (generator *JwtGenerator) prepareAccessToken(realmBaseUrl string, tokenType
 	userData data.User) *data.AccessTokenData {
 	issuer := realmBaseUrl
 	jwtCommon := data.JwtCommonInfo{Issuer: issuer, Type: tokenType, Audience: "account", Scope: scope, JwtId: uuid.New(),
-		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
-		SessionId: sessionData.Id, SessionState: sessionData.Id}
+		IssuedAt: sessionData.Started.In(time.UTC).Unix(), ExpiredAt: sessionData.Expired.In(time.UTC).Unix(),
+		Subject: sessionData.UserId, SessionId: sessionData.Id, SessionState: sessionData.Id}
 	accessToken := data.CreateAccessToken(&jwtCommon, userData)
 	return accessToken
 }
@@ -90,8 +91,8 @@ func (generator *JwtGenerator) prepareAccessToken(realmBaseUrl string, tokenType
 func (generator *JwtGenerator) prepareRefreshToken(realmBaseUrl string, tokenType string, scope string, sessionData *data.UserSession) *data.TokenRefreshData {
 	issuer := realmBaseUrl
 	jwtCommon := data.JwtCommonInfo{Issuer: issuer, Type: tokenType, Audience: issuer, Scope: scope, JwtId: uuid.New(),
-		IssuedAt: sessionData.Started, ExpiredAt: sessionData.Expired, Subject: sessionData.UserId,
-		SessionId: sessionData.Id, SessionState: sessionData.Id}
+		IssuedAt: sessionData.Started.In(time.UTC).Unix(), ExpiredAt: sessionData.Expired.In(time.UTC).Unix(),
+		Subject: sessionData.UserId, SessionId: sessionData.Id, SessionState: sessionData.Id}
 	accessToken := data.CreateRefreshToken(&jwtCommon)
 	return accessToken
 }
