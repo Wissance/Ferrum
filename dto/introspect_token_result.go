@@ -1,15 +1,21 @@
 package dto
 
-// StringOrArray represents a value that can either be a string or an array of strings
-type StringOrArray []string
+/* type Roles struct {
+	Roles []string `json:"roles"`
+}
+
+type AccountRoles struct {
+	AccountRoles Roles `json:"account"`
+}*/
 
 type IntrospectTokenResult struct {
-	Exp      int           `json:"exp,omitempty"`
-	Nbf      int           `json:"nbf,omitempty"`
-	Iat      int           `json:"iat,omitempty"`
-	Aud      StringOrArray `json:"aud,omitempty"`
-	Active   bool          `json:"active,omitempty"`
-	AuthTime int           `json:"auth_time,omitempty"`
-	Jti      string        `json:"jti,omitempty"`
-	Type     string        `json:"typ,omitempty"`
+	Exp      int64  `json:"exp,omitempty"`
+	Iss      string `json:"iss,omitempty"`
+	Iat      int64  `json:"iat,omitempty"`
+	Active   bool   `json:"active,omitempty"`
+	Username string `json:"username,omitempty"`
+	ClientId string `json:"client_id,omitempty"`
+	Scope    string `json:"scope,omitempty"`
+	// RealmAccess    Roles        `json:"realm_access,omitempty"`
+	// ResourceAccess AccountRoles `json:"resource_access,omitempty"`
 }
