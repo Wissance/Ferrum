@@ -144,7 +144,7 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 	sessionId := uuid.New()
 	// if there are no realm sessions ...
 	if !ok {
-		started := time.Now()
+		started := time.Now().In(time.UTC)
 		userSession := data.UserSession{
 			Id: sessionId, UserId: userId, Started: started,
 			Expired:        started.Add(time.Second * time.Duration(duration)),
@@ -160,8 +160,8 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 	service.mutex.RLock()
 	for i, s := range realmSessions {
 		if s.UserId == userId {
-			realmSessions[i].Expired = time.Now().Add(time.Second * time.Duration(duration))
-			realmSessions[i].RefreshExpired = time.Now().Add(time.Second * time.Duration(refresh))
+			realmSessions[i].Expired = time.Now().In(time.UTC).Add(time.Second * time.Duration(duration))
+			realmSessions[i].RefreshExpired = time.Now().In(time.UTC).Add(time.Second * time.Duration(refresh))
 			// todo(UMV): could be an issue with map concurrent write
 			service.mutex.RUnlock()
 			service.mutex.Lock()
@@ -173,8 +173,8 @@ func (service *TokenBasedSecurityService) StartOrUpdateSession(realm string, use
 	service.mutex.RUnlock()
 	// such session does not exist, adding
 	userSession := data.UserSession{
-		Id: sessionId, UserId: userId, Started: time.Now(),
-		Expired: time.Now().Add(time.Second * time.Duration(duration)),
+		Id: sessionId, UserId: userId, Started: time.Now().In(time.UTC),
+		Expired: time.Now().In(time.UTC).Add(time.Second * time.Duration(duration)),
 	}
 	service.mutex.Lock()
 	service.UserSessions[realm] = append(realmSessions, userSession)

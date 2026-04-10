@@ -6,8 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="f2bc4471-ed8e-44f8-95bc-15c82292d6f2" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/certs/server.crt" beforeDir="false" afterPath="$PROJECT_DIR$/certs/server.crt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/certs/server.key" beforeDir="false" afterPath="$PROJECT_DIR$/certs/server.key" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/rest/web_api_handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/api/rest/web_api_handler.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/application/application_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/application/application_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dto/introspect_token_result.go" beforeDir="false" afterPath="$PROJECT_DIR$/dto/introspect_token_result.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,13 +22,17 @@
       </list>
     </option>
   </component>
-  <component name="GOROOT" url="file://$PROJECT_DIR$/../../../../Program Files/Go" />
+  <component name="GOROOT" url="file://C:/Program Files/Go" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 4
+}</component>
   <component name="ProjectId" id="2J3JLaZQ2vYOt0DxChxlfp0MlBK" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -36,19 +41,28 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "DefaultGoTemplateProperty": "Go File",
-    "Go Build.go build github.com/wissance/Ferrum.executor": "Debug",
+    "Go Build.go build github.com/wissance/Ferrum.executor": "Run",
+    "Go Test.FuzzTestGetUserInfoWithWrongToken in github.com/wissance/Ferrum/api.executor": "Run",
+    "Go Test.TestApplicationOnHttp in github.com/wissance/Ferrum/application (1).executor": "Debug",
+    "Go Test.TestApplicationOnHttp in github.com/wissance/Ferrum/application (2).executor": "Debug",
+    "Go Test.TestApplicationOnHttp in github.com/wissance/Ferrum/application.executor": "Debug",
+    "Go Test.go test Ferrum.executor": "Run",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.go.format.on.save.advertiser.fired": "true",
     "RunOnceActivity.go.formatter.settings.were.checked": "true",
     "RunOnceActivity.go.migrated.go.modules.settings": "true",
     "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
     "RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed": "true",
     "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "feature/76__prometheus__metrics",
+    "git-widget-placeholder": "feature/80__TokenIntrospectFormat",
     "go.import.settings.migrated": "true",
     "go.sdk.automatically.set": "true",
+    "ignore.virus.scanning.warn.message": "true",
     "last_opened_file_path": "C:/Users/mushakov/projects/soar",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "go.sdk"
   }
@@ -62,7 +76,7 @@
       <recent name="C:\Users\mushakov\projects\Ferrum\managers\" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Build.go build github.com/wissance/Ferrum">
+  <component name="RunManager" selected="Go Test.TestApplicationOnHttp in github.com/wissance/Ferrum/application (2)">
     <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="Ferrum" />
       <working_directory value="$PROJECT_DIR$" />
@@ -71,12 +85,52 @@
       <filePath value="$PROJECT_DIR$" />
       <method v="2" />
     </configuration>
-    <configuration name="go build github.com/wissance/Ferrum" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+    <configuration name="FuzzTestGetUserInfoWithWrongToken in github.com/wissance/Ferrum/api" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="Ferrum" />
-      <working_directory value="$PROJECT_DIR$" />
+      <working_directory value="$PROJECT_DIR$/api" />
+      <root_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
-      <package value="github.com/wissance/Ferrum" />
+      <package value="github.com/wissance/Ferrum/api" />
       <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QFuzzTestGetUserInfoWithWrongToken\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestApplicationOnHttp in github.com/wissance/Ferrum/application (1)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="Ferrum" />
+      <working_directory value="$PROJECT_DIR$/application" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/wissance/Ferrum/application" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestApplicationOnHttp\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestApplicationOnHttp in github.com/wissance/Ferrum/application (2)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="Ferrum" />
+      <working_directory value="$PROJECT_DIR$/application" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/wissance/Ferrum/application" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestApplicationOnHttp\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestApplicationOnHttp in github.com/wissance/Ferrum/application" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="Ferrum" />
+      <working_directory value="$PROJECT_DIR$/application" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/wissance/Ferrum/application" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestApplicationOnHttp\E$" />
       <method v="2" />
     </configuration>
     <configuration default="true" type="GoTestRunConfiguration" factoryName="Go Test">
@@ -92,6 +146,7 @@
       <module name="Ferrum" />
       <working_directory value="$PROJECT_DIR$" />
       <kind value="DIRECTORY" />
+      <package value="github.com/wissance/Ferrum" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
@@ -99,10 +154,21 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Go Build.go build github.com/wissance/Ferrum" />
+        <item itemvalue="Go Test.TestApplicationOnHttp in github.com/wissance/Ferrum/application (2)" />
         <item itemvalue="Go Test.go test Ferrum" />
+        <item itemvalue="Go Test.TestApplicationOnHttp in github.com/wissance/Ferrum/application (1)" />
+        <item itemvalue="Go Test.TestApplicationOnHttp in github.com/wissance/Ferrum/application" />
+        <item itemvalue="Go Test.FuzzTestGetUserInfoWithWrongToken in github.com/wissance/Ferrum/api" />
       </list>
     </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-gosdk-d297c17c1fbd-b87a2f8923ed-org.jetbrains.plugins.go.sharedIndexes.bundled-GO-243.21565.208" />
+        <option value="bundled-js-predefined-d6986cc7102b-e768b9ed790e-JavaScript-GO-243.21565.208" />
+      </set>
+    </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">
@@ -121,5 +187,36 @@
   </component>
   <component name="VgoProject">
     <settings-migrated>true</settings-migrated>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/application/application_test.go</url>
+          <line>86</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/api/rest/web_api_handler.go</url>
+          <line>343</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/application/application_test.go</url>
+          <line>120</line>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/application/application_test.go</url>
+          <line>271</line>
+          <option name="timeStamp" value="7" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+    <watches-manager>
+      <configuration name="GoTestRunConfiguration">
+        <watch expression="response" />
+      </configuration>
+    </watches-manager>
   </component>
 </project>
