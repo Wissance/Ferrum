@@ -7,13 +7,15 @@ import (
 	"time"
 )
 
-const blockThresholdPerMin = 100
+const blockThreshold = 100
+const minTimeToCheck = 60
 
 type attackerList struct {
 	mutex                *sync.RWMutex
 	attackersIPAddresses map[string]uuid.UUID
 	attackersDevices     map[string]uuid.UUID
 	attackersStats       map[uuid.UUID]AttackerStats
+	blockTime            int
 }
 
 // AttackerStats is a public exporting type that is representing for the attackers statistics
@@ -30,12 +32,13 @@ type AttackerStats struct {
 	deviceId string
 }
 
-func createAttackerList() *attackerList {
+func createAttackerList(blockTime int) *attackerList {
 	return &attackerList{
 		mutex:                &sync.RWMutex{},
 		attackersDevices:     map[string]uuid.UUID{},
 		attackersIPAddresses: map[string]uuid.UUID{},
 		attackersStats:       map[uuid.UUID]AttackerStats{},
+		blockTime:            blockTime,
 	}
 }
 
@@ -104,8 +107,12 @@ func (attackers *attackerList) upsertStatsImpl(keyExists bool, id uuid.UUID, isK
 		existingStats, statsExists := attackers.attackersStats[id]
 		if statsExists {
 			existingStats.attackCount++
-			// todo(UMV) think about decision to block here
 			existingStats.lastAttackDetection = utcNow
+			if checkAttackerShouldBeBlocked(&existingStats) {
+				existingStats.blocked = true
+				existingStats.blockedAt = utcNow
+				existingStats.blockTill = utcNow.Add(time.Second * time.Duration(attackers.blockTime))
+			}
 			attackers.attackersStats[id] = existingStats
 		} else {
 			return errors.NewAttackerStatDataNotFoundError(attackerSign, id)
@@ -130,6 +137,11 @@ func (attackers *attackerList) upsertStatsImpl(keyExists bool, id uuid.UUID, isK
 	return nil
 }
 
-func checkAttackerShouldBeBlocked() bool {
+func checkAttackerShouldBeBlocked(stats *AttackerStats) bool {
+	utcNow := time.Now().UTC()
+	timeDelta := utcNow.Unix() - stats.firstAttackDetection.Unix()
+	if timeDelta >= minTimeToCheck {
+		return stats.attackCount >= blockThreshold
+	}
 	return false
 }

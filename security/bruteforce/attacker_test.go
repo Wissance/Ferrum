@@ -1,5 +1,19 @@
 package bruteforce
 
+import "testing"
+
+func TestUpsertIpAddressStats(t *testing.T) {
+
+}
+
+func TestUpsertDeviceStats(t *testing.T) {
+
+}
+
+func TestGetAttackerStats(t *testing.T) {
+	
+}
+
 /*import (
 	"github.com/stretchr/testify/assert"
 	"testing"
