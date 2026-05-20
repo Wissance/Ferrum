@@ -2,9 +2,12 @@ package bruteforce
 
 import (
 	"github.com/google/uuid"
+	"github.com/wissance/Ferrum/errors"
 	"sync"
 	"time"
 )
+
+const blockThresholdPerMin = 100
 
 type attackerList struct {
 	mutex                *sync.RWMutex
@@ -21,6 +24,10 @@ type AttackerStats struct {
 	blocked              bool
 	blockedAt            time.Time
 	blockTill            time.Time
+	// ipAddress was added for quick search in attackersIPAddresses map
+	ipAddress string
+	// deviceId was added for quick search in attackersDevices map
+	deviceId string
 }
 
 func createAttackerList() *attackerList {
@@ -40,7 +47,7 @@ func createAttackerList() *attackerList {
  *    - ipAddress - client IP, same browser could connect via proxy with different IP addresses
  * Returns pointer to attackerStats or nil
  */
-func (attackers *attackerList) getAttackerStats(deviceId string, ipAddress string) *AttackerStats {
+func (attackers *attackerList) GetAttackerStats(deviceId string, ipAddress string) *AttackerStats {
 	if deviceId == "" && ipAddress == "" {
 		return nil
 	}
@@ -62,17 +69,38 @@ func (attackers *attackerList) getAttackerStats(deviceId string, ipAddress strin
 	return &stats
 }
 
-// upsertDeviceStats implements statistic update for selected deviceId
+// UpsertDeviceStats implements statistic update for selected deviceId
 /* This function perform statistic insert or update.
- * Insert creates initial values
+ * Insert creates initial values (1 attempt and so on ....)
+ * Parameters:
+ *    - deviceId is a browser fingerprint/identifier
  */
-func (attackers *attackerList) upsertDeviceStats(ipAddress string) error {
+func (attackers *attackerList) UpsertDeviceStats(deviceId string) error {
+	attackers.mutex.RLock()
+	id, ok := attackers.attackersDevices[deviceId]
+	attackers.mutex.RUnlock()
+	return attackers.upsertStatsImpl(ok, id, false, deviceId)
+}
+
+// UpsertIpAddressStats implements statistic update for selected ipAddress
+/* This function perform statistic update by replacing attackCount if stats is present
+ * If there are no such stats it will be created with all fields copy to the attackerList
+ * Parameters:
+ *    - ipAddress is a registered attacker id
+ */
+func (attackers *attackerList) UpsertIpAddressStats(ipAddress string) error {
 	attackers.mutex.RLock()
 	id, ok := attackers.attackersIPAddresses[ipAddress]
 	attackers.mutex.RUnlock()
+	return attackers.upsertStatsImpl(ok, id, true, ipAddress)
+}
+
+// upsertStatsImpl implements insert or update stats data for potential attacker
+func (attackers *attackerList) upsertStatsImpl(keyExists bool, id uuid.UUID, isKeyIpAddress bool, attackerSign string) error {
 	attackers.mutex.Lock()
+	defer attackers.mutex.Unlock()
 	utcNow := time.Now().UTC()
-	if ok {
+	if keyExists {
 		existingStats, statsExists := attackers.attackersStats[id]
 		if statsExists {
 			existingStats.attackCount++
@@ -80,26 +108,28 @@ func (attackers *attackerList) upsertDeviceStats(ipAddress string) error {
 			existingStats.lastAttackDetection = utcNow
 			attackers.attackersStats[id] = existingStats
 		} else {
-			// todo(UMV): provide error here
-			return nil
+			return errors.NewAttackerStatDataNotFoundError(attackerSign, id)
 		}
 	} else {
+		newId := uuid.New()
 		stats := AttackerStats{
 			firstAttackDetection: utcNow,
 			lastAttackDetection:  utcNow,
 			attackCount:          1,
 			blocked:              false,
 		}
+		if isKeyIpAddress {
+			stats.ipAddress = attackerSign
+			attackers.attackersIPAddresses[attackerSign] = newId
+		} else {
+			stats.deviceId = attackerSign
+			attackers.attackersDevices[attackerSign] = newId
+		}
 		attackers.attackersStats[id] = stats
 	}
-	attackers.mutex.Unlock()
 	return nil
 }
 
-// upsertIpAddressStats implements statistic update for selected ipAddress
-/* This function perform statistic update by replacing attackCount if stats is present
- * If there are no such stats it will be created with all fields copy to the attackerList
- */
-func (attackers *attackerList) upsertIpAddressStats(ipAddress string) {
-
+func checkAttackerShouldBeBlocked() bool {
+	return false
 }
