@@ -1,9 +1,53 @@
 package bruteforce
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"math/rand"
+	"testing"
+	"time"
+)
 
 func TestUpsertIpAddressStats(t *testing.T) {
-
+	testCases := []struct {
+		name           string
+		ipList         []string
+		produceAttacks int
+		expectBlock    bool
+	}{
+		{
+			name:           "Sequential attack from one address and block as a result",
+			ipList:         []string{"192.167.99.144"},
+			produceAttacks: 1000,
+			expectBlock:    true,
+		},
+		{
+			name:           "User attempts to remember his password",
+			ipList:         []string{"192.168.0.201"},
+			produceAttacks: 10,
+			expectBlock:    false,
+		},
+	}
+	for _, tCase := range testCases {
+		t.Run(tCase.name, func(t *testing.T) {
+			// 1. Create attackerList
+			attackers := createAttackerList(3600)
+			// 2. take random IP from the list
+			ipIndex := rand.Intn(len(tCase.ipList))
+			selectedIP := tCase.ipList[ipIndex]
+			errNumber := 0
+			for range tCase.produceAttacks {
+				err := attackers.UpsertIpAddressStats(selectedIP)
+				if err != nil {
+					errNumber++
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+			assert.Equal(t, 0, errNumber)
+			stats := attackers.GetAttackerStats("", selectedIP)
+			assert.NotNil(t, stats)
+			assert.Equal(t, tCase.expectBlock, stats.blocked)
+		})
+	}
 }
 
 func TestUpsertDeviceStats(t *testing.T) {
@@ -11,59 +55,5 @@ func TestUpsertDeviceStats(t *testing.T) {
 }
 
 func TestGetAttackerStats(t *testing.T) {
-	
+
 }
-
-/*import (
-	"github.com/stretchr/testify/assert"
-	"testing"
-)
-
-func TestAttackerEquals(t *testing.T) {
-	device1Id := "8e59868c-55b4-42e3-88e2-a709ba403ecc"
-	device2Id := "8ad11bba-a072-48d7-86d6-63a33cc00e1c"
-
-	testCases := []struct {
-		name         string
-		items        []attacker
-		itemToLookup attacker
-		lookupResult bool
-	}{
-		{
-			name: "Search attacker by IP among IP and Devices, present in table",
-			items: []attacker{
-				{IPAddress: "192.168.122.20", DeviceId: nil},
-				{IPAddress: "192.168.123.44", DeviceId: nil},
-				{IPAddress: "167.165.190.239", DeviceId: nil},
-				{IPAddress: "167.165.190.239", DeviceId: &device1Id},
-				{IPAddress: "10.116.200.15", DeviceId: &device2Id},
-			},
-			itemToLookup: attacker{IPAddress: "192.168.123.44", DeviceId: nil},
-			lookupResult: true,
-		},
-		{
-			name: "Search attacker by Device among IP and Devices, present in table",
-			items: []attacker{
-				{IPAddress: "192.168.122.20", DeviceId: nil},
-				{IPAddress: "192.168.123.44", DeviceId: nil},
-				{IPAddress: "167.165.190.239", DeviceId: nil},
-				{IPAddress: "167.165.190.239", DeviceId: &device1Id},
-				{IPAddress: "10.116.200.15", DeviceId: &device2Id},
-			},
-			itemToLookup: attacker{IPAddress: "167.165.190.178", DeviceId: &device1Id},
-			lookupResult: true,
-		},
-	}
-
-	for _, tCase := range testCases {
-		t.Run(tCase.name, func(t *testing.T) {
-			attackersMap := map[attacker]struct{}{}
-			for _, hacker := range tCase.items {
-				attackersMap[hacker] = struct{}{}
-			}
-			_, ok := attackersMap[tCase.itemToLookup]
-			assert.Equal(t, tCase.lookupResult, ok)
-		})
-	}
-}
-*/

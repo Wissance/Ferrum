@@ -8,7 +8,7 @@ import (
 )
 
 const blockThreshold = 100
-const minTimeToCheck = 60
+const minTimeToCheck = 30
 
 type attackerList struct {
 	mutex                *sync.RWMutex
@@ -62,7 +62,7 @@ func (attackers *attackerList) GetAttackerStats(deviceId string, ipAddress strin
 		id, ok = attackers.attackersDevices[deviceId]
 	}
 	if !ok {
-		id, ok = attackers.attackersDevices[deviceId]
+		id, ok = attackers.attackersIPAddresses[ipAddress]
 	}
 
 	if ok {
@@ -132,7 +132,7 @@ func (attackers *attackerList) upsertStatsImpl(keyExists bool, id uuid.UUID, isK
 			stats.deviceId = attackerSign
 			attackers.attackersDevices[attackerSign] = newId
 		}
-		attackers.attackersStats[id] = stats
+		attackers.attackersStats[newId] = stats
 	}
 	return nil
 }
@@ -140,7 +140,7 @@ func (attackers *attackerList) upsertStatsImpl(keyExists bool, id uuid.UUID, isK
 func checkAttackerShouldBeBlocked(stats *AttackerStats) bool {
 	utcNow := time.Now().UTC()
 	timeDelta := utcNow.Unix() - stats.firstAttackDetection.Unix()
-	if timeDelta >= minTimeToCheck {
+	if timeDelta >= minTimeToCheck || stats.attackCount >= blockThreshold {
 		return stats.attackCount >= blockThreshold
 	}
 	return false
