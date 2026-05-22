@@ -151,3 +151,31 @@ func TestGetAttackerStats(t *testing.T) {
 		})
 	}
 }
+
+func TestAttackersCleanup(t *testing.T) {
+	watchTime := 10
+	attackers := createAttackerList(context.Background(), 3600, watchTime)
+	ipAddress1 := "167.134.30.55"
+	ipAddress2 := "55.22.90.14"
+	ipAddress3 := "102.36.99.202"
+	deviceId1 := "1b9ee5b8d043698cd13c9f11481cd037d44b8cf3"
+	deviceId2 := "d3681338021a33149a9f8ef2f48eb8bfb46b10b3"
+	err := attackers.UpsertIpAddressStats(ipAddress1)
+	assert.NoError(t, err)
+	err = attackers.UpsertIpAddressStats(ipAddress2)
+	assert.NoError(t, err)
+	err = attackers.UpsertIpAddressStats(ipAddress3)
+	assert.NoError(t, err)
+	err = attackers.UpsertDeviceStats(deviceId1)
+	assert.NoError(t, err)
+	err = attackers.UpsertDeviceStats(deviceId2)
+	assert.NoError(t, err)
+	ipAddress4 := "127.0.0.1"
+	for range blockThreshold {
+		err = attackers.UpsertIpAddressStats(ipAddress4)
+		assert.NoError(t, err)
+	}
+	time.Sleep(time.Duration(watchTime+1) * time.Second)
+	stats := attackers.GetAttackerStats("", ipAddress1)
+	assert.Nil(t, stats)
+}
