@@ -1,6 +1,7 @@
 package bruteforce
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -29,7 +30,7 @@ func TestUpsertIpAddressStats(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			// 1. Create attackerList
-			attackers := createAttackerList(3600)
+			attackers := createAttackerList(context.Background(), 3600, 600)
 			errNumber := 0
 			// 2. Implement a set of "attacks"
 			for range tCase.produceAttacks {
@@ -75,7 +76,7 @@ func TestUpsertDeviceStats(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			// 1. Create attackerList
-			attackers := createAttackerList(3600)
+			attackers := createAttackerList(context.Background(), 3600, 600)
 			errNumber := 0
 			// 2. Implement a set of "attacks"
 			for range tCase.produceAttacks {
@@ -96,7 +97,7 @@ func TestUpsertDeviceStats(t *testing.T) {
 }
 
 func TestGetAttackerStats(t *testing.T) {
-	attackers := createAttackerList(3600)
+	attackers := createAttackerList(context.Background(), 3600, 600)
 	err := attackers.UpsertIpAddressStats("167.134.30.55")
 	assert.NoError(t, err)
 	err = attackers.UpsertIpAddressStats("55.22.90.14")

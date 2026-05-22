@@ -1,6 +1,7 @@
 package bruteforce
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"github.com/wissance/Ferrum/errors"
 	"sync"
@@ -8,14 +9,17 @@ import (
 )
 
 const blockThreshold = 100
+const watchThreshold = blockThreshold / 2
 const minTimeToCheck = 30
 
 type attackerList struct {
 	mutex                *sync.RWMutex
+	ctx                  context.Context
 	attackersIPAddresses map[string]uuid.UUID
 	attackersDevices     map[string]uuid.UUID
 	attackersStats       map[uuid.UUID]AttackerStats
 	blockTime            int
+	watchTime            int
 }
 
 // AttackerStats is a public exporting type that is representing for the attackers statistics
@@ -32,14 +36,20 @@ type AttackerStats struct {
 	deviceId string
 }
 
-func createAttackerList(blockTime int) *attackerList {
-	return &attackerList{
+func createAttackerList(ctx context.Context, blockTime int, watchTime int) *attackerList {
+	attackers := attackerList{
 		mutex:                &sync.RWMutex{},
+		ctx:                  ctx,
 		attackersDevices:     map[string]uuid.UUID{},
 		attackersIPAddresses: map[string]uuid.UUID{},
 		attackersStats:       map[uuid.UUID]AttackerStats{},
 		blockTime:            blockTime,
+		watchTime:            watchTime,
 	}
+
+	go attackers.processAttackers()
+
+	return &attackers
 }
 
 // GetAttackerStats is a function for searching the stats
@@ -111,7 +121,7 @@ func (attackers *attackerList) upsertStatsImpl(keyExists bool, id uuid.UUID, isK
 		if statsExists {
 			existingStats.attackCount++
 			existingStats.lastAttackDetection = utcNow
-			if checkAttackerShouldBeBlocked(&existingStats) {
+			if attackers.checkAttackerShouldBeBlocked(&existingStats) {
 				existingStats.blocked = true
 				existingStats.blockedAt = utcNow
 				existingStats.blockTill = utcNow.Add(time.Second * time.Duration(attackers.blockTime))
@@ -140,11 +150,59 @@ func (attackers *attackerList) upsertStatsImpl(keyExists bool, id uuid.UUID, isK
 	return nil
 }
 
-func checkAttackerShouldBeBlocked(stats *AttackerStats) bool {
+func (attackers *attackerList) checkAttackerShouldBeBlocked(stats *AttackerStats) bool {
 	utcNow := time.Now().UTC()
 	timeDelta := utcNow.Unix() - stats.firstAttackDetection.Unix()
 	if timeDelta >= minTimeToCheck || stats.attackCount >= blockThreshold {
 		return stats.attackCount >= blockThreshold
 	}
 	return false
+}
+
+// removedNonWatchingAttackers function that processed all data in maps
+/* This function must be run in goroutine and do the following
+ * 1. Remove after 10min attackers that didn't behave like attackers
+ * 2. Check blocked till (here we should think should we unblock or should we
+ *    completely remove them ?
+ */
+func (attackers *attackerList) removedNonWatchingAttackers() {
+	attackers.mutex.RLock()
+	utcNow := time.Now().UTC().Unix()
+	itemsToRemove := make([]AttackerStats, 0, len(attackers.attackersStats)/2)
+	for _, v := range attackers.attackersStats {
+		// 1. Select attackers with low stats
+		delta := v.lastAttackDetection.Unix() - utcNow
+		if v.attackCount < watchThreshold && delta >= int64(attackers.watchTime) {
+			itemsToRemove = append(itemsToRemove, v)
+		}
+		// 2. Check blocked ? unblock or not
+	}
+	attackers.mutex.RUnlock()
+
+	attackers.mutex.Lock()
+	for _, v := range itemsToRemove {
+		var id uuid.UUID
+		if v.ipAddress != "" {
+			id = attackers.attackersIPAddresses[v.ipAddress]
+			delete(attackers.attackersIPAddresses, v.ipAddress)
+		} else {
+			id = attackers.attackersDevices[v.deviceId]
+			delete(attackers.attackersDevices, v.deviceId)
+		}
+		delete(attackers.attackersStats, id)
+	}
+	attackers.mutex.Unlock()
+}
+
+// processAttackers functions that removes attackers that we should not watch
+func (attackers *attackerList) processAttackers() {
+	ticker := time.NewTicker(time.Duration(attackers.watchTime) * time.Second)
+	for {
+		select {
+		case <-attackers.ctx.Done():
+			return
+		case <-ticker.C:
+			attackers.removedNonWatchingAttackers()
+		}
+	}
 }
