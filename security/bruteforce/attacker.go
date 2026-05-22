@@ -69,7 +69,10 @@ func (attackers *attackerList) GetAttackerStats(deviceId string, ipAddress strin
 		stats = attackers.attackersStats[id]
 	}
 	attackers.mutex.RUnlock()
-	return &stats
+	if ok {
+		return &stats
+	}
+	return nil
 }
 
 // UpsertDeviceStats implements statistic update for selected deviceId
