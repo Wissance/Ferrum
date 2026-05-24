@@ -10,12 +10,14 @@ package bruteforce
  *     1. https://www.sobyte.net/post/2021-09/gin-get-client-real-ip/
  */
 type ProtectionService interface {
-	// BlockSender functions that adds record for blocking access to the list
-	BlockSender(ipAddress string, deviceId string)
-	// IsSenderBlocked checks that sender was blocked
-	IsSenderBlocked(ipAddress string) bool
-	// IsSenderDeviceBlocked checks that sender device was blocked
-	IsSenderDeviceBlocked(deviceId string) bool
+	// BlockDevice functions that adds record for blocking access for deviceId to the list
+	BlockDevice(deviceId string)
+	// BlockIpAddress functions that adds record for blocking access for ipAddress to the list
+	BlockIpAddress(ipAddress string)
+	// IsIpAddressBlocked checks that sender was blocked
+	IsIpAddressBlocked(ipAddress string) bool
+	// IsDeviceBlocked checks that sender device was blocked
+	IsDeviceBlocked(deviceId string) bool
 	// UnblockSender is a function for direct Sender unblock
 	UnblockSender(ipAddress string)
 	// UnblockDevice is a function for direct Device unblock
