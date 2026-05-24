@@ -175,7 +175,7 @@ func TestAttackersCleanup(t *testing.T) {
 		err = attackers.UpsertIpAddressStats(ipAddress4)
 		assert.NoError(t, err)
 	}
-	time.Sleep(time.Duration(watchTime+1) * time.Second)
+	time.Sleep(time.Duration(watchTime+2) * time.Second)
 	stats := attackers.GetAttackerStats("", ipAddress1)
 	assert.Nil(t, stats)
 }
