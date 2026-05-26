@@ -188,7 +188,7 @@ func (attackers *attackerList) removedNonWatchingAttackers() {
 	for _, v := range attackers.attackersStats {
 		// 1. Select attackers with low stats
 		delta := utcNowUnix - v.lastAttackDetection.Unix()
-		if v.attackCount < watchThreshold && delta >= int64(attackers.watchTime) {
+		if !v.blocked && v.attackCount < watchThreshold && delta >= int64(attackers.watchTime) {
 			itemsToRemove = append(itemsToRemove, v)
 		}
 

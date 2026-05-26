@@ -138,6 +138,18 @@ func TestGetAttackerStats(t *testing.T) {
 			deviceId:  "atatatatatatta-no-such-device-anyway",
 			exists:    false,
 		},
+		{
+			name:      "empty-sign-case",
+			ipAddress: "",
+			deviceId:  "",
+			exists:    false,
+		},
+		{
+			name:      "non-empty-but-non-existed-attacker",
+			ipAddress: "166.166.166.166",
+			deviceId:  "",
+			exists:    false,
+		},
 	}
 
 	for _, tCase := range testCases {
@@ -152,7 +164,7 @@ func TestGetAttackerStats(t *testing.T) {
 	}
 }
 
-func TestAttackersCleanup(t *testing.T) {
+func TestAttackersCleanupForAutoAddedAttackers(t *testing.T) {
 	watchTime := 10
 	attackers := createAttackerList(context.Background(), 3600, watchTime)
 	ipAddress1 := "167.134.30.55"
@@ -187,5 +199,48 @@ func TestAttackersCleanup(t *testing.T) {
 	stats = attackers.GetAttackerStats(deviceId2, "")
 	assert.Nil(t, stats)
 	stats = attackers.GetAttackerStats("", ipAddress4)
+	assert.NotNil(t, stats)
+}
+
+func TestAttackersCleanupForManualAddedAttackers(t *testing.T) {
+	watchTime := 10
+	attackers := createAttackerList(context.Background(), 3600, watchTime)
+	ipAddress1 := "167.134.30.55"
+	ipAddress2 := "55.22.90.14"
+	ipAddress3 := "102.36.99.202"
+	deviceId1 := "1b9ee5b8d043698cd13c9f11481cd037d44b8cf3"
+	deviceId2 := "d3681338021a33149a9f8ef2f48eb8bfb46b10b3"
+	err := attackers.UpsertIpAddressStats(ipAddress1)
+	assert.NoError(t, err)
+	err = attackers.UpsertIpAddressStats(ipAddress2)
+	assert.NoError(t, err)
+	err = attackers.UpsertIpAddressStats(ipAddress3)
+	assert.NoError(t, err)
+	err = attackers.UpsertDeviceStats(deviceId1)
+	assert.NoError(t, err)
+	err = attackers.UpsertDeviceStats(deviceId2)
+	assert.NoError(t, err)
+	// manually set ipAddress2 && device1 to block, they must not be removed
+	err = attackers.setIpAddressBlockedStatus(ipAddress2, true)
+	assert.NoError(t, err)
+	err = attackers.setDeviceIdBlockedStatus(deviceId1, true)
+	assert.NoError(t, err)
+	time.Sleep(time.Duration(watchTime+2) * time.Second)
+	stats := attackers.GetAttackerStats("", ipAddress1)
+	assert.Nil(t, stats)
+	stats = attackers.GetAttackerStats("", ipAddress2)
+	assert.NotNil(t, stats)
+	stats = attackers.GetAttackerStats("", ipAddress3)
+	assert.Nil(t, stats)
+	stats = attackers.GetAttackerStats(deviceId1, "")
+	assert.NotNil(t, stats)
+	stats = attackers.GetAttackerStats(deviceId2, "")
+	assert.Nil(t, stats)
+	// manually unblock and wait that some of them will be removed
+	err = attackers.setIpAddressBlockedStatus(ipAddress2, false)
+	time.Sleep(time.Duration(watchTime+2) * time.Second)
+	stats = attackers.GetAttackerStats("", ipAddress2)
+	assert.Nil(t, stats)
+	stats = attackers.GetAttackerStats(deviceId1, "")
 	assert.NotNil(t, stats)
 }
