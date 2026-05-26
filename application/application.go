@@ -15,6 +15,7 @@ import (
 	"github.com/wissance/Ferrum/globals"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/Ferrum/managers"
+	"github.com/wissance/Ferrum/security/bruteforce"
 	"github.com/wissance/Ferrum/services"
 	"github.com/wissance/Ferrum/sre"
 	"github.com/wissance/Ferrum/swagger"
@@ -34,24 +35,25 @@ import (
 const ferrumSwaggerAddressEnvVariable = "FERRUM_SWAGGER_EXT_ADDRESS"
 
 type Application struct {
-	devMode            bool
-	appConfigFile      *string
-	dataConfigFile     *string
-	secretKeyFile      *string
-	appConfig          *config.AppConfig
-	authenticationDefs *data.AuthenticationDefs
-	secretKey          []byte
-	serverData         *data.ServerData
-	ctx                context.Context
-	cancelFunc         context.CancelFunc
-	dataProvider       *managers.DataContext
-	webApiHandler      *r.GinBasedWebApiHandler
-	webApiContext      *rest.WebApiContext
-	logger             *logging.AppLogger
-	httpHandler        *http.Handler
-	httpServer         *http.Server
-	shutdownTimeout    time.Duration
-	metricsCollector   *sre.MetricsCollector
+	devMode                    bool
+	appConfigFile              *string
+	dataConfigFile             *string
+	secretKeyFile              *string
+	appConfig                  *config.AppConfig
+	bruteforceProtectionConfig *bruteforce.ProtectionServiceConfig // TODO(UMV): add this config to the app config
+	authenticationDefs         *data.AuthenticationDefs
+	secretKey                  []byte
+	serverData                 *data.ServerData
+	ctx                        context.Context
+	cancelFunc                 context.CancelFunc
+	dataProvider               *managers.DataContext
+	webApiHandler              *r.GinBasedWebApiHandler
+	webApiContext              *rest.WebApiContext
+	logger                     *logging.AppLogger
+	httpHandler                *http.Handler
+	httpServer                 *http.Server
+	shutdownTimeout            time.Duration
+	metricsCollector           *sre.MetricsCollector
 }
 
 // CreateAppWithConfigs creates but not Init new Application as AppRunner
@@ -258,12 +260,19 @@ func (app *Application) initData(dataProvider managers.DataContext) error {
 func (app *Application) initRestApi() error {
 	app.webApiHandler = r.NewGinBasedWebApiHandler(true, r.AnyOrigin)
 	securityService := services.CreateSecurityService(app.dataProvider, app.logger, app.ctx)
+	bruteforceProtectionConfig := bruteforce.ProtectionServiceConfig{
+		WatchTimeSec: 600,
+	}
+	app.bruteforceProtectionConfig = &bruteforceProtectionConfig
+	bruteForceProtectionService := bruteforce.CreateProtectionService(app.ctx, app.bruteforceProtectionConfig, app.logger)
 	serverAddress := stringFormatter.Format("{0}:{1}", app.appConfig.ServerCfg.Address, app.appConfig.ServerCfg.Port)
 	app.webApiContext = &rest.WebApiContext{
 		Address: serverAddress, Schema: string(app.appConfig.ServerCfg.Schema),
 		AuthDefs:     app.authenticationDefs,
 		DataProvider: app.dataProvider, Security: &securityService,
-		TokenGenerator: &services.JwtGenerator{SignKey: app.secretKey, Logger: app.logger}, Logger: app.logger,
+		TokenGenerator:       &services.JwtGenerator{SignKey: app.secretKey, Logger: app.logger},
+		Logger:               app.logger,
+		BruteforceProtection: bruteForceProtectionService,
 	}
 	router := app.webApiHandler.Router
 	router.RedirectTrailingSlash = true
