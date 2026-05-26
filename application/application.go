@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/wissance/Ferrum/api/rest"
+	"github.com/wissance/Ferrum/api/rest/filter"
 	"github.com/wissance/Ferrum/api/rest/metrics"
 	"github.com/wissance/Ferrum/config"
 	"github.com/wissance/Ferrum/data"
@@ -277,6 +278,7 @@ func (app *Application) initRestApi() error {
 	router := app.webApiHandler.Router
 	router.RedirectTrailingSlash = true
 	router.Use(app.metricsCollector.HttpMetricsCollectMiddleware())
+	router.Use(filter.AttackersFilterMiddleware(app.webApiContext.BruteforceProtection))
 	rootRoutesGroup := router.Group("/")
 	app.initKeyCloakSimilarRestApiRoutes(rootRoutesGroup)
 	app.initSRERestApiRoutes(rootRoutesGroup)
