@@ -23,14 +23,21 @@ type attackerList struct {
 }
 
 // AttackerStats is a public exporting type that is representing for the attackers statistics
+/* Attackers (all people and robots that were entered invalid credentials) are analyzing in
+ * background where it could be made one of the following decision
+ * 1. attacker is not an attacker and should be removed from the list (if attackCount < watchThreshold)
+ * 2. attacker could be added to the list AUTO (if attackCount >= blockThreshold with blockTill
+ *    expiration) or MANUALLY (permanent block)
+ */
 type AttackerStats struct {
 	firstAttackDetection time.Time
 	lastAttackDetection  time.Time
 	attackCount          int64
+	archivedAttackCount  int64
 	blocked              bool
-	blockedAt            time.Time
-	// blockTill is actually not using, only manual unblock
-	blockTill time.Time
+	blockedAt            *time.Time
+	// blockTill is Nullable , null means permanent block
+	blockTill *time.Time
 	// ipAddress was added for quick search in attackersIPAddresses map
 	ipAddress string
 	// deviceId was added for quick search in attackersDevices map
@@ -123,10 +130,14 @@ func (attackers *attackerList) upsertStatsImpl(keyExists bool, id uuid.UUID, isK
 		if statsExists {
 			existingStats.attackCount++
 			existingStats.lastAttackDetection = utcNow
-			if attackers.checkAttackerShouldBeBlocked(&existingStats) {
+			/* it is possible to change blocked state however it could be changed
+			 * by attackCount less than threshold
+			 */
+			if !existingStats.blocked && attackers.checkAttackerShouldBeBlocked(&existingStats) {
 				existingStats.blocked = true
-				existingStats.blockedAt = utcNow
-				existingStats.blockTill = utcNow.Add(time.Second * time.Duration(attackers.blockTime))
+				existingStats.blockedAt = &utcNow
+				blockTime := utcNow.Add(time.Second * time.Duration(attackers.blockTime))
+				existingStats.blockTill = &blockTime
 			}
 			attackers.attackersStats[id] = existingStats
 		} else {
@@ -138,6 +149,7 @@ func (attackers *attackerList) upsertStatsImpl(keyExists bool, id uuid.UUID, isK
 			firstAttackDetection: utcNow,
 			lastAttackDetection:  utcNow,
 			attackCount:          1,
+			archivedAttackCount:  0,
 			blocked:              false,
 		}
 		if isKeyIpAddress {
@@ -169,15 +181,23 @@ func (attackers *attackerList) checkAttackerShouldBeBlocked(stats *AttackerStats
  */
 func (attackers *attackerList) removedNonWatchingAttackers() {
 	attackers.mutex.RLock()
-	utcNow := time.Now().UTC().Unix()
+	utcNow := time.Now().UTC()
+	utcNowUnix := utcNow.Unix()
 	itemsToRemove := make([]AttackerStats, 0, len(attackers.attackersStats)/2)
+	itemsToUnblock := make([]AttackerStats, 0, len(attackers.attackersStats)/2)
 	for _, v := range attackers.attackersStats {
 		// 1. Select attackers with low stats
-		delta := utcNow - v.lastAttackDetection.Unix()
+		delta := utcNowUnix - v.lastAttackDetection.Unix()
 		if v.attackCount < watchThreshold && delta >= int64(attackers.watchTime) {
 			itemsToRemove = append(itemsToRemove, v)
 		}
-		// 2. Check blocked ? unblock or not
+
+		// 2. Check AUTO blocked attackers
+		if v.blocked && v.blockTill != nil {
+			if v.blockTill.Before(utcNow) {
+				itemsToUnblock = append(itemsToUnblock, v)
+			}
+		}
 	}
 	attackers.mutex.RUnlock()
 
@@ -193,6 +213,25 @@ func (attackers *attackerList) removedNonWatchingAttackers() {
 		}
 		delete(attackers.attackersStats, id)
 	}
+
+	for _, v := range itemsToUnblock {
+		var id uuid.UUID
+		if v.ipAddress != "" {
+			id = attackers.attackersIPAddresses[v.ipAddress]
+		} else {
+			id = attackers.attackersDevices[v.deviceId]
+		}
+
+		stats, ok := attackers.attackersStats[id]
+		if ok {
+			stats.blocked = false
+			stats.archivedAttackCount += stats.attackCount
+			stats.attackCount = 0
+			stats.blockTill = nil
+
+			attackers.attackersStats[id] = stats
+		}
+	}
 	attackers.mutex.Unlock()
 }
 
@@ -207,4 +246,44 @@ func (attackers *attackerList) processAttackers() {
 			attackers.removedNonWatchingAttackers()
 		}
 	}
+}
+
+func (attackers *attackerList) setIpAddressBlockedStatus(ipAddress string, status bool) error {
+	attackers.mutex.RLock()
+	id, ok := attackers.attackersIPAddresses[ipAddress]
+	attackers.mutex.RUnlock()
+	if !ok {
+		return errors.NewAttackerNotFoundError(ipAddress)
+	}
+	return attackers.setBlockedStatus(ipAddress, id, status)
+}
+
+func (attackers *attackerList) setDeviceIdBlockedStatus(deviceId string, status bool) error {
+	attackers.mutex.RLock()
+	id, ok := attackers.attackersDevices[deviceId]
+	attackers.mutex.RUnlock()
+	if !ok {
+		return errors.NewAttackerNotFoundError(deviceId)
+	}
+	return attackers.setBlockedStatus(deviceId, id, status)
+}
+
+func (attackers *attackerList) setBlockedStatus(attackerSign string, attackerId uuid.UUID, status bool) error {
+	attackers.mutex.Lock()
+	now := time.Now().UTC()
+	stats, ok := attackers.attackersStats[attackerId]
+	if ok {
+		// if we are blocking manually = permanent block
+		stats.blocked = status
+		stats.blockTill = nil
+		if status {
+			stats.blockedAt = &now
+		}
+		attackers.attackersStats[attackerId] = stats
+	}
+	attackers.mutex.Unlock()
+	if !ok {
+		return errors.NewAttackerStatDataNotFoundError(attackerSign, attackerId)
+	}
+	return nil
 }
