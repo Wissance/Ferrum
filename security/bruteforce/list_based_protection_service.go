@@ -73,7 +73,7 @@ func (service *ListBasedProtectionService) BlockIpAddress(ipAddress string) {
 func (service *ListBasedProtectionService) IsIpAddressBlocked(ipAddress string) bool {
 	stats := service.attackersList.GetAttackerStats("", ipAddress)
 	if stats == nil {
-		return true
+		return false
 	}
 	return stats.blocked
 }
@@ -81,7 +81,7 @@ func (service *ListBasedProtectionService) IsIpAddressBlocked(ipAddress string) 
 func (service *ListBasedProtectionService) IsDeviceBlocked(deviceId string) bool {
 	stats := service.attackersList.GetAttackerStats(deviceId, "")
 	if stats == nil {
-		return true
+		return false
 	}
 	return stats.blocked
 }
@@ -96,8 +96,12 @@ func (service *ListBasedProtectionService) UnblockIpAddress(ipAddress string) {
 
 func (service *ListBasedProtectionService) UnblockDevice(deviceId string) {
 	// this err is just more informational neither real error
-	err := service.attackersList.setDeviceIdBlockedStatus(deviceId, true)
+	err := service.attackersList.setDeviceIdBlockedStatus(deviceId, false)
 	if err != nil {
 		service.logger.Warn(err.Error())
 	}
+}
+
+func (service *ListBasedProtectionService) GetWatchingAttackersCount() int {
+	return service.attackersList.getWatchingAttackersCount()
 }

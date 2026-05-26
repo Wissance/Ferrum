@@ -176,8 +176,8 @@ func (attackers *attackerList) checkAttackerShouldBeBlocked(stats *AttackerStats
 // removedNonWatchingAttackers function that processed all data in maps
 /* This function must be run in goroutine and do the following
  * 1. Remove after 10min attackers that didn't behave like attackers
- * 2. Check blocked till (here we should think should we unblock or should we
- *    completely remove them ?
+ * 2. Check blocked till (automatically blocked attackers), automatically
+ * blocked attackers can be unblocked after time expiration
  */
 func (attackers *attackerList) removedNonWatchingAttackers() {
 	attackers.mutex.RLock()
@@ -286,4 +286,10 @@ func (attackers *attackerList) setBlockedStatus(attackerSign string, attackerId 
 		return errors.NewAttackerStatDataNotFoundError(attackerSign, attackerId)
 	}
 	return nil
+}
+
+func (attackers *attackerList) getWatchingAttackersCount() int {
+	attackers.mutex.RLock()
+	defer attackers.mutex.RUnlock()
+	return len(attackers.attackersStats)
 }

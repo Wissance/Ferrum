@@ -87,10 +87,38 @@ func TestRegisterAttemptsAndCheckIsBlocked(t *testing.T) {
 
 }
 
-func TestRegisterAttemptsAndCheckAttackersAutoRemove(t *testing.T) {
-
-}
-
-func TestBlockAttacker(t *testing.T) {
-
+func TestBlockAttackersManuallyAndAutoRemoveSomeOfThem(t *testing.T) {
+	ipAddress1 := "122.130.205.221"
+	ipAddress2 := "192.100.205.221"
+	deviceId1 := "device_one"
+	deviceId2 := "device_two"
+	logger := logging.AppLogger{}
+	cfg := ProtectionServiceConfig{
+		WatchTimeSec: 10,
+	}
+	protectionService := CreateProtectionService(context.Background(), &cfg, &logger)
+	protectionService.RegisterIpAddressAttempt(ipAddress1)
+	protectionService.RegisterIpAddressAttempt(ipAddress2)
+	protectionService.RegisterDeviceAttempt(deviceId1)
+	protectionService.RegisterDeviceAttempt(deviceId2)
+	assert.Equal(t, 4, protectionService.GetWatchingAttackersCount())
+	// do manual block after that they can't be removed
+	protectionService.BlockIpAddress(ipAddress1)
+	protectionService.BlockDevice(deviceId2)
+	// wait period to skip auto-remove
+	time.Sleep(time.Duration(cfg.WatchTimeSec+2) * time.Second)
+	assert.Equal(t, true, protectionService.IsIpAddressBlocked(ipAddress1))
+	assert.Equal(t, false, protectionService.IsIpAddressBlocked(ipAddress2))
+	assert.Equal(t, false, protectionService.IsDeviceBlocked(deviceId1))
+	assert.Equal(t, true, protectionService.IsDeviceBlocked(deviceId2))
+	assert.Equal(t, 2, protectionService.GetWatchingAttackersCount())
+	// unblock and wait (however it is hard to check
+	protectionService.UnblockIpAddress(ipAddress1)
+	protectionService.UnblockDevice(deviceId2)
+	time.Sleep(time.Duration(cfg.WatchTimeSec+2) * time.Second)
+	assert.Equal(t, false, protectionService.IsIpAddressBlocked(ipAddress1))
+	assert.Equal(t, false, protectionService.IsIpAddressBlocked(ipAddress2))
+	assert.Equal(t, false, protectionService.IsDeviceBlocked(deviceId1))
+	assert.Equal(t, false, protectionService.IsDeviceBlocked(deviceId2))
+	assert.Equal(t, 0, protectionService.GetWatchingAttackersCount())
 }

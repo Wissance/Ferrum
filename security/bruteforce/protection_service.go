@@ -37,6 +37,8 @@ type ProtectionService interface {
 	UnblockIpAddress(ipAddress string)
 	// UnblockDevice is a function for direct Device unblock
 	UnblockDevice(ipAddress string)
+	// GetWatchingAttackersCount returns number of watching attackers
+	GetWatchingAttackersCount() int
 }
 
 // CreateProtectionService is a factory function that build implementation of ProtectionService
