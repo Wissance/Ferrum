@@ -1,5 +1,16 @@
 package bruteforce
 
+import (
+	"context"
+	"github.com/wissance/Ferrum/logging"
+)
+
+// ProtectionServiceConfig contains a set of properties that defines bruteforce protection behaviour
+type ProtectionServiceConfig struct {
+	// WatchTimeSec is set a period for inspect potential attackers
+	WatchTimeSec int
+}
+
 // ProtectionService is a struct that is using for
 /* Service manages Sender (someone who sends request on issue token or|and auth)
  * Sender is representing by the following fingerprint
@@ -26,4 +37,10 @@ type ProtectionService interface {
 	UnblockIpAddress(ipAddress string)
 	// UnblockDevice is a function for direct Device unblock
 	UnblockDevice(ipAddress string)
+}
+
+// CreateProtectionService is a factory function that build implementation of ProtectionService
+func CreateProtectionService(ctx context.Context, config *ProtectionServiceConfig,
+	logger *logging.AppLogger) ProtectionService {
+	return CreateListBasedProtectionService(ctx, config.WatchTimeSec, logger)
 }

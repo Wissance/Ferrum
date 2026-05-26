@@ -5,7 +5,7 @@ import (
 	"github.com/wissance/Ferrum/logging"
 )
 
-// ListBasedProtectionService is bruteforce protection service that uses lists of blocked clients/device
+// ListBasedProtectionService is bruteforce protection service that uses lists of blocked ip addresses/devices
 type ListBasedProtectionService struct {
 	attackersList *attackerList
 	ctx           context.Context
@@ -55,11 +55,19 @@ func (service *ListBasedProtectionService) RegisterDeviceAttempt(deviceId string
 }
 
 func (service *ListBasedProtectionService) BlockDevice(deviceId string) {
-
+	// this err is just more informational neither real error
+	err := service.attackersList.setDeviceIdBlockedStatus(deviceId, true)
+	if err != nil {
+		service.logger.Warn(err.Error())
+	}
 }
 
 func (service *ListBasedProtectionService) BlockIpAddress(ipAddress string) {
-
+	// this err is just more informational neither real error
+	err := service.attackersList.setIpAddressBlockedStatus(ipAddress, true)
+	if err != nil {
+		service.logger.Warn(err.Error())
+	}
 }
 
 func (service *ListBasedProtectionService) IsIpAddressBlocked(ipAddress string) bool {
@@ -79,9 +87,17 @@ func (service *ListBasedProtectionService) IsDeviceBlocked(deviceId string) bool
 }
 
 func (service *ListBasedProtectionService) UnblockIpAddress(ipAddress string) {
-
+	// this err is just more informational neither real error
+	err := service.attackersList.setIpAddressBlockedStatus(ipAddress, false)
+	if err != nil {
+		service.logger.Warn(err.Error())
+	}
 }
 
-func (service *ListBasedProtectionService) UnblockDevice(ipAddress string) {
-
+func (service *ListBasedProtectionService) UnblockDevice(deviceId string) {
+	// this err is just more informational neither real error
+	err := service.attackersList.setDeviceIdBlockedStatus(deviceId, true)
+	if err != nil {
+		service.logger.Warn(err.Error())
+	}
 }
