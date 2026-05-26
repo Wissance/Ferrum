@@ -9,9 +9,9 @@ volumes:
   prometheus_cfg:
     driver: local
     driver_opts:
-      type: 'none'
-      o: 'bind'
-      device: 'prometheus'
+      type: none
+      o: bind
+      device: prometheus
 
 
 networks:
@@ -96,7 +96,8 @@ services:
       ferrum:
         condition: service_started
     volumes:
-      - prometheus_cfg:/etc/prometheus
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      #- prometheus_cfg:/etc/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
