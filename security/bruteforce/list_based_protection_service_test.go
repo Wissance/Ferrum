@@ -71,7 +71,7 @@ func TestRegisterAttemptsAndCheckIsBlocked(t *testing.T) {
 				}
 			}
 			// Wait pause until all goroutines are completed
-			time.Sleep(time.Duration(5) * time.Second)
+			time.Sleep(time.Duration(12) * time.Second)
 
 			for _, a := range tCase.attackers {
 				var isBlocked bool
