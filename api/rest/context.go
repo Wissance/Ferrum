@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"context"
 	"github.com/wissance/Ferrum/data"
 	"github.com/wissance/Ferrum/logging"
 	"github.com/wissance/Ferrum/managers"
@@ -13,7 +12,6 @@ import (
 type WebApiContext struct {
 	Address              string
 	Schema               string
-	ctx                  context.Context
 	DataProvider         *managers.DataContext
 	AuthDefs             *data.AuthenticationDefs
 	Security             *services.SecurityService

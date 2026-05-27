@@ -238,6 +238,7 @@ func TestAttackersCleanupForManualAddedAttackers(t *testing.T) {
 	assert.Nil(t, stats)
 	// manually unblock and wait that some of them will be removed
 	err = attackers.setIpAddressBlockedStatus(ipAddress2, false)
+	assert.NoError(t, err)
 	time.Sleep(time.Duration(watchTime+2) * time.Second)
 	stats = attackers.GetAttackerStats("", ipAddress2)
 	assert.Nil(t, stats)

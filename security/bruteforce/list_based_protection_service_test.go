@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/wissance/Ferrum/logging"
+	"sync"
 	"testing"
 	"time"
 )
@@ -11,7 +12,7 @@ import (
 func TestRegisterAttemptsAndCheckIsBlocked(t *testing.T) {
 	logger := logging.AppLogger{}
 	cfg := ProtectionServiceConfig{
-		WatchTimeSec: 60,
+		WatchTimeSec: 600,
 	}
 	protectionService := CreateProtectionService(context.Background(), &cfg, &logger)
 	testCases := []struct {
@@ -60,18 +61,26 @@ func TestRegisterAttemptsAndCheckIsBlocked(t *testing.T) {
 	}
 
 	for _, tCase := range testCases {
+		wg := &sync.WaitGroup{}
 		t.Run(tCase.name, func(t *testing.T) {
 			for _, a := range tCase.attackers {
 				for range a.attacks {
+					wg.Add(1)
 					if a.deviceId == "" {
-						go protectionService.RegisterIpAddressAttempt(a.ipAddress)
+						go func() {
+							protectionService.RegisterIpAddressAttempt(a.ipAddress)
+							wg.Done()
+						}()
 					} else {
-						go protectionService.RegisterDeviceAttempt(a.deviceId)
+						go func() {
+							protectionService.RegisterDeviceAttempt(a.deviceId)
+							wg.Done()
+						}()
 					}
 				}
 			}
 			// Wait pause until all goroutines are completed
-			time.Sleep(time.Duration(12) * time.Second)
+			wg.Wait()
 
 			for _, a := range tCase.attackers {
 				var isBlocked bool
