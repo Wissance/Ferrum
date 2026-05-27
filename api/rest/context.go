@@ -11,13 +11,13 @@ import (
 
 // WebApiContext is a central Application logic processor manages from Web via HTTP/HTTPS
 type WebApiContext struct {
-	ctx                  context.Context
 	Address              string
 	Schema               string
+	ctx                  context.Context
 	DataProvider         *managers.DataContext
 	AuthDefs             *data.AuthenticationDefs
 	Security             *services.SecurityService
-	BruteforceProtection bruteforce.ProtectionService
+	BruteforceProtection *bruteforce.ProtectionService
 	TokenGenerator       *services.JwtGenerator
 	Logger               *logging.AppLogger
 }

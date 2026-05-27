@@ -273,12 +273,12 @@ func (app *Application) initRestApi() error {
 		DataProvider: app.dataProvider, Security: &securityService,
 		TokenGenerator:       &services.JwtGenerator{SignKey: app.secretKey, Logger: app.logger},
 		Logger:               app.logger,
-		BruteforceProtection: bruteForceProtectionService,
+		BruteforceProtection: &bruteForceProtectionService,
 	}
 	router := app.webApiHandler.Router
 	router.RedirectTrailingSlash = true
 	router.Use(app.metricsCollector.HttpMetricsCollectMiddleware())
-	router.Use(filter.AttackersFilterMiddleware(app.webApiContext.BruteforceProtection))
+	router.Use(filter.AttackersFilterMiddleware(app.webApiContext.BruteforceProtection, app.logger))
 	rootRoutesGroup := router.Group("/")
 	app.initKeyCloakSimilarRestApiRoutes(rootRoutesGroup)
 	app.initSRERestApiRoutes(rootRoutesGroup)

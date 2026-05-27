@@ -119,7 +119,7 @@ func (wCtx *WebApiContext) IssueNewToken(c *gin.Context) {
 					// 2. User credentials validation
 					check = (*wCtx.Security).CheckCredentials(&tokenGenerationData, realmPtr.Name)
 					if check != nil {
-						wCtx.BruteforceProtection.RegisterIpAddressAttempt(c.ClientIP())
+						(*wCtx.BruteforceProtection).RegisterIpAddressAttempt(c.ClientIP())
 						wCtx.Logger.Debug("New token issue: invalid user credentials (username or password)")
 						status = http.StatusUnauthorized
 						result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
