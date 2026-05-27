@@ -22,6 +22,8 @@ COPY globals ./globals
 COPY logging ./logging
 COPY managers ./managers
 COPY services ./services
+COPY security ./security
+COPY testUtils ./testUtils
 COPY sre ./sre
 COPY utils ./utils
 COPY "go.mod" ./"go.mod"

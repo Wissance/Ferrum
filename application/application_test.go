@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"net/url"
@@ -92,6 +93,25 @@ func TestApplicationOnHttps(t *testing.T) {
 	serverAddress := stringFormatter.Format("{0}:{1}", httpsAppConfig.ServerCfg.Address, httpsAppConfig.ServerCfg.Port)
 	fullBaseUrl := stringFormatter.Format("{0}://{1}", httpsAppConfig.ServerCfg.Schema, serverAddress)
 	testRunCommonTestCycleImpl(t, &httpsAppConfig, fullBaseUrl)
+}
+
+func TestApplicationSecurityOnHttps(t *testing.T) {
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	serverAddress := stringFormatter.Format("{0}:{1}", httpsAppConfig.ServerCfg.Address, httpsAppConfig.ServerCfg.Port)
+	fullBaseUrl := stringFormatter.Format("{0}://{1}", httpsAppConfig.ServerCfg.Schema, serverAddress)
+	ctx := context.Background()
+	app := CreateAppWithData(&httpsAppConfig, &testServerData, ctx, testKey, true)
+	res, err := app.Init()
+	assert.True(t, res)
+	assert.Nil(t, err)
+	res, err = app.Start()
+	assert.True(t, res)
+	assert.Nil(t, err)
+	// 1. Security check with bruteforce attack and block attacker
+	bruteForceToIssueToken(t, fullBaseUrl, testRealm1, testClient1, testClient1Secret)
+	res, err = app.Stop()
+	assert.True(t, res)
+	assert.Nil(t, err)
 }
 
 func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseUrl string) {
@@ -271,4 +291,18 @@ func checkIntrospectToken(t *testing.T, baseUrl string, realm string, token stri
 	err = json.Unmarshal(responseBody, &result)
 	assert.Nil(t, err)
 	return result
+}
+
+func bruteForceToIssueToken(t *testing.T, baseUrl string, realm string, clientId string, clientSecret string) {
+	// somehow a hacker find realm, clientId and client secret
+	userName := "admin"
+	const numberOfAttempts = 110
+	for range numberOfAttempts {
+		// using guid as a random password
+		rndPassword, _ := uuid.NewUUID()
+		_ = issueNewToken(t, baseUrl, realm, clientId, clientSecret, userName, rndPassword.String())
+	}
+	// now lets check access to all endpoints, we are expecting 429 status
+	resp := issueNewToken(t, baseUrl, realm, clientId, clientSecret, userName, "new_Password_1234567890")
+	assert.Equal(t, http.StatusTooManyRequests, resp.StatusCode)
 }
