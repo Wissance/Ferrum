@@ -119,6 +119,7 @@ func (wCtx *WebApiContext) IssueNewToken(c *gin.Context) {
 					// 2. User credentials validation
 					check = (*wCtx.Security).CheckCredentials(&tokenGenerationData, realmPtr.Name)
 					if check != nil {
+						(*wCtx.BruteforceProtection).RegisterIpAddressAttempt(c.ClientIP())
 						wCtx.Logger.Debug("New token issue: invalid user credentials (username or password)")
 						status = http.StatusUnauthorized
 						result = dto.ErrorDetails{Msg: check.Msg, Description: check.Description}
@@ -341,11 +342,27 @@ func (wCtx *WebApiContext) Introspect(c *gin.Context) {
 	}
 	active := !session.Expired.Before(time.Now())
 	status := http.StatusOK
-	authTokenType := string(BearerToken)
-	result := dto.IntrospectTokenResult{
-		Active: active,
-		Type:   authTokenType,
-		Exp:    realmPtr.TokenExpiration,
+	result := dto.IntrospectTokenResult{Active: active}
+	if active {
+		realmPath := sf.Format("auth/realms/{0}", realm)
+		// What is important is that server could be behind reverse proxy
+		fullAddress := sf.Format("{0}://{1}", wCtx.Schema, wCtx.Address)
+		result.Iss = sf.Format("{0}/{1}", fullAddress, realmPath)
+		result.Exp = session.Expired.In(time.UTC).Unix()
+		result.Iat = session.Started.In(time.UTC).Unix()
+		result.ClientId = secretPair[0]
+		// todo(UMV): add scope
+		result.Scope = "profile"
+		result.RealmAccess = dto.Roles{Roles: []string{}}
+		result.ResourceAccess = dto.AccountRoles{AccountRoles: dto.Roles{Roles: []string{}}}
+
+		user, userErr := (*wCtx.DataProvider).GetUserById(realm, session.UserId)
+		if userErr != nil {
+			wCtx.Logger.Error(sf.Format("An error occurred during get user by id : {0}, error {1}",
+				session.UserId, userErr.Error()))
+		} else {
+			result.Username = user.GetUsername()
+		}
 	}
 	afterHandle(&w, status, &result)
 }
