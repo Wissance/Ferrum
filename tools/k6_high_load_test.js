@@ -30,12 +30,12 @@ export default function () {
     const userPassword = "P@55W0rD"
     const clientSecret = "00000000000000000000000000000000"
     let ferrumBaseUrl = "http://10.50.40.3:8182";
-    // 1. Get random realm (1-100) && user (1-100)
+    // 1. Get random realm (1-100) && user (1-1000)
     let randomRealm = getRandomInt(1, 100)
     let realm = "realm_" + randomRealm
     console.log("Using Realm is: " + realm)
     let randomUserRel = getRandomInt(1, 1000)
-    let absUser = (randomRealm - 1) * 100 + randomUserRel
+    let absUser = (randomRealm - 1) * 1000 + randomUserRel
     let user = "u" + absUser
     console.log("Using User is: " + user)
     let clientId = "client_" + randomRealm
