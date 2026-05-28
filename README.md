@@ -4,6 +4,7 @@
 * :comet:fast, [see](#452-performance-testing)
 * :fire:low resource consumption, 
 * :heavy_check_mark:fully tested including performance testing
+* :closed_lock_with_key: secure with protection from passwords brute-forcing
 
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/wissance/Ferrum?style=plastic) 
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/Ferrum?style=plastic) 
@@ -340,6 +341,10 @@ Features:
 
 * switched from `gorilla/mux` to `gin-gonic/gin`
 * confirmed that `Ferrum` could handle `~3500 users with 5000 RPS`
+
+### 7.12 Changes in 0.9.3
+
+* added brute-force protection (block by `IP address` (`API` client) or `device Id`   (browser) after 100 unsuccessful attempts), also were added manual block and unblock
 
 ## 8. Contributors
 
