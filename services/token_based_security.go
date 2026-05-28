@@ -92,7 +92,7 @@ func (service *TokenBasedSecurityService) CheckCredentials(tokenIssueData *dto.T
 		msg := sf.Format("User \"{0}\" configured as federated, currently it is not fully supported, wait for future releases",
 			user.GetUsername())
 		service.logger.Warn(msg)
-		return &data.OperationError{Msg: "federated user not supported", Description: msg}
+		return &data.OperationError{Msg: "federated user is not fully supported yet", Description: msg}
 	} else {
 		oldPasswordHash := user.GetPasswordHash()
 		if !realm.Encoder.IsPasswordsMatch(tokenIssueData.Password, oldPasswordHash) {

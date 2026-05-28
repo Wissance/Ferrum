@@ -117,7 +117,7 @@ services:
     hostname: prometheus
 
   grafana:
-    image: grafana/grafana-oss:latest
+    image: grafana/grafana-oss:12.4.2
     container_name: wissance_ferrum_grafana
     volumes:
       # This maps the internal Grafana data directory to a named Docker volume
@@ -166,7 +166,7 @@ services:
     image: grafana/k6:latest
     container_name: wissance_ferrum_k6
     # command: run /k6_smoke_test.js
-    command: run /k6_high_load_test.js
+    command: run /k6_half_high_load_test.js
     networks:
       wissance_ferrum_eth:
         ipv4_address: 10.50.40.20
@@ -184,7 +184,7 @@ services:
       #- K6_OUT=influxdb=http://admin:admin123456@influxdb:8086/k6
     volumes:
       #- ./tools/k6_smoke_test.js:/k6_smoke_test.js
-      - ./tools/k6_high_load_test.js:/k6_high_load_test.js
+      - ./tools/k6_half_high_load_test.js:/k6_half_high_load_test.js
     depends_on:
       influxdb:
         condition: service_started
