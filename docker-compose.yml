@@ -46,6 +46,7 @@ services:
 
   ferrum:
     container_name: wissance_ferrum_webapi
+    user: "1000:1000"
     networks:
       wissance_ferrum_eth:
         ipv4_address: 10.50.40.3
