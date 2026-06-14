@@ -23,6 +23,11 @@ networks:
           subnet: 10.50.40.0/24
 
 services:
+  init-volume:
+    image: alpine
+    volumes:
+      - app_data:/app_data
+    command: chown -R 1000:1000 /app_data
   redis:
     container_name: wissance_ferrum_db
     networks:

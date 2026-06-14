@@ -25,7 +25,6 @@ RUN mkdir -p /nginx_cfg/dhparam && mkdir -p /nginx_cfg/certs && mkdir -p /nginx_
 # TODO(UMV): I need to create dhparam directory in VOLUME, there are no other way or i have not found it yet
 # COPY "LICENSE" /nginx_cfg/dhparam/
 
-
 RUN apk add --update --no-cache python3 && ln -sf python3 /usr/bin/python && apk add py3-pip
 RUN apk add py3-setuptools && apk add py3-redis
 
@@ -39,6 +38,8 @@ COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/ferrum /app/ferrum
 COPY --from=builder --chown=appuser:appgroup --chmod=755 /app/ferrum-admin /app/ferrum-admin
 COPY --from=builder --chown=appuser:appgroup --chmod=755 /app/config_docker_w_redis.json /app/config_docker_w_redis.json
 COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/tools /app/tools
+#TODO(UMV): add keyfile re-generation on every run
+COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/keyfile /app/keyfile
 
 WORKDIR /app
 USER wissance
