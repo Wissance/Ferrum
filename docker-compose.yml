@@ -78,7 +78,25 @@ services:
       - "8182:8182"
     expose:
       - "8182"
-
+  init-nginx:
+    image: alpine:latest
+    container_name: nginx_init
+    volumes:
+      - nginx_cfg:/etc/nginx/
+      - nginx_certs:/etc/ssl/certs
+    # use docs/nginx/nginx_docker.conf as reverse-proxy template cfg
+    command: >
+      sh -c "
+        echo 'Creating directories...' &&
+        mkdir -p /etc/nginx/conf.d /etc/nginx/certs /etc/nginx/dhparam &&
+      
+        if [ ! -f /etc/nginx/dhparam/dhparam.pem ]; then
+          echo 'Generating DH parameters (this might take a minute)...' &&
+          apk add --no-cache openssl &&
+          openssl dhparam -out /etc/nginx/dhparam/dhparam.pem 2048;
+        fi &&
+      
+        echo 'Initialization complete!'"
   nginx-proxy:
     container_name: wissance_reverse_proxy
     image: nginxproxy/nginx-proxy
@@ -87,14 +105,18 @@ services:
         ipv4_address: 10.50.40.4
     ports:
       - '80:80'
-    extra_hosts:
-      - ferrum.dev.local:10.50.40.3
+      # - '443:443'
+    #extra_hosts:
+    #  - ferrum.dev.local:10.50.40.3
     depends_on:
-      - ferrum
+      init-nginx:
+        condition: service_completed_successfully
     volumes:
-      - nginx_cfg:/etc/nginx/
+      - nginx_cfg:/etc/nginx
       - nginx_certs:/etc/ssl/certs
+      - ./docs/nginx/nginx_docker.conf:/etc/nginx/nginx.conf:ro
       - '/var/run/docker.sock:/tmp/docker.sock:ro'
+
   prometheus:
     image: prom/prometheus:latest
     container_name: wissance_ferrum_prometheus

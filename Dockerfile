@@ -19,13 +19,6 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o ferrum-admin ./api/admin/cli
 
 FROM alpine:3.20
 VOLUME /app_data
-#TODO(UMV): remove all reverse-proxy operations from this Dockerfile
-VOLUME /nginx_cfg
-
-# TODO(UMV) : remove this from Dockerfile
-RUN mkdir -p /nginx_cfg/dhparam && mkdir -p /nginx_cfg/certs && mkdir -p /nginx_cfg/conf.d
-# TODO(UMV): I need to create dhparam directory in VOLUME, there are no other way or i have not found it yet
-# COPY "LICENSE" /nginx_cfg/dhparam/
 
 #RUN apk add --update --no-cache python3 && ln -sf python3 /usr/bin/python && apk add py3-pip
 #RUN apk add py3-setuptools && apk add py3-redis
@@ -45,7 +38,6 @@ COPY --from=builder --chown=appuser:appgroup --chmod=755 /app/config_docker_w_re
 COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/tools/*.sh ./tools/
 #TODO(UMV): add keyfile re-generation on every run (via go generate at builder)
 COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/keyfile ./keyfile
-#TODO(UMV): copy swagger
 COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/swagger ./swagger
 COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/certs ./certs
 
