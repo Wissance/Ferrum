@@ -114,6 +114,24 @@ func TestApplicationSecurityOnHttps(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestApplicationGetDocsOnHttps(t *testing.T) {
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	serverAddress := stringFormatter.Format("{0}:{1}", httpsAppConfig.ServerCfg.Address, httpsAppConfig.ServerCfg.Port)
+	fullBaseUrl := stringFormatter.Format("{0}://{1}", httpsAppConfig.ServerCfg.Schema, serverAddress)
+	ctx := context.Background()
+	app := CreateAppWithData(&httpsAppConfig, &testServerData, ctx, testKey, true)
+	res, err := app.Init()
+	assert.True(t, res)
+	assert.Nil(t, err)
+	res, err = app.Start()
+	assert.True(t, res)
+	assert.Nil(t, err)
+	checkGetSwaggerDocs(t, fullBaseUrl)
+	res, err = app.Stop()
+	assert.True(t, res)
+	assert.Nil(t, err)
+}
+
 func testRunCommonTestCycleImpl(t *testing.T, appConfig *config.AppConfig, baseUrl string) {
 	ctx := context.Background()
 	app := CreateAppWithData(appConfig, &testServerData, ctx, testKey, true)
@@ -253,6 +271,17 @@ func getUserInfo(t *testing.T, baseUrl string, realm string, token string, expec
 	err = json.Unmarshal(responseBody, &result)
 	assert.Nil(t, err)
 	return result
+}
+
+func checkGetSwaggerDocs(t *testing.T, baseUrl string) {
+	swaggerUrlTemplate := "{0}/swagger/index.html"
+	swaggerUrl := stringFormatter.Format(swaggerUrlTemplate, baseUrl)
+	client := http.Client{}
+	request, err := http.NewRequest("GET", swaggerUrl, nil)
+	assert.NoError(t, err)
+	response, err := client.Do(request)
+	require.Nil(t, err)
+	assert.Equal(t, "200 OK", response.Status)
 }
 
 func checkGetMetrics(t *testing.T, baseUrl string) {
