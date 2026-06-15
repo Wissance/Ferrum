@@ -459,20 +459,22 @@ var doc = `{
         }
     },
     "definitions": {
+        "dto.AccountRoles": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "$ref": "#/definitions/dto.Roles"
+                }
+            }
+        },
         "dto.IntrospectTokenResult": {
             "type": "object",
             "properties": {
                 "active": {
                     "type": "boolean"
                 },
-                "aud": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "auth_time": {
-                    "type": "integer"
+                "client_id": {
+                    "type": "string"
                 },
                 "exp": {
                     "type": "integer"
@@ -480,13 +482,19 @@ var doc = `{
                 "iat": {
                     "type": "integer"
                 },
-                "jti": {
+                "iss": {
                     "type": "string"
                 },
-                "nbf": {
-                    "type": "integer"
+                "realm_access": {
+                    "$ref": "#/definitions/dto.Roles"
                 },
-                "typ": {
+                "resource_access": {
+                    "$ref": "#/definitions/dto.AccountRoles"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -570,6 +578,17 @@ var doc = `{
                 },
                 "userinfo_endpoint": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.Roles": {
+            "type": "object",
+            "properties": {
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

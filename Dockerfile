@@ -34,21 +34,21 @@ RUN apk add --no-cache redis
 RUN addgroup -g 1000 -S wissance && adduser -u 1000 -S ferrum -G wissance
 RUN mkdir /app
 RUN chown ferrum:wissance /app
+WORKDIR /app
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/ferrum /app/ferrum
-COPY --from=builder --chown=appuser:appgroup --chmod=755 /app/ferrum-admin /app/ferrum-admin
-#TODO(UMV): pass desired config via env
-COPY --from=builder --chown=appuser:appgroup --chmod=755 /app/config_docker_w_redis.json /app/config_docker_w_redis.json
-COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/tools/*.sh /app/tools/
-#TODO(UMV): add keyfile re-generation on every run
-COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/keyfile /app/keyfile
-#TODO(UMV): copy swagger && certs
-COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/swagger/* /app/
-COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/certs /app/certs
+COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/ferrum ./ferrum
+COPY --from=builder --chown=appuser:appgroup --chmod=755 /app/ferrum-admin ./ferrum-admin
+#TODO(UMV): pass desired config via env, and make it RO ??
+COPY --from=builder --chown=appuser:appgroup --chmod=755 /app/config_docker_w_redis.json ./config_docker_w_redis.json
+COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/tools/*.sh ./tools/
+#TODO(UMV): add keyfile re-generation on every run (via go generate at builder)
+COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/keyfile ./keyfile
+#TODO(UMV): copy swagger
+COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/swagger ./swagger
+COPY --from=builder --chown=ferrum:wissance --chmod=755 /app/certs ./certs
 
-WORKDIR /app
 USER wissance
 
 CMD ["/bin/sh", "-c", "/app/tools/docker_app_runner.sh"]

@@ -117,7 +117,7 @@ services:
     hostname: prometheus
 
   grafana:
-    image: grafana/grafana-oss:latest
+    image: grafana/grafana-oss:12.4.2
     container_name: wissance_ferrum_grafana
     volumes:
       # This maps the internal Grafana data directory to a named Docker volume

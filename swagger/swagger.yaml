@@ -1,23 +1,28 @@
 definitions:
+  dto.AccountRoles:
+    properties:
+      account:
+        $ref: '#/definitions/dto.Roles'
+    type: object
   dto.IntrospectTokenResult:
     properties:
       active:
         type: boolean
-      aud:
-        items:
-          type: string
-        type: array
-      auth_time:
-        type: integer
+      client_id:
+        type: string
       exp:
         type: integer
       iat:
         type: integer
-      jti:
+      iss:
         type: string
-      nbf:
-        type: integer
-      typ:
+      realm_access:
+        $ref: '#/definitions/dto.Roles'
+      resource_access:
+        $ref: '#/definitions/dto.AccountRoles'
+      scope:
+        type: string
+      username:
         type: string
     type: object
   dto.OpenIdConfiguration:
@@ -90,6 +95,13 @@ definitions:
         type: string
       userinfo_endpoint:
         type: string
+    type: object
+  dto.Roles:
+    properties:
+      roles:
+        items:
+          type: string
+        type: array
     type: object
   dto.Token:
     properties:
