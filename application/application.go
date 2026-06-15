@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	httpSwagger "github.com/swaggo/http-swagger"
+	swaggerFiles "github.com/swaggo/files"
+	"github.com/swaggo/gin-swagger"
 	"github.com/wissance/Ferrum/api/rest"
 	"github.com/wissance/Ferrum/api/rest/filter"
 	"github.com/wissance/Ferrum/api/rest/metrics"
@@ -310,9 +311,7 @@ func (app *Application) initSwaggerRoutes(router *gin.RouterGroup) {
 	}
 	swagger.SwaggerInfo.Host = stringFormatter.Format("{0}:{1}", address, app.appConfig.ServerCfg.Port)
 
-	app.webApiHandler.GET(router, "/swagger", func(ctx *gin.Context) {
-		httpSwagger.Handler()
-	})
+	app.webApiHandler.GET(router, "/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
 func (app *Application) initSRERestApiRoutes(router *gin.RouterGroup) {

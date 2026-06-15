@@ -1,0 +1,29 @@
+# "src" folders to ignore
+img/
+prometheus/
+extTestApps/
+docs/
+testData/
+# logs
+logs/
+*.log
+# source controls
+.git
+.gitignore
+.gitattributes
+# build + artifacts
+.github/
+.golangci*
+dist/
+build/
+bin/
+*.exe
+# container configuration
+.env*
+*.local
+Dockerfile
+docker-compose.*
+start_docker_perftests.ps1
+# IDE configuration
+.vscode/
+.idea

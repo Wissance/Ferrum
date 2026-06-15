@@ -44,7 +44,7 @@
     },
     "security" : {
         "allowed_hosts" : ["*"],
-        "admin_api_url_prefix" : "ass123",
+        "admin_api_url_prefix" : "adm123",
         "admin": {
             "username": "admin",
             "password": "#P@55W0RRRD#"
