@@ -61,8 +61,8 @@ func TestRegisterAttemptsAndCheckIsBlocked(t *testing.T) {
 	}
 
 	for _, tCase := range testCases {
-		wg := &sync.WaitGroup{}
 		t.Run(tCase.name, func(t *testing.T) {
+			wg := &sync.WaitGroup{}
 			for _, a := range tCase.attackers {
 				for range a.attacks {
 					wg.Add(1)
