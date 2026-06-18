@@ -17,6 +17,9 @@ RUN go generate
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o ferrum
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o ferrum-admin ./api/admin/cli
 
+RUN apk add --update --no-cache python3 && ln -sf python3 /usr/bin/python && apk add py3-pip
+RUN python ./tools/lf_fixer.py --i=./tools --o=./tools --sel=*.sh
+
 FROM alpine:3.20
 VOLUME /app_data
 
