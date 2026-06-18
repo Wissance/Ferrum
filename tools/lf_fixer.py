@@ -1,9 +1,8 @@
 import os
-import csv
 import argparse
-import datetime
 import typing
 import fnmatch
+from pathlib import Path
 
 input_dir_arg = "--i"
 output_dir_arg = "--o"
@@ -62,22 +61,30 @@ class FileProcessor:
         for item in files:
             item_path = os.path.abspath(os.path.join(input_dir, item))
             if os.path.isfile(item_path):
-                self.replace_line_ending(item_path)
+                rel_structure = input_dir.removeprefix(self._options.input_dir)
+                #print(str.format("relative path to reproduce : {0}", rel_structure))
+                out_dir = os.path.abspath(os.path.join(self._options.output_dir, rel_structure))
+                out_file = os.path.join(out_dir, item)
+                #print(str.format("save to : {0}", out_file))
+                self.replace_line_ending(item_path, out_file)
             else:
                 files_in_dir = self.list_files(item_path)
                 self.process_selected_files(item_path, files_in_dir)
     
-    def replace_line_ending(self, input_file: str):
+    def replace_line_ending(self, input_file: str, output_file: str):
         print(str.format("#### Start to process file \"{0}\" ####", input_file))
         processed_lines = []
-        with open(input_file, "r", encoding="utf-8") as f:
-            for line in f:
+        with open(input_file, "r") as i_file:
+            for line in i_file:
                 if line.endswith("\r\n"):
                     processed_line = line.rstrip("\r\n") + "\n"
                     processed_lines.append(processed_line)
                 else:
                     processed_lines.append(line)
-        # save ... 
+        # create dirs
+        with open(output_file,"w", newline="\n") as o_file:
+            for line in processed_lines:
+                o_file.write(line)
         print(str.format("#### File \"{0}\" processing finished ####", input_file))
 
     _options = None
