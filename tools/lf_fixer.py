@@ -48,24 +48,38 @@ class FileProcessor:
     def __init__(self, options: ProcessOptions):
         self._options = options
 
-    def list_files(self) -> typing.List[str] :
-        raw_result = os.listdir(self._options.input_dir)
+    def list_files(self, dir: str) -> typing.List[str] :
+        raw_result = os.listdir(dir)
         if self._options.selector != "":
             result = list(filter(lambda x: fnmatch.fnmatch(x, self._options.selector) 
-                                           if os.path.isfile(os.path.join(self._options.input_dir, x)) 
-                                           else self._options.recursive,
+                                           if os.path.isfile(os.path.join(dir, x)) 
+                                           else self._options.recursive and x != "." and x != "..",
                                  raw_result))
             return result
         return raw_result
     
-    def process_selected_files(self, files: typing.List[str]):
+    def process_selected_files(self, input_dir: str, files: typing.List[str]):
         for item in files:
-            if os.path.isfile(os.path.join(self._options.input_dir, item)):
-                pass
-            else :
-                pass
-        pass
+            item_path = os.path.abspath(os.path.join(input_dir, item))
+            if os.path.isfile(item_path):
+                self.replace_line_ending(item_path)
+            else:
+                files_in_dir = self.list_files(item_path)
+                self.process_selected_files(item_path, files_in_dir)
     
+    def replace_line_ending(self, input_file: str):
+        print(str.format("#### Start to process file \"{0}\" ####", input_file))
+        processed_lines = []
+        with open(input_file, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.endswith("\r\n"):
+                    processed_line = line.rstrip("\r\n") + "\n"
+                    processed_lines.append(processed_line)
+                else:
+                    processed_lines.append(line)
+        # save ... 
+        print(str.format("#### File \"{0}\" processing finished ####", input_file))
+
     _options = None
     
 """
@@ -76,7 +90,7 @@ class FileProcessor:
     2. select all files from . and save to the ./out -> lf_fixer.py --input=. --output=./out 
 """
 def main() :
-    print("###### Starting to fix line endings CRLF -> LF for running scripts in linux ######")
+    print("######## Starting to fix line endings CRLF -> LF for running scripts in linux ########")
     args = parser.parse_args()
     output_dir = args.o
     input_dir = args.i
@@ -86,15 +100,10 @@ def main() :
     options = ProcessOptions(input_dir, output_dir, file_selector, recursive_processing)
     processor = FileProcessor(options)
 
-    files_and_dirs = processor.list_files()
+    files_and_dirs = processor.list_files(options.input_dir)
     print(files_and_dirs)
-    for item in files_and_dirs:
-        if os.path.isfile(os.path.join(input_dir, item)):
-            pass
-        else :
-            pass
-    pass
-    print("###### Line endings CRLF -> LF for running scripts in linux fixing finished ######")
+    processor.process_selected_files(options.input_dir, files_and_dirs)
+    print("######## Line endings CRLF -> LF for running scripts in linux fixing finished ########")
 
 if __name__ == "__main__":
     main()
